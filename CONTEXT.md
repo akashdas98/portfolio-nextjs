@@ -15,7 +15,7 @@ Current implementation state:
 - Git is initialized on branch `main`.
 - Initial baseline commit exists.
 - GitHub repository exists as a private repo at `git@github.com:akashdas98/portfolio-nextjs.git`.
-- GitHub CLI is installed, but durable `gh` authentication is not complete.
+- GitHub CLI is installed and authenticated for `akashdas98` through the Windows keyring.
 
 Current estimated completion:
 
@@ -45,7 +45,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 | Local install/build | Blocked | Retry with Node 20+ available on PATH. | Dependencies are pinned to Node 18-compatible versions. |
 | Git repo | Complete | Add remote and push. | User wants a different branch or history. |
 | GitHub push | Complete | Use normal Git workflow from `main`. | Remote target changes. |
-| GitHub CLI auth | Blocked | Use built-in `gh auth login` browser flow or a classic PAT. | Durable auth starts passing `gh auth status`. |
+| GitHub CLI auth | Complete | Use `gh` for future repo/PR/API work. | Token is revoked or account changes. |
 
 ## Completed Foundation
 
@@ -54,7 +54,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 - Initial commit exists: `0a226dd Initial portfolio baseline`.
 - GitHub repository exists as private repo `akashdas98/portfolio-nextjs`.
 - `origin` points to `git@github.com:akashdas98/portfolio-nextjs.git`.
-- GitHub CLI is installed at `C:\Program Files\GitHub CLI\gh.exe`, but it is not currently authenticated.
+- GitHub CLI is installed at `C:\Program Files\GitHub CLI\gh.exe` and authenticated as `akashdas98`.
 - Git safe-directory is configured for this repo path.
 - `.gitignore` excludes local dependencies, build outputs, Vercel state, logs, and environment files.
 - Contact form environment variables are documented in `.env.example` and `README.md`.
@@ -103,7 +103,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 - `npm install` failed under Node `v18.17.1` after resolving packages that require Node 20+.
 - `npm run build` failed because the failed install did not leave a usable `next` binary.
 - GitHub CLI was installed with winget. Existing shells may not have the new PATH entry; direct path is `C:\Program Files\GitHub CLI\gh.exe`.
-- Manual device-token storage through `gh auth login --with-token` initially accepted tokens, but later `gh auth status` reported them invalid. The invalid stored token was removed. Durable GitHub CLI setup still needs the built-in browser flow or a classic PAT.
+- GitHub CLI auth now passes for `akashdas98` through the Windows keyring. Existing shells may still need PATH refresh before `gh` resolves without the full executable path.
 - Git operations in this workspace may require elevated filesystem access to write `.git` metadata.
 - The current dependency ranges use `latest`, so future installs may change behavior unless versions are pinned.
 - Some existing project files contain mojibake text.
@@ -130,4 +130,4 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 - 2026-06-24: Initialized Git on branch `main`, configured Git safe-directory for the repo path, staged the full project, and created the initial baseline commit.
 - 2026-06-24: Attempted local dependency install and build. Verification is blocked by Node 18 while the resolved latest packages require Node 20+.
 - 2026-06-24: Created private GitHub repository `akashdas98/portfolio-nextjs` and set `origin` to the SSH remote.
-- 2026-06-24: Attempted OS-level GitHub CLI authentication with device-token scopes. `gh auth status` reported the stored token as invalid, so the token was removed and durable `gh` auth remains open.
+- 2026-06-24: Completed OS-level GitHub CLI authentication for `akashdas98`; `gh auth status` passes with SSH as the Git protocol.
