@@ -1,155 +1,133 @@
-# CONTEXT
+# Portfolio Context
 
-## Current Intent
+## Current Status
 
-This portfolio exists to sell Akash Das as a senior full-stack developer for clean, user-friendly websites and web applications.
+This repository is a Next.js App Router portfolio site at:
 
-The core offer is one experienced technical partner across UI/UX planning, frontend development, backend architecture, deployment, and maintenance.
+`E:\Documents\Projects\Freelance Starter Pack\portfolio-nextjs`
 
-The site should make competence feel obvious without overselling. It should read like an established technical brand, not a freelancer asking to be trusted.
+Current work item: establish durable repo memory, initialize Git, and prepare the project for GitHub.
 
-## Positioning
+Current implementation state:
 
-Primary headline:
+- Portfolio site source exists with App Router, TypeScript, global CSS, reusable components, structured content, metadata, sitemap, robots, and a Resend-backed contact API.
+- `AGENTS.md` and `CONTEXT.md` now exist in the same compact ledger style as the MafiaGame project memory files.
+- Git is initialized on branch `main`.
+- Initial baseline commit exists.
+- GitHub push is not complete because no remote is configured and GitHub CLI is not installed on PATH.
 
-Senior Full-Stack Developer for Clean, User-Friendly Websites and Web Applications
+Current estimated completion:
 
-Portfolio headline:
+- Repo memory files: complete.
+- Local Git initialization: complete.
+- Initial commit: complete.
+- Local dependency install/build verification: blocked by Node/runtime tooling.
+- GitHub push: blocked pending exact remote or GitHub creation method.
 
-Clean, Reliable Web Products Built End to End
+## Operating Rule
 
-Safe UI/UX claim:
+Before continuing work, check this file's `Status Ledger`, `Known Issues`, and `Next Recommended Steps`.
 
-I create clean, professional interfaces using established UI/UX principles, responsive design and reusable design systems.
+Keep this file compact. It is working memory, not a full changelog. Use Git history for detailed change history and `portfolio-structure.md` / `positioning.md` for durable product direction.
 
-Do not position Akash as a dedicated UI/UX designer. The claim is UI/UX-informed engineering.
+## Status Ledger
 
-## Voice
+| Area | Status | Do Next | Do Not Rework Unless |
+| --- | --- | --- | --- |
+| Root memory files | Complete | Keep them accurate after meaningful changes. | User asks for a different format. |
+| Product positioning | Defined | Preserve senior full-stack, UI/UX-informed, end-to-end delivery framing. | `positioning.md` changes. |
+| Portfolio content | Implemented from outline | Fix encoding issues deliberately when touching nearby copy. | Copy strategy changes. |
+| Visual direction | Implemented as restrained dark UI | Verify mobile/desktop polish before launch. | User requests a redesign. |
+| Contact form | Implemented with Resend | Configure real env vars and verified sender before launch. | Contact provider changes. |
+| Metadata/sitemap/robots | Implemented with placeholder deployment URL | Replace placeholder production URL before launch. | Domain/deployment target changes. |
+| Dependencies | Uses `latest` ranges | Use Node 20+ or pin versions before serious deployment. | User accepts floating latest versions. |
+| Local install/build | Blocked | Retry with Node 20+ available on PATH. | Dependencies are pinned to Node 18-compatible versions. |
+| Git repo | Complete | Add remote and push. | User wants a different branch or history. |
+| GitHub push | Blocked | Provide exact GitHub repo URL or install/use a GitHub creation path. | Remote already exists. |
 
-Use direct, client-facing language.
+## Completed Foundation
 
-Prefer:
+- `AGENTS.md` and `CONTEXT.md` exist and must be read before work.
+- Git is initialized on `main`.
+- Initial commit exists: `0a226dd Initial portfolio baseline`.
+- Git safe-directory is configured for this repo path.
+- `.gitignore` excludes local dependencies, build outputs, Vercel state, logs, and environment files.
+- Contact form environment variables are documented in `.env.example` and `README.md`.
 
-- Built for
-- Designed to
-- End-to-end
-- Reliable by design
-- Clear, maintainable, and ready to scale
-- Existing systems, improved without unnecessary disruption
-- Technical complexity translated into dependable products
+## Current Architecture Notes
 
-Avoid:
+- `app/page.tsx` renders the main one-page portfolio.
+- `components/Header.tsx` owns fixed header and mobile nav behavior.
+- `components/ContactForm.tsx` owns client-side form state and posts to `/api/contact`.
+- `app/api/contact/route.ts` validates submissions with Zod and sends email through Resend.
+- `components/ProjectCard.tsx` renders selected work cards from structured content.
+- `components/SystemVisual.tsx` renders simple CSS-based visuals for project cards.
+- `lib/content.ts` stores selected work and service content.
+- `app/globals.css` owns design tokens, layout, responsive behavior, and motion.
 
-- I can help with
-- I can build
-- I can investigate
-- I am able to
-- Whether you need
-- My services include
+## Active Gaps
 
-Use first person selectively. Most service and project copy should focus on outcomes.
+1. GitHub push:
+   No remote is configured and `gh` is not installed. Pushing requires either an existing repository URL or another authenticated GitHub creation method.
 
-## Visual Direction
+2. Local build verification:
+   The current shell has Node `v18.17.1`. The `latest` dependency resolution includes `next@16.2.9` and `resend@6.14.0`, which require Node 20+. `npm install` exited with an npm error and did not create a usable `next` binary.
 
-The desired impression is cold competence: controlled, sharp, calm, confident, and not sterile.
+3. Encoding cleanup:
+   Several source files contain mojibake from encoding issues, including broken middots, rupee symbols, arrows, apostrophes, and dashes. Fix these deliberately in a separate copy pass or when editing adjacent text.
 
-Use:
+4. Launch readiness:
+   Placeholder deployment URLs still need replacement in metadata, sitemap, and robots. Resend sender configuration still needs real production values.
 
-- Near-black or deep-charcoal background
-- Slightly lighter surfaces
-- Soft off-white primary text
-- Muted cool-grey secondary text
-- Low-contrast borders
-- One restrained icy-blue, steel-blue, or desaturated-cyan accent
-- Typography-led hierarchy
-- Spacious but purposeful layout
-- Subtle hover and reveal motion
+## Pending
 
-Avoid:
+- Add a GitHub remote.
+- Push `main` to GitHub.
+- Use Node 20+ and rerun `npm install`.
+- Run `npm run build`.
+- Replace placeholder domain values before deployment.
+- Configure Resend sender values in `.env.local` for local testing and in the deployment environment for production.
+- Review mobile and desktop layouts after any copy or styling changes.
 
-- Bright gradients
-- Neon cyberpunk styling
-- Decorative blobs
-- Fake terminal aesthetics
-- Code rain
-- Heavy glassmorphism
-- Multiple accent colors
-- Scroll-jacking, parallax, magnetic buttons, cursor effects, or long intro animations
+## Assumptions
 
-## Current Site Structure
+- The production branch should be `main`.
+- GitHub should receive the current initial baseline history unless the user asks for a different commit structure.
+- The current visual direction should remain restrained and typography-led.
+- The contact form should keep direct email as a fallback.
+- The site can target Node 20+ for deployment unless the user explicitly needs Node 18 compatibility.
 
-Navigation:
+## Known Issues
 
-- Work
-- Services
-- About
-- Contact
+- `npm install` failed under Node `v18.17.1` after resolving packages that require Node 20+.
+- `npm run build` failed because the failed install did not leave a usable `next` binary.
+- `gh auth status` failed because GitHub CLI is not installed or not on PATH.
+- No Git remote is configured.
+- Git operations in this workspace may require elevated filesystem access to write `.git` metadata.
+- The current dependency ranges use `latest`, so future installs may change behavior unless versions are pinned.
+- Some existing project files contain mojibake text.
 
-Main sections:
+## Important Deviations From Launch-Ready
 
-- Hero
-- Selected work
-- Additional impact
-- Services
-- About
-- Technical foundation
-- Contact
+- The site has not been successfully built in this local shell.
+- The contact form is not production-ready until Resend environment variables and sender verification are configured.
+- Metadata, sitemap, and robots still need the real production domain.
+- Dependency versions are not pinned.
 
-Selected work:
+## Next Recommended Steps
 
-- Ecommerce Delivery Intelligence Platform
-- Centralized Lead Capture and Routing Platform
-- Horecah Hospitality Hiring Application
+1. Provide the exact GitHub repository URL, or install/configure GitHub CLI so the repo can be created from this machine.
+2. Add `origin` and push `main`.
+3. Install Node 20+ or switch PATH to an existing Node 20+ runtime.
+4. Run `npm install`.
+5. Run `npm run build`.
+6. Decide whether to pin dependency versions instead of keeping `latest`.
+7. Fix mojibake text across `app/page.tsx`, `lib/content.ts`, `README.md`, `portfolio-structure.md`, and `positioning.md`.
+8. Replace placeholder domain values in `app/layout.tsx`, `app/sitemap.ts`, and `app/robots.ts`.
 
-Additional impact:
+## Recent Changes
 
-- Customer communication automation
-- Healthcare and hospital platforms
-- Mobile patient-management application
-- OCR document processing prototype
-
-Services:
-
-- Business Websites
-- Custom Web Applications
-- Application Rescue
-- Ongoing Support
-
-## Technical Context
-
-Framework:
-
-- Next.js
-- TypeScript
-- App Router
-- Server Components by default
-
-Styling:
-
-- Global CSS in `app/globals.css`
-- Custom CSS variables for tokens
-- No component library
-
-Contact:
-
-- `components/ContactForm.tsx` posts to `app/api/contact/route.ts`
-- API validates with Zod
-- Email delivery uses Resend
-- Required environment variables:
-  - `RESEND_API_KEY`
-  - `CONTACT_TO_EMAIL`
-  - `CONTACT_FROM_EMAIL`
-
-Deployment notes:
-
-- Replace placeholder production URLs in metadata, sitemap, and robots before launch.
-- Verify Resend sender domain before relying on the form.
-- Direct email link remains the fallback.
-
-## Known Watchpoints
-
-- Some source files currently contain mojibake characters from encoding issues, such as broken middots, rupee symbols, arrows, and apostrophes. Fix these deliberately when touching nearby copy.
-- The global CSS currently uses strong negative letter spacing in large headings. Any design pass should verify readability on mobile.
-- `package.json` uses `latest` dependency ranges. Pin versions before a serious deployment if repeatable builds matter.
-- `next lint` may not be available depending on the installed Next.js version.
+- 2026-06-24: Created root `AGENTS.md` and `CONTEXT.md` using the MafiaGame compact agent-guide and status-ledger style.
+- 2026-06-24: Initialized Git on branch `main`, configured Git safe-directory for the repo path, staged the full project, and created the initial baseline commit.
+- 2026-06-24: Attempted local dependency install and build. Verification is blocked by Node 18 while the resolved latest packages require Node 20+.
 
