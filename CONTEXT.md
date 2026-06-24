@@ -15,6 +15,7 @@ Current implementation state:
 - Git is initialized on branch `main`.
 - Initial baseline commit exists.
 - GitHub repository exists as a private repo at `git@github.com:akashdas98/portfolio-nextjs.git`.
+- GitHub CLI is installed, but durable `gh` authentication is not complete.
 
 Current estimated completion:
 
@@ -22,7 +23,7 @@ Current estimated completion:
 - Local Git initialization: complete.
 - Initial commit: complete.
 - Local dependency install/build verification: blocked by Node/runtime tooling.
-- GitHub push: ready after committing this context update.
+- GitHub push: complete.
 
 ## Operating Rule
 
@@ -43,7 +44,8 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 | Dependencies | Uses `latest` ranges | Use Node 20+ or pin versions before serious deployment. | User accepts floating latest versions. |
 | Local install/build | Blocked | Retry with Node 20+ available on PATH. | Dependencies are pinned to Node 18-compatible versions. |
 | Git repo | Complete | Add remote and push. | User wants a different branch or history. |
-| GitHub push | Ready | Push `main` to `origin`. | Remote target changes. |
+| GitHub push | Complete | Use normal Git workflow from `main`. | Remote target changes. |
+| GitHub CLI auth | Blocked | Use built-in `gh auth login` browser flow or a classic PAT. | Durable auth starts passing `gh auth status`. |
 
 ## Completed Foundation
 
@@ -52,6 +54,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 - Initial commit exists: `0a226dd Initial portfolio baseline`.
 - GitHub repository exists as private repo `akashdas98/portfolio-nextjs`.
 - `origin` points to `git@github.com:akashdas98/portfolio-nextjs.git`.
+- GitHub CLI is installed at `C:\Program Files\GitHub CLI\gh.exe`, but it is not currently authenticated.
 - Git safe-directory is configured for this repo path.
 - `.gitignore` excludes local dependencies, build outputs, Vercel state, logs, and environment files.
 - Contact form environment variables are documented in `.env.example` and `README.md`.
@@ -80,7 +83,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 
 ## Pending
 
-- Push `main` to GitHub.
+- Keep `main` pushed to GitHub after changes.
 - Use Node 20+ and rerun `npm install`.
 - Run `npm run build`.
 - Replace placeholder domain values before deployment.
@@ -99,8 +102,8 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 
 - `npm install` failed under Node `v18.17.1` after resolving packages that require Node 20+.
 - `npm run build` failed because the failed install did not leave a usable `next` binary.
-- GitHub CLI was installed with winget, but the current shell may not have the new PATH entry; direct path is `C:\Program Files\GitHub CLI\gh.exe`.
-- GitHub CLI token storage rejected a repo-only device token because it wanted `read:org`; repo creation was completed through the GitHub API instead.
+- GitHub CLI was installed with winget. Existing shells may not have the new PATH entry; direct path is `C:\Program Files\GitHub CLI\gh.exe`.
+- Manual device-token storage through `gh auth login --with-token` initially accepted tokens, but later `gh auth status` reported them invalid. The invalid stored token was removed. Durable GitHub CLI setup still needs the built-in browser flow or a classic PAT.
 - Git operations in this workspace may require elevated filesystem access to write `.git` metadata.
 - The current dependency ranges use `latest`, so future installs may change behavior unless versions are pinned.
 - Some existing project files contain mojibake text.
@@ -114,13 +117,12 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 
 ## Next Recommended Steps
 
-1. Push `main` to GitHub.
-2. Install Node 20+ or switch PATH to an existing Node 20+ runtime.
-3. Run `npm install`.
-4. Run `npm run build`.
-5. Decide whether to pin dependency versions instead of keeping `latest`.
-6. Fix mojibake text across `app/page.tsx`, `lib/content.ts`, `README.md`, `portfolio-structure.md`, and `positioning.md`.
-7. Replace placeholder domain values in `app/layout.tsx`, `app/sitemap.ts`, and `app/robots.ts`.
+1. Install Node 20+ or switch PATH to an existing Node 20+ runtime.
+2. Run `npm install`.
+3. Run `npm run build`.
+4. Decide whether to pin dependency versions instead of keeping `latest`.
+5. Fix mojibake text across `app/page.tsx`, `lib/content.ts`, `README.md`, `portfolio-structure.md`, and `positioning.md`.
+6. Replace placeholder domain values in `app/layout.tsx`, `app/sitemap.ts`, and `app/robots.ts`.
 
 ## Recent Changes
 
@@ -128,3 +130,4 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 - 2026-06-24: Initialized Git on branch `main`, configured Git safe-directory for the repo path, staged the full project, and created the initial baseline commit.
 - 2026-06-24: Attempted local dependency install and build. Verification is blocked by Node 18 while the resolved latest packages require Node 20+.
 - 2026-06-24: Created private GitHub repository `akashdas98/portfolio-nextjs` and set `origin` to the SSH remote.
+- 2026-06-24: Attempted OS-level GitHub CLI authentication with device-token scopes. `gh auth status` reported the stored token as invalid, so the token was removed and durable `gh` auth remains open.
