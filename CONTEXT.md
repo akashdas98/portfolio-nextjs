@@ -6,7 +6,7 @@ This repository is a Next.js App Router portfolio site at:
 
 `E:\Documents\Projects\Freelance Starter Pack\portfolio-nextjs`
 
-Current work item: establish durable repo memory, initialize Git, and prepare the project for GitHub.
+Current work item: establish durable repo memory, initialize Git, and push the project to GitHub.
 
 Current implementation state:
 
@@ -14,7 +14,7 @@ Current implementation state:
 - `AGENTS.md` and `CONTEXT.md` now exist in the same compact ledger style as the MafiaGame project memory files.
 - Git is initialized on branch `main`.
 - Initial baseline commit exists.
-- GitHub push is not complete because no remote is configured and GitHub CLI is not installed on PATH.
+- GitHub repository exists as a private repo at `git@github.com:akashdas98/portfolio-nextjs.git`.
 
 Current estimated completion:
 
@@ -22,7 +22,7 @@ Current estimated completion:
 - Local Git initialization: complete.
 - Initial commit: complete.
 - Local dependency install/build verification: blocked by Node/runtime tooling.
-- GitHub push: blocked pending exact remote or GitHub creation method.
+- GitHub push: ready after committing this context update.
 
 ## Operating Rule
 
@@ -43,13 +43,15 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 | Dependencies | Uses `latest` ranges | Use Node 20+ or pin versions before serious deployment. | User accepts floating latest versions. |
 | Local install/build | Blocked | Retry with Node 20+ available on PATH. | Dependencies are pinned to Node 18-compatible versions. |
 | Git repo | Complete | Add remote and push. | User wants a different branch or history. |
-| GitHub push | Blocked | Provide exact GitHub repo URL or install/use a GitHub creation path. | Remote already exists. |
+| GitHub push | Ready | Push `main` to `origin`. | Remote target changes. |
 
 ## Completed Foundation
 
 - `AGENTS.md` and `CONTEXT.md` exist and must be read before work.
 - Git is initialized on `main`.
 - Initial commit exists: `0a226dd Initial portfolio baseline`.
+- GitHub repository exists as private repo `akashdas98/portfolio-nextjs`.
+- `origin` points to `git@github.com:akashdas98/portfolio-nextjs.git`.
 - Git safe-directory is configured for this repo path.
 - `.gitignore` excludes local dependencies, build outputs, Vercel state, logs, and environment files.
 - Contact form environment variables are documented in `.env.example` and `README.md`.
@@ -67,21 +69,17 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 
 ## Active Gaps
 
-1. GitHub push:
-   No remote is configured and `gh` is not installed. Pushing requires either an existing repository URL or another authenticated GitHub creation method.
-
-2. Local build verification:
+1. Local build verification:
    The current shell has Node `v18.17.1`. The `latest` dependency resolution includes `next@16.2.9` and `resend@6.14.0`, which require Node 20+. `npm install` exited with an npm error and did not create a usable `next` binary.
 
-3. Encoding cleanup:
+2. Encoding cleanup:
    Several source files contain mojibake from encoding issues, including broken middots, rupee symbols, arrows, apostrophes, and dashes. Fix these deliberately in a separate copy pass or when editing adjacent text.
 
-4. Launch readiness:
+3. Launch readiness:
    Placeholder deployment URLs still need replacement in metadata, sitemap, and robots. Resend sender configuration still needs real production values.
 
 ## Pending
 
-- Add a GitHub remote.
 - Push `main` to GitHub.
 - Use Node 20+ and rerun `npm install`.
 - Run `npm run build`.
@@ -92,7 +90,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 ## Assumptions
 
 - The production branch should be `main`.
-- GitHub should receive the current initial baseline history unless the user asks for a different commit structure.
+- GitHub should receive the current local history unless the user asks for a different commit structure.
 - The current visual direction should remain restrained and typography-led.
 - The contact form should keep direct email as a fallback.
 - The site can target Node 20+ for deployment unless the user explicitly needs Node 18 compatibility.
@@ -101,8 +99,8 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 
 - `npm install` failed under Node `v18.17.1` after resolving packages that require Node 20+.
 - `npm run build` failed because the failed install did not leave a usable `next` binary.
-- `gh auth status` failed because GitHub CLI is not installed or not on PATH.
-- No Git remote is configured.
+- GitHub CLI was installed with winget, but the current shell may not have the new PATH entry; direct path is `C:\Program Files\GitHub CLI\gh.exe`.
+- GitHub CLI token storage rejected a repo-only device token because it wanted `read:org`; repo creation was completed through the GitHub API instead.
 - Git operations in this workspace may require elevated filesystem access to write `.git` metadata.
 - The current dependency ranges use `latest`, so future installs may change behavior unless versions are pinned.
 - Some existing project files contain mojibake text.
@@ -116,18 +114,17 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 
 ## Next Recommended Steps
 
-1. Provide the exact GitHub repository URL, or install/configure GitHub CLI so the repo can be created from this machine.
-2. Add `origin` and push `main`.
-3. Install Node 20+ or switch PATH to an existing Node 20+ runtime.
-4. Run `npm install`.
-5. Run `npm run build`.
-6. Decide whether to pin dependency versions instead of keeping `latest`.
-7. Fix mojibake text across `app/page.tsx`, `lib/content.ts`, `README.md`, `portfolio-structure.md`, and `positioning.md`.
-8. Replace placeholder domain values in `app/layout.tsx`, `app/sitemap.ts`, and `app/robots.ts`.
+1. Push `main` to GitHub.
+2. Install Node 20+ or switch PATH to an existing Node 20+ runtime.
+3. Run `npm install`.
+4. Run `npm run build`.
+5. Decide whether to pin dependency versions instead of keeping `latest`.
+6. Fix mojibake text across `app/page.tsx`, `lib/content.ts`, `README.md`, `portfolio-structure.md`, and `positioning.md`.
+7. Replace placeholder domain values in `app/layout.tsx`, `app/sitemap.ts`, and `app/robots.ts`.
 
 ## Recent Changes
 
 - 2026-06-24: Created root `AGENTS.md` and `CONTEXT.md` using the MafiaGame compact agent-guide and status-ledger style.
 - 2026-06-24: Initialized Git on branch `main`, configured Git safe-directory for the repo path, staged the full project, and created the initial baseline commit.
 - 2026-06-24: Attempted local dependency install and build. Verification is blocked by Node 18 while the resolved latest packages require Node 20+.
-
+- 2026-06-24: Created private GitHub repository `akashdas98/portfolio-nextjs` and set `origin` to the SSH remote.
