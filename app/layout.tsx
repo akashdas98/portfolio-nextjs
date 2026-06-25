@@ -3,7 +3,7 @@ import "./globals.css";
 
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://example.com"),
+  metadataBase: new URL("https://freebirdakash.vercel.app"),
   title: {
     default: "Akash Das — Senior Software Engineer",
     template: "%s — Akash Das",

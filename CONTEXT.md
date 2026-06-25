@@ -50,7 +50,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 | Visual direction | Implemented as restrained dark UI | Verify mobile/desktop polish before launch. | User requests a redesign. |
 | Contact form | Implemented with Resend | Configure real env vars and verified sender before launch. | Contact provider changes. |
 | Deployment target | Planned | Use Netlify Free first; keep Vercel as an option if Next.js hosting needs outgrow Netlify. | User chooses another host. |
-| Metadata/sitemap/robots | Implemented with placeholder deployment URL | Replace placeholder production URL before launch. | Domain/deployment target changes. |
+| Metadata/sitemap/robots | Implemented with Vercel production URL | Update if the production domain changes. | Domain/deployment target changes. |
 | Dependencies | Uses `latest` ranges | Use Node 20+ or pin versions before serious deployment. | User accepts floating latest versions. |
 | Local install | Complete with Node 24 and public npm registry | Keep lockfile URLs on public npm registry. | Dependency strategy changes. |
 | Dev server | Running | Use `http://localhost:3000`; restart after route-convention changes such as `middleware.ts` to `proxy.ts`. | Port or framework changes. |
@@ -98,7 +98,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
    Several source files contain mojibake from encoding issues, including broken middots, rupee symbols, arrows, apostrophes, and dashes. Fix these deliberately in a separate copy pass or when editing adjacent text.
 
 2. Launch readiness:
-   Placeholder deployment URLs still need replacement in metadata, sitemap, and robots. Resend sender configuration still needs real production values.
+   Metadata, sitemap, and robots now use the Vercel production URL. Resend sender configuration still needs final production values if moving beyond the zero-cost default sender.
 
 3. Admin completion:
    Gmail label sync, selected email review, richer lead filters, and project deletion are not built yet.
@@ -110,7 +110,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 
 - Keep `main` pushed to GitHub after changes.
 - Build the planned text-led project, admin-project, and freelance-lead tracking workflow from `docs/admin-projects-and-leads-plan.md`.
-- Replace placeholder domain values before deployment.
+- Keep production domain values aligned with the deployed URL.
 - Configure Resend sender values in `.env.local` for local testing and in the deployment environment for production.
 - Supabase env vars are configured locally, schema/seed appear applied, and the admin Auth user has been created.
 - Review mobile and desktop layouts after any copy or styling changes.
@@ -141,7 +141,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 - The site has been production-built successfully in this local shell after dependency installation.
 - The contact form is not production-ready until Resend environment variables and sender verification are configured.
 - Database-backed projects and admin auth are locally connected. Production still needs deployment env vars.
-- Metadata, sitemap, and robots still need the real production domain.
+- Metadata, sitemap, and robots use `https://freebirdakash.vercel.app`.
 - Dependency versions are not pinned.
 
 ## Next Recommended Steps
@@ -151,7 +151,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 3. Start Phase 1 from `docs/admin-projects-and-leads-plan.md`: remove/replace static public diagrams with tighter text-led project cards and URLs.
 4. Add Gmail label sync and selected-email review after lead workflow is valuable.
 5. Fix mojibake text across `app/page.tsx`, `lib/content.ts`, `README.md`, `portfolio-structure.md`, and `positioning.md`.
-6. Replace placeholder domain values in `app/layout.tsx`, `app/sitemap.ts`, and `app/robots.ts`.
+6. Re-check production env vars and Resend sender behavior after each deployment.
 
 ## Recent Changes
 
@@ -216,3 +216,4 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 - 2026-06-25: Changed Additional impact copy on big screens from bottom-aligned as a block to a stretched vertical column with `space-between` between the paragraph and metrics; tablet/phone keep the stacked metrics spacing. Verified `npm run build` passes.
 - 2026-06-25: Adjusted big-screen Additional impact copy again to vertically center the paragraph and metrics as a group with a fixed 54px gap instead of stretching them apart; tablet/phone remain stacked. Verified `npm run build` passes.
 - 2026-06-25: Updated contact-form email labeling so inbox messages read as work leads: subject is now `New work enquiry from {name}`, the body starts with `New portfolio work enquiry`, and the documented sender display name is `Portfolio Work Leads`. Verified `npm run build` passes.
+- 2026-06-25: Replaced placeholder production URLs in metadata, sitemap, and robots with `https://freebirdakash.vercel.app`, and updated deployment notes accordingly. Verified `npm run build` passes.

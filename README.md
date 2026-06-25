@@ -56,7 +56,7 @@ Notes:
 
 ## Before deployment
 
-1. Replace `https://example.com` in `app/layout.tsx`, `app/sitemap.ts`, and `app/robots.ts` with the real domain.
+1. Confirm `https://freebirdakash.vercel.app` in `app/layout.tsx`, `app/sitemap.ts`, and `app/robots.ts` still matches the production domain.
 2. Add a custom Open Graph image if desired.
 3. Verify the sender domain in Resend.
 4. Configure Supabase environment variables if the admin panel or lead capture should be active.
