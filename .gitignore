@@ -5,4 +5,8 @@ out
 .env.local
 .vercel
 *.log
+.npm-cache
 .DS_Store
+resume.pdf
+positioning.md
+portfolio-structure.md

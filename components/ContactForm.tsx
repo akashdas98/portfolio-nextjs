@@ -47,16 +47,20 @@ export function ContactForm() {
       </div>
       <label>
         <span>Company or project</span>
-        <input name="company" autoComplete="organization" />
+        <input name="company" />
       </label>
       <label>
         <span>What needs to move forward?</span>
         <textarea name="message" rows={6} required />
       </label>
       <label>
-        <span>Budget range <em>optional</em></span>
+        <span>
+          Budget range <em>optional</em>
+        </span>
         <select name="budget" defaultValue="">
-          <option value="" disabled>Select a range</option>
+          <option value="" disabled>
+            Select a range
+          </option>
           <option>Under ₹50,000</option>
           <option>₹50,000–₹1,50,000</option>
           <option>₹1,50,000–₹5,00,000</option>
@@ -64,12 +68,25 @@ export function ContactForm() {
           <option>Not defined yet</option>
         </select>
       </label>
-      <input className="honeypot" type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+      <input
+        className="honeypot"
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+      />
       <div className="form-footer">
-        <button className="button button-primary" type="submit" disabled={status === "sending"}>
-          {status === "sending" ? "Sending…" : "Send project brief"}
+        <button
+          className="button button-primary"
+          type="submit"
+          disabled={status === "sending"}
+        >
+          {status === "sending" ? "Sending…" : "Send Project Brief"}
         </button>
-        <p className={`form-status ${status}`} aria-live="polite">{message}</p>
+        <p className={`form-status ${status}`} aria-live="polite">
+          {message}
+        </p>
       </div>
     </form>
   );

@@ -6,7 +6,6 @@ const links = [
   ["Work", "#work"],
   ["Services", "#services"],
   ["About", "#about"],
-  ["Contact", "#contact"],
 ] as const;
 
 export function Header() {
@@ -35,17 +34,25 @@ export function Header() {
           aria-controls="primary-navigation"
           onClick={() => setOpen((value) => !value)}
         >
-          <span>{open ? "Close" : "Menu"}</span>
+          <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
+          <span className="menu-icon" aria-hidden="true">
+            <span />
+            <span />
+          </span>
         </button>
 
-        <nav id="primary-navigation" className={`nav ${open ? "is-open" : ""}`} aria-label="Primary navigation">
+        <nav
+          id="primary-navigation"
+          className={`nav ${open ? "is-open" : ""}`}
+          aria-label="Primary navigation"
+        >
           {links.map(([label, href]) => (
             <a key={href} href={href} onClick={() => setOpen(false)}>
               {label}
             </a>
           ))}
           <a className="nav-cta" href="#contact" onClick={() => setOpen(false)}>
-            Start a conversation
+            Start a Conversation
           </a>
         </nav>
       </div>

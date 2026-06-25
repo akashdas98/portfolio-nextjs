@@ -1,6 +1,8 @@
 export const projects = [
   {
     index: "01",
+    name: "Delivery Intelligence | The Sleep Company",
+    url: "https://thesleepcompany.in",
     category: "Ecommerce · Backend Architecture · Production Systems",
     title: "Delivery promises made dependable",
     challenge:
@@ -8,7 +10,7 @@ export const projects = [
     delivery:
       "A centralized delivery-estimation service combined operational data and business rules from courier, inventory, ecommerce, and warehouse systems, with caching, administrative data controls, version history, backup and restore, and automated alerts.",
     metrics: [
-      ["95%", "delivery-date accuracy"],
+      ["200%", "delivery-date accuracy increase"],
       ["₹1 crore", "annual cost savings"],
       ["1.45M", "peak-period requests"],
     ],
@@ -18,6 +20,8 @@ export const projects = [
   },
   {
     index: "02",
+    name: "Leads Management | The Sleep Company",
+    url: "https://thesleepcompany.in",
     category: "Ecommerce · Integrations · High-Volume Systems",
     title: "Fragmented lead capture, rebuilt as one dependable system",
     challenge:
@@ -35,6 +39,8 @@ export const projects = [
   },
   {
     index: "03",
+    name: "Horecah",
+    url: "https://horecah.com",
     category: "Freelance · Web and Mobile · Payments and Notifications",
     title: "One hiring platform across web, Android, and iOS",
     challenge:
@@ -44,7 +50,7 @@ export const projects = [
     metrics: [
       ["3", "platforms delivered"],
       ["1", "shared payment flow"],
-      ["2", "push ecosystems unified"],
+      ["3", "push ecosystems unified"],
     ],
     capabilities:
       "Full-stack development, cross-platform mobile delivery, payments, GraphQL, push notifications, third-party integration, and technical problem-solving.",

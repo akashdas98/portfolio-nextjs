@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
 
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
+
 const schema = z.object({
   name: z.string().trim().min(2).max(100),
   email: z.string().trim().email(),
@@ -27,13 +29,33 @@ export async function POST(request: Request) {
       );
     }
 
+    const supabase = createSupabaseAdminClient();
+    if (supabase) {
+      const { error: leadError } = await supabase.from("leads").insert({
+        name: data.name,
+        email: data.email,
+        company: data.company || null,
+        budget: data.budget || null,
+        message: data.message,
+        source: "portfolio-contact-form",
+        status: "new",
+        priority: "normal",
+      });
+
+      if (leadError) {
+        console.error("Lead capture failed", leadError);
+      }
+    }
+
     const resend = new Resend(apiKey);
     await resend.emails.send({
       from,
       to,
       replyTo: data.email,
-      subject: `Portfolio enquiry from ${data.name}`,
+      subject: `New work enquiry from ${data.name}`,
       text: [
+        "New portfolio work enquiry",
+        "",
         `Name: ${data.name}`,
         `Email: ${data.email}`,
         `Company/project: ${data.company || "Not provided"}`,

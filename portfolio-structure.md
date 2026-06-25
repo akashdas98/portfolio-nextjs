@@ -325,7 +325,7 @@ That breadth creates a simpler working relationship—fewer hand-offs, stronger 
 
 ## Principles
 
-- Understand before building
+- Clarity before development
 - Design for real users
 - Keep systems maintainable
 - Communicate clearly

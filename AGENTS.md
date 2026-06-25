@@ -7,14 +7,23 @@ This repository is a Next.js App Router portfolio site for Akash Das.
 Top-level layout:
 
 - `app/`: Next.js routes, metadata, sitemap, robots, global styles, and API routes.
+- `app/admin/`: private admin routes for dashboard, projects, leads, settings, and login.
 - `app/api/contact/route.ts`: contact form endpoint using Zod validation and Resend email delivery.
 - `components/`: reusable UI components for the header, contact form, project cards, and system visuals.
+- `components/AdminLoginForm.tsx`: Supabase Auth login form for the admin panel.
+- `components/AdminProjectForm.tsx`: admin create/edit form for selected-work project records.
+- `components/AdminLeadForm.tsx`: admin action form for lead status, priority, notes, and follow-ups.
+- `lib/admin/`: admin data adapters and TypeScript types.
 - `lib/content.ts`: structured portfolio content for selected work and services.
+- `lib/supabase/`: Supabase configuration and browser/server/admin clients.
 - `public/`: static assets.
+- `supabase/schema.sql`: Supabase schema for projects, leads, and future selected Gmail messages.
+- `supabase/seed.sql`: initial selected-work project seed data.
 - `portfolio-structure.md`: durable content, UI/UX direction, service positioning, and technical direction.
 - `positioning.md`: client-facing positioning and safe UI/UX claim.
 - `resume.pdf`: source resume used as reference material.
 - `README.md`: local setup and deployment notes.
+- `proxy.ts`: Next.js proxy guard for protected admin routes.
 
 Generated/cache folders such as `.next`, `node_modules`, `out`, `.vercel`, logs, and local environment files should not be committed.
 
@@ -56,6 +65,14 @@ Use:
 - Typography-led hierarchy.
 - Spacious but purposeful layouts.
 - Subtle hover and reveal motion.
+- Hard-cornered buttons.
+- Hard-cornered card surfaces with slightly thicker borders.
+- Light-blue primary buttons with black text, an offset striped shadow shape, and a slightly larger/separated hover state.
+- Button shadow shapes use solid deep colors with 3px borders and black diagonal negative stripes; do not make them translucent.
+- Primary button hover states must keep black text.
+- `Start a Conversation` uses the same primary button face with a pink striped shadow shape.
+- Project `Visit website` actions use a pointed arrow-style blue button with horizontal hover motion.
+- Service item tags are plain inline text separated by large accent dots, not pills.
 
 Avoid:
 
@@ -66,6 +83,9 @@ Avoid:
 - Code rain.
 - Heavy glassmorphism.
 - Multiple accent colors.
+- Rounded pill buttons for primary actions.
+- Rounded card surfaces.
+- Pill-shaped service tags.
 - Scroll-jacking, parallax, magnetic buttons, cursor effects, or long intro animations.
 
 Every design choice should improve hierarchy, readability, comprehension, navigation, trust, or interaction feedback. If it does not, remove it.
@@ -103,9 +123,13 @@ Use first person selectively. Most copy should focus on what the work delivers.
 - Keep JavaScript minimal and purposeful.
 - Avoid unnecessary dependencies and component libraries.
 - Keep content data structured in `lib/content.ts` unless a page-specific reason exists.
+- Public Work should prefer published Supabase projects when available, with `lib/content.ts` as the fallback.
 - Keep global visual tokens in `app/globals.css`.
 - Keep semantic HTML, accessible labels, keyboard navigation, visible focus states, and reduced-motion support.
 - Do not commit secrets. Contact form configuration belongs in `.env.local`, based on `.env.example`.
+- Keep admin data access through `lib/admin/` and Supabase utilities through `lib/supabase/`.
+- Keep `SUPABASE_SECRET_KEY` server-only. Never reference it from client components.
+- Admin access must be restricted by both the server-side `ADMIN_EMAILS` allowlist and matching `public.admin_users` rows in Supabase RLS.
 
 ## Tooling Rules
 
@@ -120,6 +144,7 @@ Current local shell note:
 - Node `v18.17.1` is on PATH.
 - Current `latest` dependency resolution includes packages that require Node 20+.
 - Use Node 20+ for local install/build unless dependencies are intentionally pinned lower.
+- Supabase admin/auth work depends on `@supabase/supabase-js` and `@supabase/ssr`.
 
 ## Mandatory Update Protocol
 
@@ -150,4 +175,3 @@ Do not use ownership or ACL changes to fix Git access unless the user explicitly
 - Do not add broad dependency weight for simple UI.
 - Do not remove the direct email fallback when editing the contact form.
 - Do not claim the site is deployment-ready until metadata URLs, contact sender configuration, and a production build are verified.
-
