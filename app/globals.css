@@ -1004,6 +1004,17 @@ p {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 1px rgba(158, 216, 242, 0.32);
 }
+.contact-form .has-error input,
+.contact-form .has-error textarea,
+.contact-form .has-error select {
+  border-color: rgba(255, 178, 178, 0.72);
+}
+.field-error {
+  color: #ffb2b2;
+  font-size: 0.76rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
 .contact-form textarea {
   resize: vertical;
 }

@@ -5,13 +5,27 @@ import { z } from "zod";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 const schema = z.object({
-  name: z.string().trim().min(2).max(100),
-  email: z.string().trim().email(),
-  company: z.string().trim().max(150).optional().default(""),
-  message: z.string().trim().min(20).max(5000),
-  budget: z.string().trim().max(100).optional().default(""),
+  name: z.string().trim().min(2, "Enter your name.").max(100, "Name must be 100 characters or fewer."),
+  email: z.string().trim().email("Enter a valid email address."),
+  company: z.string().trim().max(150, "Company or project must be 150 characters or fewer.").optional().default(""),
+  message: z
+    .string()
+    .trim()
+    .min(20, "Share at least 20 characters about the project.")
+    .max(5000, "Message must be 5000 characters or fewer."),
+  budget: z.string().trim().max(100, "Budget range must be 100 characters or fewer.").optional().default(""),
   website: z.string().max(0).optional().default(""),
 });
+
+function getValidationErrors(error: z.ZodError) {
+  return error.issues.reduce<Record<string, string>>((errors, issue) => {
+    const field = issue.path[0];
+    if (typeof field === "string" && field !== "website" && !errors[field]) {
+      errors[field] = issue.message;
+    }
+    return errors;
+  }, {});
+}
 
 export async function POST(request: Request) {
   try {
@@ -68,7 +82,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Please check the form and try again." }, { status: 400 });
+      const errors = getValidationErrors(error);
+      return NextResponse.json(
+        {
+          error: "Please fix the highlighted fields.",
+          errors,
+        },
+        { status: 400 },
+      );
     }
     return NextResponse.json({ error: "Message could not be sent. Please email directly." }, { status: 500 });
   }
