@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 
 const links = [
-  ["Work", "#work"],
-  ["Services", "#services"],
-  ["About", "#about"],
+  ["Work", "/#work"],
+  ["Services", "/#services"],
+  ["About", "/#about"],
 ] as const;
 
 export function Header() {
@@ -22,7 +22,7 @@ export function Header() {
   return (
     <header className={`site-header ${scrolled ? "is-scrolled" : ""}`}>
       <div className="shell header-inner">
-        <a href="#top" className="brand" aria-label="Akash Das, back to top">
+        <a href="/#top" className="brand" aria-label="Akash Das, back to top">
           <span className="brand-name">Akash Das</span>
           <span className="brand-role">Software Engineer</span>
         </a>
@@ -51,7 +51,7 @@ export function Header() {
               {label}
             </a>
           ))}
-          <a className="nav-cta" href="#contact" onClick={() => setOpen(false)}>
+          <a className="nav-cta" href="/#contact" onClick={() => setOpen(false)}>
             Start a Conversation
           </a>
         </nav>

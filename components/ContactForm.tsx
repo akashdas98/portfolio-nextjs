@@ -102,7 +102,12 @@ export function ContactForm() {
   }
 
   return (
-    <form className="contact-form" onSubmit={onSubmit} noValidate>
+    <form
+      className="contact-form"
+      onSubmit={onSubmit}
+      noValidate
+      suppressHydrationWarning
+    >
       <div className="field-row">
         <label className={errors.name ? "has-error" : undefined}>
           <span>Name</span>
@@ -112,6 +117,7 @@ export function ContactForm() {
             autoComplete="name"
             aria-invalid={Boolean(errors.name)}
             aria-describedby={errors.name ? "contact-name-error" : undefined}
+            suppressHydrationWarning
           />
           {errors.name ? (
             <strong id="contact-name-error" className="field-error">
@@ -128,6 +134,7 @@ export function ContactForm() {
             autoComplete="email"
             aria-invalid={Boolean(errors.email)}
             aria-describedby={errors.email ? "contact-email-error" : undefined}
+            suppressHydrationWarning
           />
           {errors.email ? (
             <strong id="contact-email-error" className="field-error">
@@ -143,6 +150,7 @@ export function ContactForm() {
           maxLength={150}
           aria-invalid={Boolean(errors.company)}
           aria-describedby={errors.company ? "contact-company-error" : undefined}
+          suppressHydrationWarning
         />
         {errors.company ? (
           <strong id="contact-company-error" className="field-error">
@@ -160,6 +168,7 @@ export function ContactForm() {
           maxLength={5000}
           aria-invalid={Boolean(errors.message)}
           aria-describedby={errors.message ? "contact-message-error" : undefined}
+          suppressHydrationWarning
         />
         {errors.message ? (
           <strong id="contact-message-error" className="field-error">
@@ -176,6 +185,7 @@ export function ContactForm() {
           defaultValue=""
           aria-invalid={Boolean(errors.budget)}
           aria-describedby={errors.budget ? "contact-budget-error" : undefined}
+          suppressHydrationWarning
         >
           <option value="" disabled>
             Select a range
@@ -199,6 +209,7 @@ export function ContactForm() {
         tabIndex={-1}
         autoComplete="off"
         aria-hidden="true"
+        suppressHydrationWarning
       />
       <div className="form-footer">
         <button className="button button-primary" type="submit" disabled={status === "sending"}>

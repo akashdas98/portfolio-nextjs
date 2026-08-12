@@ -11,6 +11,10 @@ function metricsValue(project?: AdminProject) {
   return project?.metrics.map((metric) => `${metric.value} | ${metric.label}`).join("\n") ?? "";
 }
 
+function caseStudyDocumentValue(project?: AdminProject) {
+  return project?.caseStudyDocument ? JSON.stringify(project.caseStudyDocument, null, 2) : "";
+}
+
 export function AdminProjectForm({ action, project, disabled = false, submitLabel }: AdminProjectFormProps) {
   return (
     <form className="admin-form" action={action}>
@@ -71,6 +75,28 @@ export function AdminProjectForm({ action, project, disabled = false, submitLabe
           rows={4}
           defaultValue={metricsValue(project)}
           placeholder="95% | delivery-date accuracy"
+          disabled={disabled}
+        />
+      </label>
+
+      <label className="admin-checkbox">
+        <input
+          name="hasCaseStudy"
+          type="checkbox"
+          defaultChecked={project?.hasCaseStudy ?? false}
+          disabled={disabled}
+        />
+        <span>Published case study exists</span>
+      </label>
+
+      <label>
+        <span>Case-study document (versioned JSON)</span>
+        <textarea
+          name="caseStudyDocument"
+          rows={18}
+          defaultValue={caseStudyDocumentValue(project)}
+          placeholder='{"schemaVersion": 2, "summary": "...", "role": "...", "sections": [...]}'
+          spellCheck={false}
           disabled={disabled}
         />
       </label>

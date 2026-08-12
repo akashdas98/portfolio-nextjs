@@ -10,9 +10,9 @@ export const projects = [
     delivery:
       "A centralized delivery-estimation service combined operational data and business rules from courier, inventory, ecommerce, and warehouse systems, with caching, administrative data controls, version history, backup and restore, and automated alerts.",
     metrics: [
-      ["200%", "delivery-date accuracy increase"],
-      ["₹1 crore", "annual cost savings"],
-      ["1.45M", "peak-period requests"],
+      ["50%", "reduction in support calls"],
+      ["5x", "FRT improvement"],
+      ["\u20b95 crore", "annual cost savings"],
     ],
     capabilities:
       "Backend architecture, API design, business-rule modelling, external integrations, caching, production scaling, observability, and long-term maintenance.",

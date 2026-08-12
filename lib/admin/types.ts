@@ -1,3 +1,5 @@
+import type { CaseStudyDocument } from "@/lib/case-study/schema";
+
 export type AdminProjectStatus = "draft" | "published" | "archived";
 
 export type AdminProjectMetric = {
@@ -16,6 +18,8 @@ export type AdminProject = {
   delivery: string;
   capabilities: string[];
   metrics: AdminProjectMetric[];
+  hasCaseStudy: boolean;
+  caseStudyDocument: CaseStudyDocument | null;
   orderIndex: number;
   status: AdminProjectStatus;
   updatedAt: string | null;

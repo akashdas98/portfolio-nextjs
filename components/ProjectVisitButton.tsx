@@ -5,6 +5,7 @@ type ProjectVisitButtonProps = {
   children: ReactNode;
   borderWidth?: number;
   className?: string;
+  external?: boolean;
 };
 
 type ProjectVisitButtonStyle = CSSProperties & {
@@ -38,13 +39,14 @@ export function ProjectVisitButton({
   children,
   borderWidth = 4,
   className = "",
+  external = href.startsWith("http"),
 }: ProjectVisitButtonProps) {
   return (
     <a
       className={["project-visit", className].filter(Boolean).join(" ")}
       href={href}
-      target="_blank"
-      rel="noreferrer"
+      target={external ? "_blank" : undefined}
+      rel={external ? "noreferrer" : undefined}
       style={projectVisitButtonStyle(borderWidth)}
     >
       <span>{children}</span>

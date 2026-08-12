@@ -6,6 +6,13 @@ out
 .vercel
 *.log
 .npm-cache
+.playwright-mcp/
+supabase/.temp/
+/*-desktop.png
+/*-ipad.png
+/*-iphone.png
+/*-inter.png
+/*-mobile.png
 .DS_Store
 resume.pdf
 positioning.md

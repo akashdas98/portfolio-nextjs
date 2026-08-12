@@ -26,7 +26,7 @@ export default async function Home() {
   return (
     <>
       <Header />
-      <main id="top">
+      <main id="top" data-public-animations>
         <section className="hero shell">
           <p className="eyebrow reveal">
             Senior Software Engineer · Full-Stack Web Development

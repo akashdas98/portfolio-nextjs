@@ -1,4 +1,5 @@
 import { projects as staticProjects } from "@/lib/content";
+import { parseCaseStudyDocument } from "@/lib/case-study/schema";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import type { AdminDataResult, AdminLead, AdminProject, AdminProjectMetric } from "./types";
@@ -14,6 +15,8 @@ type ProjectRow = {
   delivery: string;
   capabilities: string[] | string | null;
   metrics: unknown;
+  has_case_study: boolean;
+  case_study_document: unknown;
   order_index: number;
   status: AdminProject["status"];
   updated_at: string | null;
@@ -81,6 +84,8 @@ function fallbackProjects(): AdminProject[] {
     delivery: project.delivery,
     capabilities: normalizeCapabilities(project.capabilities),
     metrics: project.metrics.map(([value, label]) => ({ value, label })),
+    hasCaseStudy: false,
+    caseStudyDocument: null,
     orderIndex: index + 1,
     status: "published",
     updatedAt: null,
@@ -88,6 +93,8 @@ function fallbackProjects(): AdminProject[] {
 }
 
 function mapProject(row: ProjectRow): AdminProject {
+  const caseStudyDocument = parseCaseStudyDocument(row.case_study_document);
+
   return {
     id: row.id,
     slug: row.slug,
@@ -99,6 +106,8 @@ function mapProject(row: ProjectRow): AdminProject {
     delivery: row.delivery,
     capabilities: normalizeCapabilities(row.capabilities),
     metrics: normalizeMetrics(row.metrics),
+    hasCaseStudy: row.has_case_study === true && Boolean(caseStudyDocument),
+    caseStudyDocument,
     orderIndex: row.order_index,
     status: row.status,
     updatedAt: row.updated_at,
@@ -208,4 +217,21 @@ export async function getPublicProjects(): Promise<AdminProject[]> {
   if (error || !data?.length) return fallbackProjects();
 
   return data.map(mapProject);
+}
+
+export async function getPublicProject(slug: string): Promise<AdminProject | null> {
+  const fallback = fallbackProjects().find((project) => project.slug === slug && project.status === "published") ?? null;
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return fallback;
+
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .eq("slug", slug)
+    .eq("status", "published")
+    .maybeSingle<ProjectRow>();
+
+  if (error) return fallback;
+
+  return data ? mapProject(data) : fallback;
 }

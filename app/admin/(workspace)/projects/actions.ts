@@ -7,6 +7,7 @@ import { z } from "zod";
 import { requireAdminUser } from "@/lib/admin/session";
 import { slugify } from "@/lib/admin/data";
 import type { AdminProjectMetric } from "@/lib/admin/types";
+import { caseStudyDocumentSchema } from "@/lib/case-study/schema";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const projectSchema = z.object({
@@ -20,6 +21,8 @@ const projectSchema = z.object({
   delivery: z.string().trim().min(10).max(5000),
   capabilities: z.string().trim().default(""),
   metrics: z.string().trim().default(""),
+  hasCaseStudy: z.boolean().default(false),
+  caseStudyDocument: z.string().trim().default(""),
   orderIndex: z.coerce.number().int().min(0).max(999).default(0),
   status: z.enum(["draft", "published", "archived"]).default("draft"),
 });
@@ -49,9 +52,19 @@ function parseProjectForm(formData: FormData) {
     delivery: formData.get("delivery"),
     capabilities: formData.get("capabilities"),
     metrics: formData.get("metrics"),
+    hasCaseStudy: formData.get("hasCaseStudy") === "on",
+    caseStudyDocument: formData.get("caseStudyDocument"),
     orderIndex: formData.get("orderIndex"),
     status: formData.get("status"),
   });
+
+  const caseStudyDocument = parsed.caseStudyDocument
+    ? caseStudyDocumentSchema.parse(JSON.parse(parsed.caseStudyDocument))
+    : null;
+
+  if (parsed.hasCaseStudy && !caseStudyDocument) {
+    throw new Error("A project marked as having a case study requires a valid case-study document.");
+  }
 
   return {
     slug: parsed.slug || slugify(parsed.name),
@@ -63,6 +76,8 @@ function parseProjectForm(formData: FormData) {
     delivery: parsed.delivery,
     capabilities: parseLines(parsed.capabilities),
     metrics: parseMetrics(parsed.metrics),
+    has_case_study: parsed.hasCaseStudy,
+    case_study_document: caseStudyDocument,
     order_index: parsed.orderIndex,
     status: parsed.status,
   };
@@ -85,6 +100,7 @@ export async function createProject(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/admin/projects");
+  revalidatePath(`/work/${payload.slug}`);
   redirect(`/admin/projects/${data.id}`);
 }
 
@@ -103,6 +119,7 @@ export async function updateProject(formData: FormData) {
   revalidatePath("/admin");
   revalidatePath("/admin/projects");
   revalidatePath(`/admin/projects/${id}`);
+  revalidatePath(`/work/${payload.slug}`);
   redirect("/admin/projects");
 }
 
@@ -118,5 +135,6 @@ export async function archiveProject(formData: FormData) {
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/admin/projects");
+  revalidatePath("/work/[slug]", "page");
   redirect("/admin/projects");
 }

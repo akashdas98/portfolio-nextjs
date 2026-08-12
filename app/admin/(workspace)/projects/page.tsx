@@ -30,6 +30,7 @@ export default async function AdminProjectsPage() {
             <tr>
               <th>Project</th>
               <th>Status</th>
+              <th>Case study</th>
               <th>URL</th>
               <th>Metrics</th>
               <th>Action</th>
@@ -44,6 +45,9 @@ export default async function AdminProjectsPage() {
                 </td>
                 <td>
                   <span className={`admin-status admin-status-${project.status}`}>{project.status}</span>
+                </td>
+                <td>
+                  <span>{project.hasCaseStudy ? "Available" : "Website only"}</span>
                 </td>
                 <td>
                   {project.url ? (

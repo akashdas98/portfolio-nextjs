@@ -11,11 +11,19 @@ create table if not exists public.projects (
   delivery text not null,
   capabilities text[] not null default '{}',
   metrics jsonb not null default '[]'::jsonb,
+  has_case_study boolean not null default false,
+  case_study_document jsonb,
   order_index integer not null default 0,
   status text not null default 'draft' check (status in ('draft', 'published', 'archived')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.projects
+add column if not exists has_case_study boolean not null default false;
+
+alter table public.projects
+add column if not exists case_study_document jsonb;
 
 create table if not exists public.leads (
   id uuid primary key default gen_random_uuid(),
@@ -92,10 +100,15 @@ alter table public.leads enable row level security;
 alter table public.email_messages enable row level security;
 alter table public.admin_users enable row level security;
 
+revoke all on table public.admin_users from anon, authenticated;
+grant select on table public.admin_users to authenticated;
+
 create or replace function public.is_admin_user()
 returns boolean
 language sql
 stable
+security definer
+set search_path = ''
 as $$
   select exists (
     select 1
@@ -103,6 +116,9 @@ as $$
     where lower(email) = lower(auth.jwt() ->> 'email')
   );
 $$;
+
+revoke all on function public.is_admin_user() from public;
+grant execute on function public.is_admin_user() to authenticated;
 
 drop policy if exists "Admin users can read own admin record" on public.admin_users;
 create policy "Admin users can read own admin record"

@@ -30,7 +30,7 @@ The admin panel lives under `/admin`. It is designed for Netlify Free + Supabase
 Supabase is used for:
 
 - Admin authentication.
-- Project records.
+- Project records, case-study availability, and versioned case-study layout documents.
 - Contact-form lead records.
 - Future selected Gmail message records.
 
@@ -43,14 +43,27 @@ SUPABASE_SECRET_KEY=your_supabase_secret_key
 ADMIN_EMAILS=akash42662012@gmail.com
 ```
 
-Create the database tables by running `supabase/schema.sql` in the Supabase SQL editor.
-Seed the current selected work by running `supabase/seed.sql` after the schema is created.
+For a new database, create the tables by running `supabase/schema.sql` in the Supabase SQL editor, then run `supabase/seed.sql`.
+
+For an existing linked database, apply incremental changes with:
+
+```bash
+npx supabase db push
+```
+
+The committed files in `supabase/migrations/` preserve those remote schema changes.
 
 Notes:
 
 - `/admin` shows fallback project data until Supabase is configured.
 - Admin access is restricted to emails in `ADMIN_EMAILS` and matching rows in `public.admin_users`.
-- Public Work uses published Supabase projects when available, then falls back to `lib/content.ts`.
+- Public Work uses published Supabase projects when available, then falls back to website-only project cards from `lib/content.ts`; static fallback cards never expose case studies.
+- `has_case_study` controls whether a project card links to `View Case Study` or the external `Visit Website` action.
+- Case-study content and section composition are stored in `case_study_document` as schema-versioned JSON and validated before rendering.
+- A case-study document can also select a validated hero visual. The promoted Delivery Intelligence schema-v2 document owns the EDD copy, integration nodes, responsive geometry, connections, SVG paths, and compact/mobile/tablet breakpoints; the frontend retains only the validated generic renderer and shared visual primitives.
+- Case-study projects are developed locally while their layouts are being iterated. Project-specific content, responsive geometry, paths, and breakpoints are promoted to validated `case_study_document` data only after explicit user approval.
+- Database promotion is the completion gate: upload and verify the finalized document, update seeds/migrations where applicable, then remove duplicated project-specific local data. Only generic renderers and shared visual primitives remain in frontend code.
+- `/work/[slug]` is database-only and returns not found unless the published Supabase project has both an enabled flag and a valid stored document.
 - Contact submissions are saved to Supabase only when `SUPABASE_SECRET_KEY` is configured.
 - Keep `SUPABASE_SECRET_KEY` server-only. Do not expose it in client code.
 

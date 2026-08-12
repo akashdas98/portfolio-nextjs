@@ -3,6 +3,7 @@ import { ProjectVisitButton } from "./ProjectVisitButton";
 interface Project {
   id?: string;
   index?: string;
+  slug: string;
   name: string;
   url: string;
   category: string;
@@ -14,6 +15,7 @@ interface Project {
     | { value: string; label: string }
   )[];
   capabilities: string | readonly string[];
+  hasCaseStudy: boolean;
   orderIndex?: number;
 }
 
@@ -36,34 +38,40 @@ export function ProjectCard({ project }: { project: Project }) {
   const challengePlacement = hasHeadlineWhitespace(project.title)
     ? "challenge-left"
     : "challenge-right";
+  const action = project.hasCaseStudy
+    ? { href: `/work/${project.slug}`, label: "View Case Study", external: false }
+    : project.url
+      ? { href: project.url, label: "Visit Website", external: true }
+      : null;
 
   return (
     <article className="project-card reveal">
-      <div className="project-meta">
+      <div className="project-meta reveal-item">
         <span className="project-index">{index}</span>
         <span className="project-name">{project.name}</span>
         <span className="project-category">{project.category}</span>
-        {project.url ? (
+        {action ? (
           <ProjectVisitButton
-            href={project.url}
+            href={action.href}
             borderWidth={1}
             className="project-visit-desktop"
+            external={action.external}
           >
-            Visit website
+            {action.label}
           </ProjectVisitButton>
         ) : null}
       </div>
       <div className={`project-grid project-grid--${challengePlacement}`}>
-        <div className="project-left">
+        <div className="project-left reveal-item">
           <h3>{project.title}</h3>
         </div>
 
-        <div className="project-section-copy project-challenge">
+        <div className="project-section-copy project-challenge reveal-item">
           <h4>The challenge</h4>
           <p>{project.challenge}</p>
         </div>
 
-        <div className="project-right">
+        <div className="project-right reveal-item">
           <div className="project-section-copy">
             <h4>The solution</h4>
             <p>{project.delivery}</p>
@@ -77,13 +85,14 @@ export function ProjectCard({ project }: { project: Project }) {
               </div>
             ))}
           </dl>
-          {project.url ? (
+          {action ? (
             <ProjectVisitButton
-              href={project.url}
+              href={action.href}
               borderWidth={1}
               className="project-visit-mobile"
+              external={action.external}
             >
-              Visit website
+              {action.label}
             </ProjectVisitButton>
           ) : null}
         </div>
