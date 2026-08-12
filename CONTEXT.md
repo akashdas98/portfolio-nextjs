@@ -18,7 +18,7 @@ Current implementation state:
 - GitHub repository exists as a private repo at `git@github.com:akashdas98/portfolio-nextjs.git`.
 - GitHub CLI is installed and authenticated for `akashdas98` through the Windows keyring.
 - Local dependencies install successfully when Node 24 is on PATH and npm uses the public registry.
-- The development server is currently stopped, with no listener on port 3000. Do not run `npm run build` beside a future dev server; stop development first because both processes write to `.next`.
+- The development server is currently running for LAN review at `http://192.168.0.103:3000`. Do not run `npm run build` beside it; stop development first because both processes write to `.next`.
 - Public animation readiness is now a server-rendered `data-public-animations` marker on public `<main>` elements, so the app no longer mutates root attributes before hydration. Chrome on iOS injects `__gcrremoteframetoken` and `__gcruniqueid` through its Autofill layer before React hydrates; narrowly scoped hydration suppression now covers only `<html>` and the contact form elements Chrome mutates.
 - Public reveal motion is progressive enhancement: server-rendered content and metrics remain canonical and visible without JavaScript. After hydration, below-fold composed blocks are held in a paused Web Animation and played at the 94% viewport line, so slow mobile scrolling cannot consume the reveal while content is still off-screen. Homepage sections, forms, case-study tables/grids/lists, and project-card surfaces reveal as units. Project cards retain only four meaningful internal stages—metadata, headline, challenge, and solution/metrics—rather than per-label or per-control motion. IntersectionObserver has a passive scroll fallback for WebKit, every played reveal has a forced-settle timeout, streamed App Router content is registered dynamically, and reduced-motion users keep the static state.
 - The spacing system has been recategorized around shared page, section, layout, stack, card, and rule-padding tokens. The Delivery Intelligence case-study page now uses the same section-heading and vertical rhythm conventions as the homepage, including a restructured final band with a desktop heading column, bottom-aligned copy/actions column, and phone stacked-button spacing matched to the homepage hero CTAs.
@@ -65,7 +65,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 | Metadata/sitemap/robots | Implemented with Vercel production URL | Update if the production domain changes. | Domain/deployment target changes. |
 | Dependencies | Uses `latest` ranges | Use Node 20+ or pin versions before serious deployment. | User accepts floating latest versions. |
 | Local install | Complete with Node 24 and public npm registry | Keep lockfile URLs on public npm registry. | Dependency strategy changes. |
-| Dev server | Not currently running | Start with LAN access when reviewing on devices; use `http://192.168.0.102:3000` and keep `allowedDevOrigins` aligned with the machine's LAN address. | Port, LAN address, or framework changes. |
+| Dev server | Running on the LAN at `http://192.168.0.103:3000` | Stop it before any production build. The bounded `allowedDevOrigins` wildcard survives DHCP changes within the `192.168.0.*` subnet. | Port, subnet, or framework changes. |
 | Production build | Complete | Re-run after code or dependency changes. | Build tooling changes. |
 | Git repo | Complete | Add remote and push. | User wants a different branch or history. |
 | GitHub push | Complete | Use normal Git workflow from `main`. | Remote target changes. |
@@ -106,7 +106,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 - `lib/content.ts` stores website-only selected-work fallback data and service content; its fallback projects never expose case studies.
 - `lib/case-study/schema.ts` validates schema-versioned database layout documents.
 - `app/globals.css` owns design tokens, layout, responsive behavior, and motion.
-- `next.config.ts` authorizes `127.0.0.1` and the current LAN host for Next.js development resources so React hydration and HMR work when the dev server is bound for local-network testing.
+- `next.config.ts` authorizes `127.0.0.1` and the bounded `192.168.0.*` LAN subnet for Next.js development resources, so React hydration and HMR keep working when DHCP changes the machine's final IPv4 segment.
 - `app/globals.css` owns the centralized typography scale. Every component and responsive font-size declaration references a `--font-size-*` token; new one-off numeric font sizes are not allowed.
 - Homepage and case-study vertical spacing should use the shared spacing categories in `app/globals.css` rather than route-specific hard-coded values.
 - Project `View Case Study` actions switch from the metadata row to the below-metrics button at `650px`, independently of the broader phone breakpoint.
@@ -162,7 +162,7 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 - The current dependency ranges use `latest`, so future installs may change behavior unless versions are pinned.
 - Some existing project files contain mojibake text.
 - `npm install @supabase/supabase-js @supabase/ssr` reported two moderate npm audit advisories; no force fix has been applied.
-- `allowedDevOrigins` currently contains `192.168.0.102`; update that exact entry if the machine receives a different LAN address.
+- `allowedDevOrigins` is intentionally limited to `192.168.0.*`; update the subnet pattern only if the router assigns the machine to a different subnet.
 
 ## Important Deviations From Launch-Ready
 
@@ -182,6 +182,10 @@ Keep this file compact. It is working memory, not a full changelog. Use Git hist
 6. Re-check production env vars and Resend sender behavior after each deployment.
 
 ## Recent Changes
+
+- 2026-08-13: Kept each compact EDD stage card's number and title on the same baseline at and below the database-owned 480px compact breakpoint. Scoped the flex header treatment to `.edd-mobile-diagram.is-compact`, leaving the regular mobile, tablet, and desktop compositions unchanged. Live browser checks confirm same-line headers at 390px, 479px, and 480px, with the existing stacked header retained at 481px; the complete compact diagram was visually reviewed at 390px. The LAN dev server remains running, so no concurrent production build was run.
+
+- 2026-08-13: Corrected and verified LAN development origin handling at its actual boundary. The previous `allowedDevOrigins` entry hardcoded `192.168.0.102`, so DHCP changing the host to `192.168.0.103` again blocked Next.js client resources and prevented hydration-driven animation and header scroll state. Replaced the single address with the installed Next.js-supported `192.168.0.*` segment wildcard, preserving a bounded local-subnet allowlist without requiring edits for future final-octet changes. Every emitted CSS/JavaScript chunk returns HTTP 200 with the `.103` origin. Browser verification at 390x844 confirms the animation client loads, reveal targets advance from 3 to 9 after scrolling, and the header gains `is-scrolled` with its `rgba(10, 13, 16, 0.88)` background. The LAN server remains running at `http://192.168.0.103:3000` for physical-device review.
 
 - 2026-08-11: Completed the explicitly approved Delivery Intelligence database promotion. The case-study document is now schema v2 and owns the EDD description, integrations, responsive breakpoints, desktop/tablet canvas geometry, endpoint/stage/service nodes, all SVG connection paths, mobile/compact geometry, integration positions, and mobile connection topology. `EddCalculationDiagram` now interprets only validated database data through generic SVG/HTML primitives; the obsolete static case study was removed from `lib/content.ts`. Updated the seed, admin JSON placeholder, architecture docs, and applied remote migration `20260811143000`. The stored published row validates, exactly matches the seed, retains the tablet ClickPost `M888...` arrow fix, and the production route returns HTTP 200 with database-driven values. `npm run build` passes and the temporary server was stopped; port 3000 has no listener. Database promotion status: verified complete.
 

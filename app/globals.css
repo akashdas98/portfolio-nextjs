@@ -1363,8 +1363,15 @@ p {
   font-size: var(--font-size-diagram-api-subtitle-mobile);
 }
 .edd-mobile-diagram.is-compact .edd-mobile-stage header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-inline-gap);
   padding-bottom: var(--edd-mobile-compact-stage-header-padding);
   border-bottom: 1px solid var(--line);
+}
+.edd-mobile-diagram.is-compact .edd-mobile-stage header > span {
+  flex: 0 0 auto;
+  margin-bottom: 0;
 }
 .case-section {
   padding-block: var(--space-section-y);

@@ -11,6 +11,16 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+For testing from another device on the same `192.168.0.x` network, bind the
+development server to the LAN and open the computer's current IPv4 address:
+
+```bash
+npm run dev -- --hostname 0.0.0.0
+```
+
+`allowedDevOrigins` covers the local `192.168.0.*` subnet, so DHCP address
+changes within that subnet do not require a configuration edit.
+
 ## Contact form
 
 The form uses Resend for email delivery. Copy `.env.example` to `.env.local` and add:

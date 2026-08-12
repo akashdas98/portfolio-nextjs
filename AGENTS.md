@@ -150,6 +150,7 @@ Use first person selectively. Most copy should focus on what the work delivers.
 
 - Install dependencies with `npm install`.
 - Run the local dev server with `npm run dev`.
+- LAN development uses the bounded `192.168.0.*` entry in `allowedDevOrigins`; do not replace it with the machine's current DHCP address, because that recreates the client-asset failure when the address changes.
 - Build with `npm run build`.
 - Never run `npm run build` while a Next.js development server is running in this repository. Both commands write to `.next`; stop the dev server before building, then clear the generated cache before restarting development so LAN devices cannot receive mismatched HTML, CSS, or JavaScript assets.
 - Start a production build with `npm start`.
