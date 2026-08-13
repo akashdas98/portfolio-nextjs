@@ -14,10 +14,10 @@ const principles = [
 ];
 
 const capabilities = [
-  ["Frontend", "React, Next.js, React Native, Capacitor, Material UI"],
   ["Backend", "Node.js, TypeScript, NestJS, REST, GraphQL, microservices"],
   ["Data & integrations", "MongoDB, PostgreSQL, Redis, RabbitMQ, Firebase, Shopify"],
   ["Cloud & delivery", "AWS EKS, Kubernetes, Docker, Jenkins, CI/CD, SigNoz, GCP"],
+  ["Frontend", "React, Next.js, React Native, Capacitor, Material UI"],
 ];
 
 export default async function Home() {

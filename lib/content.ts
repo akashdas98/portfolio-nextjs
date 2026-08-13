@@ -25,35 +25,35 @@ export const projects = [
     category: "Ecommerce · Integrations · High-Volume Systems",
     title: "Fragmented lead capture, rebuilt as one dependable system",
     challenge:
-      "Lead capture relied on spreadsheets and disconnected systems. The business needed a centralized platform for collection, enrichment, routing, and synchronization across marketing, sales, and communication systems.",
+      "Lead capture relied on spreadsheets and disconnected systems. The business needed a centralized platform for collecting lead activities, retaining owned records, enriching applicable data, and synchronizing it across marketing, sales, and analytics systems.",
     delivery:
-      "A centralized lead service replaced spreadsheet-based middleware, enriched data with ecommerce metadata, applied configurable routing rules, and coordinated internal and third-party systems.",
+      "A centralized lead service replaced spreadsheet-based middleware, retained owned lead-activity records, normalized payloads for downstream systems, enriched applicable activities through a nearest-store API, and handled custom activity-type workflows.",
     metrics: [
+      ["2.2×", "daily activity volume growth"],
+      ["626K", "monthly activities sustained"],
       ["3.6M", "requests in 30 days"],
-      ["626K", "leads sustained"],
-      ["3.19×", "daily volume growth"],
     ],
     capabilities:
-      "System integration, backend architecture, business workflows, data enrichment, routing logic, cloud deployment, scaling, and production support.",
+      "System integration, backend architecture, business workflows, data enrichment, workflow orchestration, cloud deployment, scaling, and production support.",
     visual: "leads",
   },
   {
     index: "03",
     name: "Horecah",
     url: "https://horecah.com",
-    category: "Freelance · Web and Mobile · Payments and Notifications",
-    title: "One hiring platform across web, Android, and iOS",
+    category: "Freelance · Cross-Platform · Payments and Notifications",
+    title: "Payments and notification journeys across web, Android, and iOS",
     challenge:
-      "A hospitality-focused hiring platform needed to operate across three platforms while preserving a shared codebase and supporting payments and push notifications everywhere.",
+      "A new hospitality hiring product needed two release-critical capabilities to behave consistently across three client platforms.",
     delivery:
-      "A shared Capacitor client connected to a Node.js and Hasura GraphQL backend. Razorpay compatibility issues were resolved through direct plugin adaptation, while one payment implementation remained shared across platforms.",
+      "End-to-end Razorpay payments and event-driven push notifications were delivered through one React and Capacitor application, including backend verification, platform delivery, and deep-link routing.",
     metrics: [
-      ["3", "platforms delivered"],
+      ["3", "client platforms"],
+      ["2", "production features"],
       ["1", "shared payment flow"],
-      ["3", "push ecosystems unified"],
     ],
     capabilities:
-      "Full-stack development, cross-platform mobile delivery, payments, GraphQL, push notifications, third-party integration, and technical problem-solving.",
+      "Cross-platform feature delivery, payment integration, push notifications, backend APIs, Hasura events, deep linking, third-party package adaptation, and production testing.",
     visual: "horecah",
   },
 ] as const;

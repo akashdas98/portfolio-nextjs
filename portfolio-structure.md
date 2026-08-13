@@ -120,7 +120,7 @@ Backend architecture, API design, business-rule modelling, external integrations
 
 ---
 
-## Centralized Lead Capture and Routing Platform
+## Centralized Lead Capture and Processing Platform
 
 ### Category
 
@@ -134,59 +134,59 @@ Ecommerce · Integrations · High-Volume Systems
 
 Lead capture relied on spreadsheets and disconnected systems.
 
-The business needed a centralized platform that could collect leads from multiple touchpoints, enrich them, apply routing rules, and synchronize data across marketing, sales, and communication platforms.
+The business needed a centralized platform that could collect lead activities from multiple touchpoints, retain owned activity records, enrich applicable data, and synchronize it across marketing, sales, and analytics platforms.
 
 ### Delivery
 
 A centralized lead service replaced the spreadsheet-based middleware.
 
-The system collected leads and activities across the business, enriched them with ecommerce metadata, applied configurable routing rules, and coordinated data between internal and third-party systems.
+The system collected lead activities across the business, normalized destination payloads, resolved the nearest store through an internal pincode API when relevant, and handled custom activity-type workflows across internal and third-party systems.
 
 ### Results
 
-- Lead volume increased from 177,080 in November 2024 to 349,474 in the December launch month
-- 626,470 leads and 3,611,900 requests sustained within 30 days
-- Daily volume reached approximately 3.19 times the first full backend month
+- Lead-activity volume increased from 177,080 in November 2024, the last full pre-service month, to 410,087 in January 2025, the first full month with the service
+- 626,470 lead activities and 3,611,900 requests sustained within 30 days
+- Daily lead-activity volume reached approximately 2.2 times the last full pre-service month in the first full month with the service
 - Automatic infrastructure scaling supported traffic spikes without permanently overprovisioning compute
 
 ### Capabilities
 
-System integration, backend architecture, business workflows, data enrichment, routing logic, cloud deployment, scaling, and production support.
+System integration, backend architecture, business workflows, data enrichment, workflow orchestration, cloud deployment, scaling, and production support.
 
 ---
 
-## Horecah Hospitality Hiring Application
+## Horecah Payments and Notification Features
 
 ### Category
 
-Freelance · Web and Mobile · Payments and Notifications
+Freelance · Cross-Platform · Payments and Notifications
 
 ### Headline
 
-# One hiring platform across web, Android, and iOS
+# Payments and notification journeys across web, Android, and iOS
 
 ### Challenge
 
-A hospitality-focused hiring platform needed to operate across web, Android, and iOS while preserving a shared codebase and supporting payments and push notifications on all three platforms.
+A new hospitality hiring product needed two release-critical capabilities to behave consistently across web, Android, and iOS.
 
 ### Delivery
 
-A shared Capacitor application connected to a Node.js and Hasura GraphQL backend.
+During a one-month feature engagement, end-to-end Razorpay payments and automatic push-notification journeys were delivered through the shared React and Capacitor application, its Node.js backend, and Hasura/PostgreSQL events.
 
-Razorpay was integrated across all three platforms by adapting the upstream Capacitor plugin to resolve compatibility issues while preserving a single payment implementation.
+The Razorpay integration covered backend order creation, live client verification, server-side signature verification, and webhook reconciliation. A broken upstream Capacitor package was forked and modernized for Capacitor 6, including its TypeScript toolchain, distributable build, module format, and checkout option types.
 
-Cross-platform push notifications were implemented through Firebase Cloud Messaging and Apple Push Notification service.
+Notification delivery used Firebase Cloud Messaging and Apple Push Notification service, with device-token routing and destination-aware deep links designed to open the correct screen consistently across web, Android, and iOS.
 
 ### Results
 
-- Shared application delivered across web, Android, and iOS
-- One payment implementation preserved across all platforms
-- Plugin compatibility issues resolved through direct repository adaptation
-- Cross-platform push-notification support completed
+- Razorpay payments and push notifications launched with the product's first production release
+- One shared payment flow supported web, Android, and iOS
+- Automatic notification journeys delivered through FCM and APNs
+- Platform-specific package and deep-linking failures resolved before release
 
 ### Capabilities
 
-Full-stack development, cross-platform mobile delivery, payments, GraphQL, push notifications, third-party integration, and technical problem-solving.
+Cross-platform feature delivery, payment integration, push notifications, backend APIs, Hasura events, deep linking, third-party package adaptation, and production testing.
 
 ---
 
@@ -336,10 +336,6 @@ That breadth creates a simpler working relationship—fewer hand-offs, stronger 
 
 # Technical Capabilities
 
-## Frontend
-
-React, Next.js, React Native, Capacitor, Material UI
-
 ## Backend
 
 Node.js, TypeScript, NestJS, REST, GraphQL, microservices, event-driven systems
@@ -351,6 +347,10 @@ MongoDB, PostgreSQL, SQL, Redis, RabbitMQ, Firebase, Shopify, LeadSquared, WebEn
 ## Cloud and Delivery
 
 AWS EKS, Kubernetes, Docker, Jenkins, CI/CD, SigNoz, AWS EC2, AWS S3, GCP
+
+## Frontend
+
+React, Next.js, React Native, Capacitor, Material UI
 
 ---
 

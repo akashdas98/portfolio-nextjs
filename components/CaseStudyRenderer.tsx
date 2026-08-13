@@ -3,7 +3,9 @@ import type { CaseStudySectionDocument, CaseStudyDocument } from "@/lib/case-stu
 
 import { CaseCircuitGlow } from "./CaseCircuitGlow";
 import { CaseStudyBackLink } from "./CaseStudyBackLink";
+import { CrossPlatformFeatureDiagram } from "./CrossPlatformFeatureDiagram";
 import { EddCalculationDiagram } from "./EddCalculationDiagram";
+import { LeadNetworkDiagram } from "./LeadNetworkDiagram";
 
 type CaseStudyRendererProps = {
   document: CaseStudyDocument;
@@ -11,8 +13,6 @@ type CaseStudyRendererProps = {
 };
 
 export function CaseStudyRenderer({ document, project }: CaseStudyRendererProps) {
-  const heroVisual = document.heroVisual?.type === "edd-calculation" ? document.heroVisual : null;
-
   return (
     <main id="top" className="case-study-page" data-public-animations>
       <CaseCircuitGlow />
@@ -25,7 +25,15 @@ export function CaseStudyRenderer({ document, project }: CaseStudyRendererProps)
           <p>{document.summary}</p>
           <p className="case-role">{document.role}</p>
         </div>
-        {heroVisual ? <EddCalculationDiagram visual={heroVisual} /> : null}
+        {document.heroVisual?.type === "edd-calculation" ? (
+          <EddCalculationDiagram visual={document.heroVisual} />
+        ) : null}
+        {document.heroVisual?.type === "lead-network" ? (
+          <LeadNetworkDiagram visual={document.heroVisual} />
+        ) : null}
+        {document.heroVisual?.type === "cross-platform-features" ? (
+          <CrossPlatformFeatureDiagram visual={document.heroVisual} />
+        ) : null}
       </section>
 
       {document.sections.map((section) => (

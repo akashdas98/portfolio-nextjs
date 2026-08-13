@@ -42,7 +42,7 @@ export function EddCalculationDiagram({ visual }: EddCalculationDiagramProps) {
   const variant = useDiagramVariant(visual);
 
   return (
-    <figure className="case-edd-diagram reveal">
+    <figure className="case-diagram case-edd-diagram reveal">
       <p className="eyebrow case-edd-diagram-eyebrow">{visual.eyebrow}</p>
 
       {variant === "desktop" ? <DesktopDiagram visual={visual} variant="desktop" /> : null}
@@ -104,7 +104,7 @@ function MobileDiagram({
 
   return (
     <div
-      className={`edd-mobile-diagram${compact ? " is-compact" : ""}`}
+      className={`case-diagram-surface edd-mobile-diagram${compact ? " is-compact" : ""}`}
       data-diagram-variant="mobile"
       role="img"
       aria-label={visual.title}
@@ -216,7 +216,7 @@ function DesktopDiagram({
   return (
     <div className={`edd-diagram-variant edd-diagram-${variant}`} data-diagram-variant={variant}>
       <svg
-        className="edd-diagram-svg"
+        className="case-diagram-surface edd-diagram-svg"
         viewBox={`0 0 ${canvas.width} ${canvas.height}`}
         role="img"
         aria-labelledby={`${titleId} ${descriptionId}`}
@@ -225,7 +225,7 @@ function DesktopDiagram({
       <desc id={descriptionId}>{visual.description}</desc>
       <DiagramDefinitions suffix={variant} gridSize={canvas.gridSize} />
       <rect
-        className="edd-diagram-canvas"
+        className="case-diagram-surface edd-diagram-canvas"
         x={canvas.frameInset}
         y={canvas.frameInset}
         width={frameWidth}

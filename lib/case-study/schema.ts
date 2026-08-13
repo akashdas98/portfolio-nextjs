@@ -183,6 +183,123 @@ const eddHeroVisualSchema = z
     });
   });
 
+const leadNetworkNodeSchema = z.object({
+  key: z.string().min(1).regex(/^[a-z0-9-]+$/),
+  name: z.string().min(1),
+  role: z.string().min(1),
+});
+
+const leadNetworkHeroVisualSchema = z.object({
+  type: z.literal("lead-network"),
+  eyebrow: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  sourceLabel: z.string().min(1),
+  sourceStat: z.string().min(1),
+  sourceStatLabel: z.string().min(1),
+  sources: z.array(leadNetworkNodeSchema).min(2).max(6),
+  serviceLabel: z.string().min(1),
+  serviceRole: z.string().min(1),
+  stages: z
+    .array(
+      z.object({
+        number: z.string().min(1),
+        title: z.string().min(1),
+        detail: z.string().min(1),
+      }),
+    )
+    .min(3)
+    .max(6),
+  record: z.object({
+    name: z.string().min(1),
+    role: z.string().min(1),
+    detail: z.string().min(1),
+  }),
+  destinationLabel: z.string().min(1),
+  destinations: z.array(leadNetworkNodeSchema).min(2).max(6),
+  layout: z.object({
+    breakpoints: z.object({
+      compactMax: z.number().int().positive().max(2000),
+      mobileMax: z.number().int().positive().max(2000),
+      tabletMax: z.number().int().positive().max(2000),
+    }),
+    canvas: z.object({
+      width: diagramSizeSchema,
+      height: diagramSizeSchema,
+      frameInset: diagramNumberSchema.min(0),
+      gridSize: diagramSizeSchema,
+    }),
+    wide: z.object({
+      sourceX: diagramNumberSchema,
+      destinationX: diagramNumberSchema,
+      laneWidth: diagramSizeSchema,
+      titleY: diagramNumberSchema,
+      statY: diagramNumberSchema,
+      sourceRuleY: diagramNumberSchema,
+      destinationRuleY: diagramNumberSchema,
+      nodeStartY: diagramNumberSchema,
+      nodeGap: diagramSizeSchema,
+      nodeWidth: diagramSizeSchema,
+      nodeHeight: diagramSizeSchema,
+      nodeTextX: diagramSizeSchema,
+      nodeTitleY: diagramSizeSchema,
+      nodeDetailY: diagramSizeSchema,
+      nodeAccentStartX: diagramSizeSchema,
+      nodeAccentEndX: diagramSizeSchema,
+      core: diagramRectSchema,
+      sourceConnectorPath: diagramPathSchema,
+      destinationConnectorPath: diagramPathSchema,
+    }),
+  }),
+}).superRefine((visual, context) => {
+  const { compactMax, mobileMax, tabletMax } = visual.layout.breakpoints;
+  if (!(compactMax < mobileMax && mobileMax < tabletMax)) {
+    context.addIssue({
+      code: "custom",
+      path: ["layout", "breakpoints"],
+      message: "Lead-network breakpoints must increase from compact to mobile to tablet.",
+    });
+  }
+});
+
+const horecahFeatureHeroVisualSchema = z.object({
+  type: z.literal("cross-platform-features"),
+  eyebrow: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  platforms: z.array(z.string().min(1)).length(3),
+  sharedCore: z.object({
+    name: z.string().min(1),
+    role: z.string().min(1),
+  }),
+  features: z
+    .array(
+      z.object({
+        key: z.string().min(1).regex(/^[a-z0-9-]+$/),
+        name: z.string().min(1),
+        role: z.string().min(1),
+        steps: z.array(z.string().min(1)).min(3).max(5),
+      }),
+    )
+    .length(2),
+  layout: z
+    .object({
+      breakpoints: z.object({
+        stackMax: z.number().int().positive().max(2000),
+        fullCoreMax: z.number().int().positive().max(2000),
+      }),
+    })
+    .superRefine((layout, context) => {
+      if (!(layout.breakpoints.stackMax < layout.breakpoints.fullCoreMax)) {
+        context.addIssue({
+          code: "custom",
+          path: ["breakpoints"],
+          message: "Cross-platform diagram breakpoints must increase from stack to full-core.",
+        });
+      }
+    }),
+});
+
 const evidenceCardSchema = z.object({
   title: z.string().min(1),
   detail: z.string().min(1),
@@ -277,13 +394,21 @@ export const caseStudyDocumentSchema = z.object({
   schemaVersion: z.literal(2),
   summary: z.string().min(1),
   role: z.string().min(1),
-  heroVisual: eddHeroVisualSchema.optional(),
+  heroVisual: z
+    .discriminatedUnion("type", [
+      eddHeroVisualSchema,
+      leadNetworkHeroVisualSchema,
+      horecahFeatureHeroVisualSchema,
+    ])
+    .optional(),
   sections: z.array(caseStudySectionSchema).min(1),
 });
 
 export type CaseStudyDocument = z.infer<typeof caseStudyDocumentSchema>;
 export type CaseStudySectionDocument = z.infer<typeof caseStudySectionSchema>;
 export type EddHeroVisualDocument = z.infer<typeof eddHeroVisualSchema>;
+export type LeadNetworkHeroVisualDocument = z.infer<typeof leadNetworkHeroVisualSchema>;
+export type HorecahFeatureHeroVisualDocument = z.infer<typeof horecahFeatureHeroVisualSchema>;
 
 export function parseCaseStudyDocument(value: unknown): CaseStudyDocument | null {
   const result = caseStudyDocumentSchema.safeParse(value);

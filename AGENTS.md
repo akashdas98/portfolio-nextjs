@@ -16,6 +16,8 @@ Top-level layout:
 - `components/AdminLeadForm.tsx`: admin action form for lead status, priority, notes, and follow-ups.
 - `components/CaseStudyRenderer.tsx`: server-side renderer for validated, database-backed case-study layout documents.
 - `components/EddCalculationDiagram.tsx`: generic responsive renderer for validated, database-owned EDD content, integrations, geometry, connections, paths, and breakpoints; it uses SVG for database-selected wide variants and native HTML/CSS for database-selected mobile variants.
+- `components/LeadNetworkDiagram.tsx`: generic responsive renderer for validated, database-owned lead-network content, breakpoints, canvas geometry, paths, and nodes; like EDD, it mounts one fixed-viewBox SVG wide/tablet composition or one native HTML mobile/compact recomposition. Wide/tablet peripheral cards are direct native SVG siblings with explicit paint and no transformed groups; only the owned internal perimeter uses one bounded `foreignObject`.
+- `components/CrossPlatformFeatureDiagram.tsx`: generic native HTML/CSS renderer for validated, database-owned cross-platform feature content and breakpoints; it maps shared client platforms into two owned feature lanes and ends at those contribution boundaries without implying ownership of the surrounding product.
 - `lib/admin/`: admin data adapters and TypeScript types.
 - `lib/case-study/`: versioned case-study document validation.
 - `lib/content.ts`: structured website-only fallback content for selected work plus homepage services; it does not contain public case-study documents.
@@ -138,7 +140,9 @@ Use first person selectively. Most copy should focus on what the work delivers.
 - After database promotion, frontend code may retain only generic renderers, safe visual primitives, and shared design tokens. A project is not complete if project-specific layout or diagram data remains hardcoded locally.
 - Never store executable React, JavaScript, or unrestricted HTML/CSS in database documents. Store declarative, bounded, schema-validated layout data that generic frontend renderers interpret.
 - Public case-study routes are database-only. If the Supabase row, availability flag, or validated document is unavailable, the route must not render a static case study.
+- Keep the project and service name `Leads Management`, but describe its ingested units, stored records, volume metrics, and processing workflows as lead activities rather than leads.
 - Keep global visual tokens in `app/globals.css`.
+- Every case-study diagram must use the shared `case-diagram` foreground layer and opaque `case-diagram-surface` canvas. The page circuit pattern and its pointer glow may remain visible around a diagram, but must never show through or paint over the diagram canvas.
 - Keep every font size on the centralized typography scale in `app/globals.css`. Component and breakpoint rules must reference a `--font-size-*` token; add a deliberately named standard to the scale when a genuinely distinct role is required instead of introducing a one-off numeric size.
 - Keep semantic HTML, accessible labels, keyboard navigation, visible focus states, and reduced-motion support.
 - Do not commit secrets. Contact form configuration belongs in `.env.local`, based on `.env.example`.

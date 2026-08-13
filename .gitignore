@@ -5,6 +5,7 @@ out
 .env.local
 .vercel
 *.log
+*.tsbuildinfo
 .npm-cache
 .playwright-mcp/
 supabase/.temp/
