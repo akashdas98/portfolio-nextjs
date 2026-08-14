@@ -370,6 +370,24 @@ const evidenceGridSectionSchema = z.object({
   ...sectionHeadingSchema,
   type: z.literal("evidence-grid"),
   cards: z.array(evidenceCardSchema),
+  columns: z.union([z.literal(2), z.literal(3)]).optional(),
+  circuitAnchor: z.enum(["section-bottom"]).optional(),
+});
+
+const impactHighlightSectionSchema = z.object({
+  ...sectionHeadingSchema,
+  type: z.literal("impact-highlight"),
+  detail: z.string().min(1),
+  capabilities: z.array(z.string().min(1)).min(1).max(4).optional(),
+  metrics: z
+    .array(
+      z.object({
+        value: z.string().min(1),
+        label: z.string().min(1),
+      }),
+    )
+    .min(1)
+    .max(4),
   circuitAnchor: z.enum(["section-bottom"]).optional(),
 });
 
@@ -387,6 +405,7 @@ export const caseStudySectionSchema = z.discriminatedUnion("type", [
   systemFlowSectionSchema,
   workflowSectionSchema,
   evidenceGridSectionSchema,
+  impactHighlightSectionSchema,
   capabilitySectionSchema,
 ]);
 

@@ -21,6 +21,12 @@ npm run dev -- --hostname 0.0.0.0
 `allowedDevOrigins` covers the local `192.168.0.*` subnet, so DHCP address
 changes within that subnet do not require a configuration edit.
 
+Development CSS and JavaScript responses are sent with `no-store`; HTML must
+revalidate, and pages restored from the browser back/forward cache reload once.
+This keeps LAN devices on the current development asset set. Keep only one
+Next.js writer active: stop the dev server and clear `.next` before running a
+production build, then clear `.next` again before returning to development.
+
 ## Contact form
 
 The form uses Resend for email delivery. Copy `.env.example` to `.env.local` and add:

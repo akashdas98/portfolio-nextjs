@@ -17,12 +17,28 @@ export async function generateMetadata({ params }: CaseStudyPageProps): Promise<
   if (!project || !project.hasCaseStudy || !document) {
     return {
       title: "Case Study",
+      robots: { index: false, follow: false },
     };
   }
+
+  const canonicalPath = `/work/${slug}`;
+  const socialTitle = `${project.title} — Case Study`;
 
   return {
     title: `${project.title} | Case Study`,
     description: document.summary,
+    alternates: { canonical: canonicalPath },
+    openGraph: {
+      title: socialTitle,
+      description: document.summary,
+      url: canonicalPath,
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: socialTitle,
+      description: document.summary,
+    },
   };
 }
 

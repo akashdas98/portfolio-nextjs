@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
+
 import { ContactForm } from "@/components/ContactForm";
 import { Header } from "@/components/Header";
 import { ProjectCard } from "@/components/ProjectCard";
 import { getPublicProjects } from "@/lib/admin/data";
 import { services } from "@/lib/content";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 const principles = [
   "Clarity before development",
@@ -67,49 +73,16 @@ export default async function Home() {
           </div>
         </section>
 
-        <section id="work" className="section shell">
-          <div className="section-heading reveal">
-            <p className="eyebrow">Selected work</p>
-            <h2>Systems built around outcomes, not theatre.</h2>
-          </div>
-          <div className="project-list">
-            {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        </section>
-
-        <section className="impact section">
-          <div className="shell impact-grid reveal">
-            <div>
-              <p className="eyebrow">Additional impact</p>
-              <p className="impact-project">
-                Communication Automation | The Sleep Company
-              </p>
-              <h2>
-                Customer communication rebuilt around the full order journey.
-              </h2>
+        <section id="work" className="section selected-work-section">
+          <div className="shell">
+            <div className="section-heading reveal">
+              <p className="eyebrow">Selected work</p>
+              <h2>Systems built around outcomes, not theatre.</h2>
             </div>
-            <div className="impact-copy">
-              <p>
-                A reusable scheduling foundation supported notifications across
-                placement, processing, dispatch, delivery, cancellation, and
-                return workflows.
-              </p>
-              <dl className="impact-metrics">
-                <div>
-                  <dt>35%</dt>
-                  <dd>reduction in support calls</dd>
-                </div>
-                <div>
-                  <dt>₹3 crore</dt>
-                  <dd>annual support-cost savings</dd>
-                </div>
-                <div>
-                  <dt>30+</dt>
-                  <dd>new notifications introduced</dd>
-                </div>
-              </dl>
+            <div className="project-list">
+              {projects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
             </div>
           </div>
         </section>

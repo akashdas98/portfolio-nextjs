@@ -1,8 +1,10 @@
 "use client";
 
 import { useLayoutEffect } from "react";
+import { usePathname } from "next/navigation";
 
 const revealSelector = ".reveal, .reveal-item";
+const revealTriggerRatio = 0.94;
 const countSelector = [
   "dt",
   ".case-outcome-table td",
@@ -130,6 +132,8 @@ function createRevealAnimation(element: Element) {
 }
 
 export function PublicAnimations() {
+  const pathname = usePathname();
+
   useLayoutEffect(() => {
     const publicMain = document.querySelector<HTMLElement>(
       "main[data-public-animations]",
@@ -170,6 +174,7 @@ export function PublicAnimations() {
         return;
       }
 
+      element.getAnimations().forEach((animation) => animation.cancel());
       const animation = createRevealAnimation(element);
       preparedAnimations.set(element, animation);
       preparedTargets.add(element);
@@ -238,14 +243,20 @@ export function PublicAnimations() {
     const observedRevealTargets = new WeakSet<Element>();
     const observedCountTargets = new WeakSet<Element>();
 
+    function startsBeyondRevealLine(element: Element) {
+      return element.getBoundingClientRect().top > window.innerHeight * revealTriggerRatio;
+    }
+
     function registerRevealTarget(element: Element) {
       if (observedRevealTargets.has(element)) return;
       observedRevealTargets.add(element);
 
-      if (element.getBoundingClientRect().top > window.innerHeight * 0.94) {
-        prepareRevealTarget(element);
+      if (!startsBeyondRevealLine(element)) {
+        element.setAttribute("data-revealed", "true");
+        return;
       }
 
+      prepareRevealTarget(element);
       revealObserver.observe(element);
     }
 
@@ -253,6 +264,12 @@ export function PublicAnimations() {
       if (observedCountTargets.has(element)) return;
       if (parseNumber(element.textContent?.trim() ?? "")) {
         observedCountTargets.add(element);
+
+        if (!startsBeyondRevealLine(element)) {
+          element.setAttribute("data-counted", "true");
+          return;
+        }
+
         countObserver.observe(element);
       }
     }
@@ -277,7 +294,7 @@ export function PublicAnimations() {
     let scrollFrame = 0;
     function checkPreparedTargets() {
       scrollFrame = 0;
-      const triggerLine = window.innerHeight * 0.94;
+      const triggerLine = window.innerHeight * revealTriggerRatio;
       const entering = Array.from(preparedTargets)
         .filter((element) => {
           const bounds = element.getBoundingClientRect();
@@ -315,7 +332,7 @@ export function PublicAnimations() {
       revealAnimations.forEach((animation) => animation.cancel());
       revealAnimations.clear();
     };
-  }, []);
+  }, [pathname]);
 
   return null;
 }

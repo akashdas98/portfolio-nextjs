@@ -165,11 +165,43 @@ function CaseStudySection({
         <section className={caseSectionClass(section)}>
           <div className="shell">
             <CaseSectionHeading section={section} />
-            <div className="case-decision-grid reveal">
+            <div
+              className={`case-decision-grid reveal${
+                section.columns === 3 ? " case-decision-grid-three" : ""
+              }`}
+            >
               {section.cards.map((item) => (
                 <CaseEvidenceCard key={item.title} item={item} />
               ))}
             </div>
+          </div>
+        </section>
+      );
+
+    case "impact-highlight":
+      return (
+        <section className={`${caseSectionClass(section)} impact case-impact-section`}>
+          <div className="shell impact-grid reveal">
+            <div>
+              <p className="eyebrow">{section.eyebrow}</p>
+              <h2>{section.title}</h2>
+            </div>
+            <div className="impact-copy">
+              <p>{section.detail}</p>
+              <dl className="impact-metrics">
+                {section.metrics.map((metric) => (
+                  <div key={`${metric.value}-${metric.label}`}>
+                    <dt>{metric.value}</dt>
+                    <dd>{metric.label}</dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+            {section.capabilities ? (
+              <p className="capabilities case-impact-capabilities">
+                {section.capabilities.join(", ")}.
+              </p>
+            ) : null}
           </div>
         </section>
       );

@@ -17,6 +17,8 @@
   --button-pink-shadow: #f37fbf;
   --button-pink-shadow-border: #f37fbf;
   --accent-ink: #071116;
+  --font-primary: "Segoe UI", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, sans-serif;
   --font-size-zero: 0;
   --font-size-nano: 0.5rem;
   --font-size-micro: 0.625rem;
@@ -112,16 +114,53 @@ body {
   background: var(--bg);
   color: var(--text);
   font-size: var(--font-size-body);
-  font-family:
-    var(--font-inter),
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family: var(--font-primary);
   -webkit-font-smoothing: antialiased;
 }
+
+@keyframes public-reveal-entry {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  main[data-public-animations] .reveal,
+  main[data-public-animations] .reveal-item {
+    --public-reveal-delay: 0ms;
+    animation: public-reveal-entry 520ms cubic-bezier(0.2, 0.75, 0.2, 1)
+      var(--public-reveal-delay) backwards;
+  }
+
+  .hero > .reveal:nth-child(2),
+  .case-hero > .reveal:nth-child(2) {
+    --public-reveal-delay: 70ms;
+  }
+
+  .hero > .reveal:nth-child(3),
+  .case-hero > .reveal:nth-child(3) {
+    --public-reveal-delay: 140ms;
+  }
+
+  .hero > .reveal:nth-child(4),
+  .case-hero > .reveal:nth-child(4) {
+    --public-reveal-delay: 210ms;
+  }
+
+  .case-hero > .reveal:nth-child(5) {
+    --public-reveal-delay: 280ms;
+  }
+
+  .case-hero > .reveal:nth-child(6) {
+    --public-reveal-delay: 350ms;
+  }
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -414,13 +453,12 @@ p {
 }
 .proof-strip {
   margin-top: var(--space-proof-top);
-  padding: var(--space-proof-y) var(--space-proof-x);
+  padding: var(--space-proof-y) var(--space-proof-x) 0;
   display: flex;
   justify-content: space-between;
   gap: var(--space-proof-item-gap);
   grid-template-columns: repeat(4, 1fr);
   border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
   color: var(--subtle);
   font-size: var(--font-size-label);
 }
@@ -446,11 +484,19 @@ p {
   display: grid;
   gap: var(--space-project-list-gap);
 }
+.selected-work-section {
+  padding-block: var(--space-section-y);
+  background: var(--bg-soft);
+}
 .project-card {
   padding: var(--space-project-card-padding);
   background: var(--surface);
   border: 2px solid var(--line);
   border-radius: var(--radius);
+}
+.selected-work-section .project-card,
+.selected-work-section .project-visit span::before {
+  background: var(--bg);
 }
 .project-meta {
   display: grid;
@@ -1027,7 +1073,7 @@ p {
 }
 .edd-diagram-service-name,
 .edd-diagram-service-role {
-  font-family: var(--font-inter), "Inter", "Segoe UI", sans-serif;
+  font-family: var(--font-primary);
   text-transform: uppercase;
 }
 .edd-diagram-service-name {
@@ -1646,7 +1692,7 @@ p {
 .lead-network-svg-meta,
 .lead-network-svg-node-title,
 .lead-network-svg-node-detail {
-  font-family: var(--font-inter), "Inter", "Segoe UI", sans-serif;
+  font-family: var(--font-primary);
 }
 .lead-network-svg-lane-label {
   font-size: var(--font-size-caption);
@@ -2305,6 +2351,9 @@ p {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-case-card-gap);
 }
+.case-decision-grid-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
 .case-control-grid {
   margin-top: var(--space-case-card-gap);
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2535,13 +2584,6 @@ p {
 .impact p {
   color: rgba(229, 240, 255, 0.74);
 }
-.impact-project {
-  margin: -6px 0 22px;
-  color: var(--text) !important;
-  font-size: var(--font-size-label);
-  font-weight: 650;
-  letter-spacing: 0.02em;
-}
 .impact-grid {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
@@ -2578,6 +2620,10 @@ p {
   margin: 8px 0 0;
   color: rgba(229, 240, 255, 0.68);
   font-size: var(--font-size-small);
+}
+.case-impact-capabilities {
+  grid-column: 1 / -1;
+  border-color: rgba(229, 240, 255, 0.2);
 }
 
 .service-list {
@@ -3620,7 +3666,6 @@ p {
   .proof-strip {
     grid-template-columns: 1fr;
     padding-top: 20px;
-    padding-bottom: 24px;
     border-top: 1px solid var(--line);
   }
   .project-meta {
@@ -3774,6 +3819,12 @@ p {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  main[data-public-animations] .reveal,
+  main[data-public-animations] .reveal-item {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
   }
   *,
   *::before,

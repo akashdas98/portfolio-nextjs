@@ -84,6 +84,8 @@ From early requirements and interface planning through development, deployment, 
 
 # Selected Work
 
+The homepage Selected Work area uses a full-width soft-grey band with dark project cards, preserving the alternating black-grey page rhythm while keeping each project as the visual foreground.
+
 ## Ecommerce Delivery Intelligence Platform
 
 ### Category
@@ -117,6 +119,25 @@ The platform also introduced Redis-backed caching, administrative data uploads, 
 ### Capabilities
 
 Backend architecture, API design, business-rule modelling, external integrations, caching, production scaling, observability, and long-term maintenance.
+
+### Communication Automation
+
+#### Headline
+
+# Customer communication rebuilt around the full order journey
+
+A separate notification-system overhaul was built to keep customers properly informed throughout the entire order journey—from order placement through processing, dispatch, delivery, cancellation, and returns. The system relied heavily on EDD as the foundation for timely, journey-aware communication.
+
+#### Results
+
+- Approximately 10 existing notifications overhauled
+- More than 30 new notifications introduced
+- Customer support calls reduced by approximately 35%
+- Around INR 3 crore in annual support-cost savings
+
+#### Capabilities
+
+Notification-system architecture, order-journey communication, event integrations, and technical ownership.
 
 ---
 
@@ -191,21 +212,6 @@ Cross-platform feature delivery, payment integration, push notifications, backen
 ---
 
 # Additional Impact
-
-## Customer Communication Automation
-
-### Headline
-
-# Customer communication rebuilt around the full order journey
-
-A reusable scheduling foundation supported notifications across order placement, processing, dispatch, delivery, cancellation, and return-to-origin workflows.
-
-### Results
-
-- Approximately 10 existing notifications overhauled
-- More than 30 new notifications introduced
-- Customer support calls reduced by approximately 35%
-- Around INR 3 crore in annual support-cost savings
 
 ## Healthcare and Hospital Platforms
 
@@ -414,14 +420,7 @@ Avoid:
 
 ## Typography
 
-Use one clean sans-serif family throughout.
-
-Recommended:
-
-- Geist
-- Inter
-- IBM Plex Sans
-- Manrope
+Use the centralized Segoe UI system-font stack throughout. Local development and production must resolve through the same declared stack; do not label a fallback face as Inter or load a separate Inter build in only one environment.
 
 Typography should carry most of the visual identity.
 
@@ -514,3 +513,11 @@ Every design decision should improve at least one of the following:
 - Interaction feedback
 
 If it improves none of them, remove it.
+
+---
+
+# Planned Work and Product Architecture
+
+The approved future direction for independently owned products, Selected Client Work, the broader Work catalogue, and distinct Product Story pages is documented in `docs/work-and-products-overhaul.md`.
+
+This is a deferred design direction, not the current homepage structure. When the first independently owned product is polished, live, and supported by credible product evidence, it should receive a singular flagship treatment above Selected Client Work. The same system should later expand into one flagship plus supporting owned products without turning the homepage into an equal-card project archive.

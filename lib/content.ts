@@ -48,9 +48,9 @@ export const projects = [
     delivery:
       "End-to-end Razorpay payments and event-driven push notifications were delivered through one React and Capacitor application, including backend verification, platform delivery, and deep-link routing.",
     metrics: [
-      ["3", "client platforms"],
+      ["1", "shared client"],
       ["2", "production features"],
-      ["1", "shared payment flow"],
+      ["3", "client platforms"],
     ],
     capabilities:
       "Cross-platform feature delivery, payment integration, push notifications, backend APIs, Hasura events, deep linking, third-party package adaptation, and production testing.",
