@@ -485,6 +485,7 @@ p {
   gap: var(--space-project-list-gap);
 }
 .selected-work-section {
+  --circuit-underlay-color: var(--bg-soft);
   padding-block: var(--space-section-y);
   background: var(--bg-soft);
 }
@@ -711,93 +712,155 @@ p {
   font-size: var(--font-size-caption);
   line-height: 1.35;
 }
-.case-study-page {
-  --case-circuit-size: 720px;
-  --case-circuit-x: -100vw;
-  --case-circuit-y: -100vh;
-  --case-circuit-glow-color: rgba(158, 216, 242, 0.38);
-  --case-circuit-glow-shadow: rgba(158, 216, 242, 0.5);
-  --case-diagram-surface-color: #080c0f;
-  padding-top: 1px;
+.public-circuit-page {
+  --circuit-underlay-color: var(--bg);
   position: relative;
   overflow: clip;
   isolation: isolate;
 }
-.case-study-page[data-circuit-tone="muted"] {
-  --case-circuit-glow-color: rgba(243, 127, 191, 0.26);
-  --case-circuit-glow-shadow: rgba(243, 127, 191, 0.38);
+.case-study-page {
+  --case-diagram-surface-color: #080c0f;
+  padding-top: 1px;
 }
-.case-hero,
-.case-section,
-.case-capability-band {
+.public-circuit-page > section {
   position: relative;
-  z-index: 3;
-  isolation: isolate;
 }
-.case-hero::before,
-.case-section::before,
-.case-capability-band::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
+.public-circuit-page > section > * {
+  position: relative;
+  z-index: 2;
+}
+.public-circuit-page > section.shell {
+  z-index: 2;
+}
+.public-circuit-page > section.shell > * {
+  z-index: auto;
+}
+
+.case-outcome-cell-content {
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+}
+
+/*
+ * Text underlays follow inline line fragments instead of a paragraph's layout
+ * rectangle. One inert duplicate supplies the entire shadow as a single
+ * blurred rounded source behind the canonical text. It is dark beneath the
+ * content and fades continuously outside, with no fill/shadow join to expose.
+ * Its text-shaped layout source is generated from a data attribute, so no
+ * duplicate live content or nested component styling can leak into the page.
+ * Transparent buttons use the whole control.
+ */
+.public-circuit-page .circuit-text-underlay {
+  --circuit-underlay-radius: 0.34em;
+  --circuit-underlay-strength: 0.7;
+  --circuit-underlay-feather: 18px;
+  --circuit-underlay-source-extension: 10px;
+  display: inline-grid;
+  width: fit-content;
+  max-width: 100%;
+  position: relative;
+  vertical-align: baseline;
+  background: transparent;
+  box-shadow: none;
+}
+.public-circuit-page .circuit-text-underlay-shadow,
+.public-circuit-page .circuit-text-underlay-content {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+.public-circuit-page .circuit-text-underlay-shadow {
+  position: relative;
+  z-index: -1;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+  opacity: var(--circuit-underlay-strength);
+  filter: blur(var(--circuit-underlay-feather));
   pointer-events: none;
-  background-image: url("/case-circuit-light.svg");
-  background-size: var(--case-circuit-size) var(--case-circuit-size);
-  background-position: center top;
-  background-attachment: fixed;
-  opacity: 0.035;
+  user-select: none;
 }
-.case-hero::before {
-  left: calc((100vw - 100%) / -2);
-  right: calc((100vw - 100%) / -2);
+.public-circuit-page .circuit-text-underlay-shadow-shape {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  border-color: transparent !important;
+  text-decoration-color: transparent !important;
+  text-shadow: none !important;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  border-radius: var(--circuit-underlay-radius);
+  background: var(--circuit-underlay-color);
+  box-shadow: 0 0 0 var(--circuit-underlay-source-extension)
+    var(--circuit-underlay-color);
 }
-.case-section-muted::before {
-  background-image: url("/case-circuit-dark.svg");
-  opacity: 0.42;
+.public-circuit-page .circuit-text-underlay-shadow-shape::before {
+  content: attr(data-circuit-shadow) !important;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
 }
-.case-section-circuit-bottom::before {
-  background-attachment: scroll;
-  background-position: center bottom;
+.public-circuit-page .circuit-text-underlay-shadow-shape::after {
+  content: none !important;
 }
-.case-hero > *,
-.case-section > .shell,
-.case-capability-band > .shell {
+.public-circuit-page .circuit-text-underlay-content {
   position: relative;
   z-index: 1;
 }
-.case-circuit-glow {
-  position: fixed;
+.public-circuit-page .circuit-text-underlay[data-circuit-underlay="compact"] {
+  --circuit-underlay-radius: 0.4em;
+  --circuit-underlay-strength: 0.644;
+  --circuit-underlay-feather: 12px;
+  --circuit-underlay-source-extension: 7px;
+}
+.public-circuit-page .circuit-text-underlay[data-circuit-underlay="heading"] {
+  --circuit-underlay-radius: 0.28em;
+  --circuit-underlay-strength: 0.7;
+  --circuit-underlay-feather: 30px;
+  --circuit-underlay-source-extension: 16px;
+}
+.public-circuit-page .button-secondary {
+  isolation: isolate;
+  background-color: transparent;
+  box-shadow: none;
+}
+.public-circuit-page .button-secondary::before {
+  content: "";
+  position: absolute;
   inset: 0;
-  z-index: 2;
+  z-index: -1;
+  border-radius: 8px;
+  background: var(--circuit-underlay-color);
+  opacity: 0.462;
+  filter: blur(14px);
+  pointer-events: none;
+}
+.public-circuit-art {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-image: var(--public-circuit-image);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center top;
+  opacity: 0.055;
+}
+.public-circuit-glow-lens {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 330px;
+  height: 330px;
+  z-index: 1;
+  contain: strict;
   pointer-events: none;
   opacity: 0;
   transition: opacity 420ms ease;
+  will-change: transform, opacity;
 }
-.case-study-page.is-circuit-active .case-circuit-glow {
+.public-circuit-glow-lens.is-active {
   opacity: 1;
-}
-.case-circuit-glow span {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(
-      circle at var(--case-circuit-x) var(--case-circuit-y),
-      var(--case-circuit-glow-color) 0,
-      var(--case-circuit-glow-color) 42px,
-      transparent 165px
-    );
-  filter:
-    drop-shadow(0 0 7px var(--case-circuit-glow-shadow))
-    drop-shadow(0 0 18px var(--case-circuit-glow-shadow));
-  mask-image: url("/case-circuit-light.svg");
-  mask-size: var(--case-circuit-size) var(--case-circuit-size);
-  mask-position: center top;
-  mask-repeat: repeat;
-  -webkit-mask-image: url("/case-circuit-light.svg");
-  -webkit-mask-size: var(--case-circuit-size) var(--case-circuit-size);
-  -webkit-mask-position: center top;
-  -webkit-mask-repeat: repeat;
+  transition-duration: 0ms;
 }
 .case-diagram {
   position: relative;
@@ -826,14 +889,15 @@ p {
 .case-back-link:hover {
   color: var(--text);
 }
-.case-back-link span {
+.case-back-link-arrow {
   position: relative;
+  flex: 0 0 auto;
   width: 15px;
   height: 10px;
   font-size: var(--font-size-zero);
   transform: translateY(-1px);
 }
-.case-back-link span::before {
+.case-back-link-arrow::before {
   content: "";
   position: absolute;
   left: 2px;
@@ -842,7 +906,7 @@ p {
   height: 2px;
   background: currentColor;
 }
-.case-back-link span::after {
+.case-back-link-arrow::after {
   content: "";
   position: absolute;
   left: 0;
@@ -2063,6 +2127,7 @@ p {
   padding-block: var(--space-section-y);
 }
 .case-section-muted {
+  --circuit-underlay-color: var(--surface);
   background: var(--surface);
 }
 .case-narrative-grid {
@@ -2399,6 +2464,7 @@ p {
   opacity: 0.62;
 }
 .case-capability-band {
+  --circuit-underlay-color: var(--surface);
   padding-block: var(--space-section-y);
   margin-top: 0;
   margin-bottom: 0;
@@ -2574,6 +2640,7 @@ p {
 }
 
 .impact {
+  --circuit-underlay-color: #173f79;
   background: #173f79;
   color: var(--text);
   padding-block: var(--space-section-y);
@@ -2675,6 +2742,7 @@ p {
 }
 
 .about-section {
+  --circuit-underlay-color: var(--bg-soft);
   background: var(--bg-soft);
   padding-block: var(--space-section-y);
 }
@@ -2738,6 +2806,7 @@ p {
 }
 
 .contact-section {
+  --circuit-underlay-color: var(--surface);
   background: var(--surface);
   border-top: 1px solid var(--line);
   padding-block: var(--space-section-y);

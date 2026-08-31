@@ -17,7 +17,7 @@ function caseStudyDocumentValue(project?: AdminProject) {
 
 export function AdminProjectForm({ action, project, disabled = false, submitLabel }: AdminProjectFormProps) {
   return (
-    <form className="admin-form" action={action}>
+    <form className="admin-form" action={action} encType="multipart/form-data">
       {project ? <input type="hidden" name="id" value={project.id} /> : null}
 
       <div className="admin-form-grid">
@@ -95,10 +95,38 @@ export function AdminProjectForm({ action, project, disabled = false, submitLabe
           name="caseStudyDocument"
           rows={18}
           defaultValue={caseStudyDocumentValue(project)}
-          placeholder='{"schemaVersion": 2, "summary": "...", "role": "...", "sections": [...]}'
+          placeholder='{"schemaVersion": 3, "summary": "...", "role": "...", "sections": [...]}'
           spellCheck={false}
           disabled={disabled}
         />
+      </label>
+
+      <label>
+        <span>Case-study PCB semantic background (SVG)</span>
+        <input
+          name="caseStudyBackground"
+          type="file"
+          accept=".svg,image/svg+xml"
+          disabled={disabled}
+        />
+        <small>
+          Optional when editing. Preserve the renderer's classified primitives and upload it with
+          the matching prepared lens below.
+        </small>
+      </label>
+
+      <label>
+        <span>Case-study PCB pointer lens (SVG)</span>
+        <input
+          name="caseStudyBackgroundLens"
+          type="file"
+          accept=".svg,image/svg+xml"
+          disabled={disabled}
+        />
+        <small>
+          Required with a new semantic background. This spatially local projection preserves the
+          same visible geometry while keeping pointer repainting bounded.
+        </small>
       </label>
 
       <div className="admin-form-grid admin-form-grid-compact">

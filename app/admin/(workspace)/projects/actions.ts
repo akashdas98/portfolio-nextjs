@@ -1,13 +1,15 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 import { requireAdminUser } from "@/lib/admin/session";
 import { slugify } from "@/lib/admin/data";
 import type { AdminProjectMetric } from "@/lib/admin/types";
-import { caseStudyDocumentSchema } from "@/lib/case-study/schema";
+import { prepareCaseStudyBackground } from "@/lib/case-study/prepare-background";
+import { caseStudyDocumentSchema, type CaseStudyBackground } from "@/lib/case-study/schema";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const projectSchema = z.object({
@@ -40,7 +42,7 @@ function parseMetrics(value: string): AdminProjectMetric[] {
   });
 }
 
-function parseProjectForm(formData: FormData) {
+function parseProjectForm(formData: FormData, background?: CaseStudyBackground) {
   const parsed = projectSchema.parse({
     id: formData.get("id"),
     slug: formData.get("slug"),
@@ -58,9 +60,11 @@ function parseProjectForm(formData: FormData) {
     status: formData.get("status"),
   });
 
-  const caseStudyDocument = parsed.caseStudyDocument
-    ? caseStudyDocumentSchema.parse(JSON.parse(parsed.caseStudyDocument))
+  const documentValue = parsed.caseStudyDocument
+    ? (JSON.parse(parsed.caseStudyDocument) as Record<string, unknown>)
     : null;
+  if (documentValue && background) documentValue.background = background;
+  const caseStudyDocument = documentValue ? caseStudyDocumentSchema.parse(documentValue) : null;
 
   if (parsed.hasCaseStudy && !caseStudyDocument) {
     throw new Error("A project marked as having a case study requires a valid case-study document.");
@@ -83,6 +87,66 @@ function parseProjectForm(formData: FormData) {
   };
 }
 
+async function uploadCaseStudyBackground(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>,
+  formData: FormData,
+  projectId: string,
+) {
+  const semanticFile = formData.get("caseStudyBackground");
+  const lensFile = formData.get("caseStudyBackgroundLens");
+  const hasSemantic = semanticFile instanceof File && semanticFile.size > 0;
+  const hasLens = lensFile instanceof File && lensFile.size > 0;
+  if (!hasSemantic && !hasLens) return null;
+  if (!hasSemantic || !hasLens) {
+    throw new Error("Upload both the prepared semantic background SVG and its matching lens SVG.");
+  }
+  if (!(semanticFile instanceof File) || !(lensFile instanceof File)) {
+    throw new Error("The prepared PCB uploads are invalid.");
+  }
+
+  const prepared = await prepareCaseStudyBackground(semanticFile, lensFile);
+  const objectPath = `${projectId}/background.${prepared.semanticHash}.svg`;
+  const lensObjectPath = `${projectId}/background-lens.${prepared.lensHash}.svg`;
+  const { error: semanticError } = await supabase.storage
+    .from("case-study-assets")
+    .upload(objectPath, prepared.semanticBody, {
+      cacheControl: "31536000",
+      contentType: "image/svg+xml",
+      upsert: true,
+    });
+  if (semanticError) throw new Error(`Background upload failed: ${semanticError.message}`);
+
+  const { error: lensError } = await supabase.storage
+    .from("case-study-assets")
+    .upload(lensObjectPath, prepared.lensBody, {
+      cacheControl: "31536000",
+      contentType: "image/svg+xml",
+      upsert: true,
+    });
+  if (lensError) {
+    await supabase.storage.from("case-study-assets").remove([objectPath]);
+    throw new Error(`Background lens upload failed: ${lensError.message}`);
+  }
+
+  return {
+    type: "pcb-svg" as const,
+    bucket: "case-study-assets" as const,
+    objectPath,
+    lensObjectPath,
+    width: prepared.width,
+    height: prepared.height,
+  };
+}
+
+async function removeUploadedBackground(
+  supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>,
+  background: CaseStudyBackground,
+) {
+  await supabase.storage
+    .from(background.bucket)
+    .remove([background.objectPath, background.lensObjectPath].filter((path): path is string => Boolean(path)));
+}
+
 async function getSupabaseOrRedirect() {
   const supabase = await createSupabaseServerClient();
   if (!supabase) redirect("/admin/settings?missing=supabase");
@@ -92,11 +156,21 @@ async function getSupabaseOrRedirect() {
 export async function createProject(formData: FormData) {
   await requireAdminUser();
   const supabase = await getSupabaseOrRedirect();
-  const payload = parseProjectForm(formData);
+  const id = randomUUID();
+  const background = await uploadCaseStudyBackground(supabase, formData, id);
+  const payload = parseProjectForm(formData, background ?? undefined);
 
-  const { data, error } = await supabase.from("projects").insert(payload).select("id").single<{ id: string }>();
-  if (error) throw new Error(error.message);
+  const { data, error } = await supabase
+    .from("projects")
+    .insert({ id, ...payload })
+    .select("id")
+    .single<{ id: string }>();
+  if (error) {
+    if (background) await removeUploadedBackground(supabase, background);
+    throw new Error(error.message);
+  }
 
+  updateTag("public-projects");
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/admin/projects");
@@ -110,11 +184,16 @@ export async function updateProject(formData: FormData) {
   if (!id) throw new Error("Project id is required.");
 
   const supabase = await getSupabaseOrRedirect();
-  const payload = parseProjectForm(formData);
+  const background = await uploadCaseStudyBackground(supabase, formData, id);
+  const payload = parseProjectForm(formData, background ?? undefined);
 
   const { error } = await supabase.from("projects").update(payload).eq("id", id);
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (background) await removeUploadedBackground(supabase, background);
+    throw new Error(error.message);
+  }
 
+  updateTag("public-projects");
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/admin/projects");
@@ -132,6 +211,7 @@ export async function archiveProject(formData: FormData) {
   const { error } = await supabase.from("projects").update({ status: "archived" }).eq("id", id);
   if (error) throw new Error(error.message);
 
+  updateTag("public-projects");
   revalidatePath("/");
   revalidatePath("/admin");
   revalidatePath("/admin/projects");

@@ -1,5 +1,9 @@
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
+
 import { projects as staticProjects } from "@/lib/content";
 import { parseCaseStudyDocument } from "@/lib/case-study/schema";
+import { createSupabasePublicClient } from "@/lib/supabase/public";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import type { AdminDataResult, AdminLead, AdminProject, AdminProjectMetric } from "./types";
@@ -203,35 +207,57 @@ export async function getAdminLead(id: string): Promise<AdminDataResult<AdminLea
   return { items: data ? [mapLead(data)] : [], source: "supabase" };
 }
 
-export async function getPublicProjects(): Promise<AdminProject[]> {
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) return fallbackProjects();
+const loadPublicProjects = unstable_cache(
+  async (): Promise<AdminProject[]> => {
+    const supabase = createSupabasePublicClient();
+    if (!supabase) throw new Error("Supabase public configuration is unavailable.");
 
-  const { data, error } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("status", "published")
-    .order("order_index", { ascending: true })
-    .returns<ProjectRow[]>();
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("status", "published")
+      .order("order_index", { ascending: true })
+      .returns<ProjectRow[]>();
 
-  if (error || !data?.length) return fallbackProjects();
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(mapProject);
+  },
+  ["public-projects-v1"],
+  { revalidate: 300, tags: ["public-projects"] },
+);
 
-  return data.map(mapProject);
-}
+export const getPublicProjects = cache(async (): Promise<AdminProject[]> => {
+  try {
+    const projects = await loadPublicProjects();
+    return projects.length ? projects : fallbackProjects();
+  } catch {
+    return fallbackProjects();
+  }
+});
 
-export async function getPublicProject(slug: string): Promise<AdminProject | null> {
-  const fallback = fallbackProjects().find((project) => project.slug === slug && project.status === "published") ?? null;
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) return fallback;
+const loadPublicProject = unstable_cache(
+  async (slug: string): Promise<AdminProject | null> => {
+    const supabase = createSupabasePublicClient();
+    if (!supabase) throw new Error("Supabase public configuration is unavailable.");
 
-  const { data, error } = await supabase
-    .from("projects")
-    .select("*")
-    .eq("slug", slug)
-    .eq("status", "published")
-    .maybeSingle<ProjectRow>();
+    const { data, error } = await supabase
+      .from("projects")
+      .select("*")
+      .eq("slug", slug)
+      .eq("status", "published")
+      .maybeSingle<ProjectRow>();
 
-  if (error) return fallback;
+    if (error) throw new Error(error.message);
+    return data ? mapProject(data) : null;
+  },
+  ["public-project-v1"],
+  { revalidate: 300, tags: ["public-projects"] },
+);
 
-  return data ? mapProject(data) : fallback;
-}
+export const getPublicProject = cache(async (slug: string): Promise<AdminProject | null> => {
+  try {
+    return await loadPublicProject(slug);
+  } catch {
+    return null;
+  }
+});

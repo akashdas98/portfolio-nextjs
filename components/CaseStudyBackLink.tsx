@@ -1,6 +1,7 @@
 "use client";
 
 import type { MouseEvent } from "react";
+import { CircuitUnderlay } from "./CircuitUnderlay";
 
 type CaseStudyBackLinkProps = {
   fallbackHref?: string;
@@ -45,8 +46,8 @@ export function CaseStudyBackLink({ fallbackHref = "/#work" }: CaseStudyBackLink
 
   return (
     <a className="case-back-link reveal" href={fallbackHref} onClick={handleClick}>
-      <span aria-hidden="true" />
-      Back to selected work
+      <span className="case-back-link-arrow" aria-hidden="true" />
+      <CircuitUnderlay size="compact">Back to selected work</CircuitUnderlay>
     </a>
   );
 }

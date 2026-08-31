@@ -4,6 +4,7 @@ import { Fragment, useCallback, useSyncExternalStore } from "react";
 import type { CSSProperties } from "react";
 
 import type { EddHeroVisualDocument } from "@/lib/case-study/schema";
+import { CircuitUnderlay } from "./CircuitUnderlay";
 
 type EddCalculationDiagramProps = {
   visual: EddHeroVisualDocument;
@@ -43,7 +44,7 @@ export function EddCalculationDiagram({ visual }: EddCalculationDiagramProps) {
 
   return (
     <figure className="case-diagram case-edd-diagram reveal">
-      <p className="eyebrow case-edd-diagram-eyebrow">{visual.eyebrow}</p>
+      <p className="eyebrow case-edd-diagram-eyebrow"><CircuitUnderlay size="compact">{visual.eyebrow}</CircuitUnderlay></p>
 
       {variant === "desktop" ? <DesktopDiagram visual={visual} variant="desktop" /> : null}
       {variant === "tablet" ? <DesktopDiagram visual={visual} variant="tablet" /> : null}
@@ -54,7 +55,7 @@ export function EddCalculationDiagram({ visual }: EddCalculationDiagramProps) {
       <figcaption className="case-diagram-caption">
         <p>
           <span className="case-diagram-caption-marker" aria-hidden="true" />
-          {visual.title}
+          <CircuitUnderlay size="compact">{visual.title}</CircuitUnderlay>
         </p>
       </figcaption>
     </figure>

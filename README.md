@@ -47,6 +47,7 @@ Supabase is used for:
 
 - Admin authentication.
 - Project records, case-study availability, and versioned case-study layout documents.
+- Project-owned case-study SVG backgrounds in the public `case-study-assets` Storage bucket.
 - Contact-form lead records.
 - Future selected Gmail message records.
 
@@ -59,7 +60,7 @@ SUPABASE_SECRET_KEY=your_supabase_secret_key
 ADMIN_EMAILS=akash42662012@gmail.com
 ```
 
-For a new database, create the tables by running `supabase/schema.sql` in the Supabase SQL editor, then run `supabase/seed.sql`.
+For a new database, create the tables and Storage policies by running `supabase/schema.sql` in the Supabase SQL editor, then run `supabase/seed.sql`. Promoted project SVG objects must also be uploaded to the document-declared paths in the `case-study-assets` bucket.
 
 For an existing linked database, apply incremental changes with:
 
@@ -76,7 +77,16 @@ Notes:
 - Public Work uses published Supabase projects when available, then falls back to website-only project cards from `lib/content.ts`; static fallback cards never expose case studies.
 - `has_case_study` controls whether a project card links to `View Case Study` or the external `Visit Website` action.
 - Case-study content and section composition are stored in `case_study_document` as schema-versioned JSON and validated before rendering.
-- A case-study document can also select a validated hero visual. The promoted Delivery Intelligence schema-v2 document owns the EDD copy, integration nodes, responsive geometry, connections, SVG paths, and compact/mobile/tablet breakpoints; the frontend retains only the validated generic renderer and shared visual primitives.
+- A schema-v3 case-study document owns paired Storage-backed PCB references: an individually classified semantic background plus an exact-geometry spatial lens projection. It can also select a validated hero visual. The promoted Delivery Intelligence document owns the EDD copy, integration nodes, responsive geometry, connections, SVG paths, and compact/mobile/tablet breakpoints; the frontend retains only validated generic renderers, upload validation, and shared visual primitives.
+- Admin project forms accept the prepared semantic/lens pair. The server rejects executable or external SVG content, verifies every semantic primitive retains its renderer ID/class/ownership fields, verifies matching viewBoxes and bounded lens paths, uploads both objects under content-versioned paths with a one-year cache lifetime, and writes both references into the validated document. The Server Action upload limit is 32 MB and the Storage bucket permits 25 MB per SVG.
+
+Prepare a PCB Art Generator render before uploading it through admin:
+
+```bash
+npm run prepare:pcb-background -- path/to/generated.svg path/to/background.svg path/to/background-lens.svg
+```
+
+The optional final argument overrides the default `400`-unit lens cell size. The first output preserves every generated line and form—including all small circles and markers—plus the renderer's stable IDs, classifications, labels, and ownership data. The second output compounds the same visible geometry only within local paint cells for the 330px luminance lens. Background removal, palette changes, and deliberate stroke treatment adjust presentation; neither output may add, delete, reroute, reshape, simplify, or reinterpret the renderer's geometry.
 - Case-study projects are developed locally while their layouts are being iterated. Project-specific content, responsive geometry, paths, and breakpoints are promoted to validated `case_study_document` data only after explicit user approval.
 - Database promotion is the completion gate: upload and verify the finalized document, update seeds/migrations where applicable, then remove duplicated project-specific local data. Only generic renderers and shared visual primitives remain in frontend code.
 - `/work/[slug]` is database-only and returns not found unless the published Supabase project has both an enabled flag and a valid stored document.

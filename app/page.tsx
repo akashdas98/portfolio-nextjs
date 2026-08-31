@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 
+import { CircuitUnderlay } from "@/components/CircuitUnderlay";
 import { ContactForm } from "@/components/ContactForm";
 import { Header } from "@/components/Header";
 import { ProjectCard } from "@/components/ProjectCard";
+import { PublicCircuitBackground } from "@/components/PublicCircuitBackground";
 import { getPublicProjects } from "@/lib/admin/data";
 import { services } from "@/lib/content";
 
@@ -32,18 +34,35 @@ export default async function Home() {
   return (
     <>
       <Header />
-      <main id="top" data-public-animations>
-        <section className="hero shell">
+      <main
+        id="top"
+        className="public-circuit-page"
+        data-public-animations
+        data-public-circuit
+      >
+        <PublicCircuitBackground
+          imageUrl="/pcb-backgrounds/home.svg"
+          lensImageUrl="/pcb-backgrounds/home-lens.svg"
+          sourceWidth={2400}
+          sourceHeight={12082.5}
+        />
+        <section className="hero shell circuit-exposed-section">
           <p className="eyebrow reveal">
-            Senior Software Engineer · Full-Stack Web Development
+            <CircuitUnderlay size="compact">
+              Senior Software Engineer · Full-Stack Web Development
+            </CircuitUnderlay>
           </p>
           <h1 className="reveal">
-            Clean, reliable web products built end to end.
+            <CircuitUnderlay size="heading">
+              Clean, reliable web products built end to end.
+            </CircuitUnderlay>
           </h1>
           <div className="hero-lower reveal">
             <p className="hero-copy">
-              Websites and applications shaped around real business needs, clear
-              user experiences, and dependable technical foundations.
+              <CircuitUnderlay>
+                Websites and applications shaped around real business needs, clear
+                user experiences, and dependable technical foundations.
+              </CircuitUnderlay>
             </p>
             <div className="hero-actions">
               <a className="button button-primary" href="#contact">
@@ -59,16 +78,24 @@ export default async function Home() {
             aria-label="Professional overview"
           >
             <span>
-              <strong>6 years</strong> professional experience
+              <CircuitUnderlay size="compact">
+                <strong>6 years</strong> professional experience
+              </CircuitUnderlay>
             </span>
             <span>
-              <strong>Full-stack</strong> product delivery
+              <CircuitUnderlay size="compact">
+                <strong>Full-stack</strong> product delivery
+              </CircuitUnderlay>
             </span>
             <span>
-              <strong>Millions</strong> of production requests
+              <CircuitUnderlay size="compact">
+                <strong>Millions</strong> of production requests
+              </CircuitUnderlay>
             </span>
             <span>
-              <strong>Kolkata</strong> India
+              <CircuitUnderlay size="compact">
+                <strong>Kolkata</strong> India
+              </CircuitUnderlay>
             </span>
           </div>
         </section>
@@ -76,8 +103,14 @@ export default async function Home() {
         <section id="work" className="section selected-work-section">
           <div className="shell">
             <div className="section-heading reveal">
-              <p className="eyebrow">Selected work</p>
-              <h2>Systems built around outcomes, not theatre.</h2>
+              <p className="eyebrow">
+                <CircuitUnderlay size="compact">Selected work</CircuitUnderlay>
+              </p>
+              <h2>
+                <CircuitUnderlay size="heading">
+                  Systems built around outcomes, not theatre.
+                </CircuitUnderlay>
+              </h2>
             </div>
             <div className="project-list">
               {projects.map((project) => (
@@ -87,30 +120,40 @@ export default async function Home() {
           </div>
         </section>
 
-        <section id="services" className="section shell">
+        <section id="services" className="section shell circuit-exposed-section">
           <div className="section-heading split-heading reveal">
             <div>
-              <p className="eyebrow">Services</p>
-              <h2>Clear on the surface. Dependable underneath.</h2>
+              <p className="eyebrow">
+                <CircuitUnderlay size="compact">Services</CircuitUnderlay>
+              </p>
+              <h2>
+                <CircuitUnderlay size="heading">
+                  Clear on the surface. Dependable underneath.
+                </CircuitUnderlay>
+              </h2>
             </div>
             <p>
-              One technical partner across planning, interface design,
-              development, deployment, and continued support.
+              <CircuitUnderlay>
+                One technical partner across planning, interface design,
+                development, deployment, and continued support.
+              </CircuitUnderlay>
             </p>
           </div>
           <div className="service-list">
             {services.map((service) => (
               <article className="service-row reveal" key={service.number}>
-                <span className="service-number">{service.number}</span>
+                <span className="service-number">
+                  <CircuitUnderlay size="compact">{service.number}</CircuitUnderlay>
+                </span>
                 <div>
-                  <h3>{service.title}</h3>
-                  <p className="service-headline">{service.headline}</p>
+                  <h3><CircuitUnderlay size="heading">{service.title}</CircuitUnderlay></h3>
+                  <p className="service-headline"><CircuitUnderlay>{service.headline}</CircuitUnderlay></p>
                 </div>
                 <div>
-                  <p>{service.copy}</p>
+                  <p><CircuitUnderlay>{service.copy}</CircuitUnderlay></p>
                   <ul>
                     {service.items.map((item) => (
-                      <li key={item}>{item}</li>
+                      <li key={item}><CircuitUnderlay>{item}</CircuitUnderlay></li>
                     ))}
                   </ul>
                 </div>
@@ -122,46 +165,52 @@ export default async function Home() {
         <section id="about" className="section about-section">
           <div className="shell about-grid reveal">
             <div className="about-heading">
-              <p className="eyebrow">About</p>
-              <h2>Engineering depth. Product-level ownership.</h2>
+              <p className="eyebrow"><CircuitUnderlay size="compact">About</CircuitUnderlay></p>
+              <h2><CircuitUnderlay size="heading">Engineering depth. Product-level ownership.</CircuitUnderlay></h2>
             </div>
             <div className="about-copy">
               <p>
-                Six years of experience across ecommerce, healthcare, mobile
-                applications, distributed systems, and integration-heavy
-                platforms.
+                <CircuitUnderlay>
+                  Six years of experience across ecommerce, healthcare, mobile
+                  applications, distributed systems, and integration-heavy
+                  platforms.
+                </CircuitUnderlay>
               </p>
               <p>
-                The work spans interface implementation, backend architecture,
-                databases, cloud infrastructure, deployment, and production
-                maintenance.
+                <CircuitUnderlay>
+                  The work spans interface implementation, backend architecture,
+                  databases, cloud infrastructure, deployment, and production
+                  maintenance.
+                </CircuitUnderlay>
               </p>
               <p>
-                That breadth creates fewer hand-offs, stronger technical
-                continuity, and decisions made with the whole product in view.
+                <CircuitUnderlay>
+                  That breadth creates fewer hand-offs, stronger technical
+                  continuity, and decisions made with the whole product in view.
+                </CircuitUnderlay>
               </p>
             </div>
           </div>
           <div className="shell principles reveal">
             {principles.map((principle, index) => (
               <div key={principle}>
-                <span>0{index + 1}</span>
-                <p>{principle}</p>
+                <span><CircuitUnderlay size="compact">0{index + 1}</CircuitUnderlay></span>
+                <p><CircuitUnderlay>{principle}</CircuitUnderlay></p>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="section shell capabilities-section">
+        <section className="section shell capabilities-section circuit-exposed-section">
           <div className="section-heading reveal">
-            <p className="eyebrow">Technical foundation</p>
-            <h2>Tools in service of the product.</h2>
+            <p className="eyebrow"><CircuitUnderlay size="compact">Technical foundation</CircuitUnderlay></p>
+            <h2><CircuitUnderlay size="heading">Tools in service of the product.</CircuitUnderlay></h2>
           </div>
           <div className="capability-list reveal">
             {capabilities.map(([title, text]) => (
               <div key={title}>
-                <h3>{title}</h3>
-                <p>{text}</p>
+                <h3><CircuitUnderlay size="heading">{title}</CircuitUnderlay></h3>
+                <p><CircuitUnderlay>{text}</CircuitUnderlay></p>
               </div>
             ))}
           </div>
@@ -170,23 +219,25 @@ export default async function Home() {
         <section id="contact" className="section contact-section">
           <div className="shell contact-grid">
             <div className="contact-intro reveal">
-              <p className="eyebrow">Contact</p>
-              <h2>Bring the project into focus.</h2>
+              <p className="eyebrow"><CircuitUnderlay size="compact">Contact</CircuitUnderlay></p>
+              <h2><CircuitUnderlay size="heading">Bring the project into focus.</CircuitUnderlay></h2>
               <p>
-                New product, existing system, or long-term technical support—the
-                starting point is a clear understanding of what needs to move
-                forward.
+                <CircuitUnderlay>
+                  New product, existing system, or long-term technical support—the
+                  starting point is a clear understanding of what needs to move
+                  forward.
+                </CircuitUnderlay>
               </p>
               <div className="direct-links">
                 <a href="mailto:akash42662012@gmail.com">
-                  akash42662012@gmail.com
+                  <CircuitUnderlay size="compact">akash42662012@gmail.com</CircuitUnderlay>
                 </a>
                 <a
                   href="https://linkedin.com/in/akash291298"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  LinkedIn ↗
+                  <CircuitUnderlay size="compact">LinkedIn ↗</CircuitUnderlay>
                 </a>
               </div>
             </div>

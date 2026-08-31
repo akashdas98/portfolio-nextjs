@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { CircuitUnderlay } from "./CircuitUnderlay";
 
 type Status = "idle" | "sending" | "success" | "error";
 type FieldName = "name" | "email" | "company" | "message" | "budget";
@@ -110,7 +111,7 @@ export function ContactForm() {
     >
       <div className="field-row">
         <label className={errors.name ? "has-error" : undefined}>
-          <span>Name</span>
+          <span><CircuitUnderlay size="compact">Name</CircuitUnderlay></span>
           <input
             name="name"
             required
@@ -126,7 +127,7 @@ export function ContactForm() {
           ) : null}
         </label>
         <label className={errors.email ? "has-error" : undefined}>
-          <span>Email</span>
+          <span><CircuitUnderlay size="compact">Email</CircuitUnderlay></span>
           <input
             name="email"
             type="email"
@@ -144,7 +145,7 @@ export function ContactForm() {
         </label>
       </div>
       <label className={errors.company ? "has-error" : undefined}>
-        <span>Company or project</span>
+        <span><CircuitUnderlay size="compact">Company or project</CircuitUnderlay></span>
         <input
           name="company"
           maxLength={150}
@@ -159,7 +160,7 @@ export function ContactForm() {
         ) : null}
       </label>
       <label className={errors.message ? "has-error" : undefined}>
-        <span>What needs to move forward?</span>
+        <span><CircuitUnderlay size="compact">What needs to move forward?</CircuitUnderlay></span>
         <textarea
           name="message"
           rows={6}
@@ -178,7 +179,9 @@ export function ContactForm() {
       </label>
       <label className={errors.budget ? "has-error" : undefined}>
         <span>
-          Budget range <em>optional</em>
+          <CircuitUnderlay size="compact">
+            Budget range <em>optional</em>
+          </CircuitUnderlay>
         </span>
         <select
           name="budget"
@@ -216,7 +219,7 @@ export function ContactForm() {
           {status === "sending" ? "Sending..." : "Send Project Brief"}
         </button>
         <p className={`form-status ${status}`} aria-live="polite">
-          {errors.form || message}
+          <CircuitUnderlay size="compact">{errors.form || message}</CircuitUnderlay>
         </p>
       </div>
     </form>

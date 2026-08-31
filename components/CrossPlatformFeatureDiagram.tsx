@@ -3,6 +3,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 
 import type { HorecahFeatureHeroVisualDocument } from "@/lib/case-study/schema";
+import { CircuitUnderlay } from "./CircuitUnderlay";
 
 type CrossPlatformFeatureDiagramProps = {
   visual: HorecahFeatureHeroVisualDocument;
@@ -40,7 +41,7 @@ export function CrossPlatformFeatureDiagram({ visual }: CrossPlatformFeatureDiag
 
   return (
     <figure className="case-diagram case-cross-platform-diagram reveal">
-      <p className="eyebrow case-cross-platform-diagram-eyebrow">{visual.eyebrow}</p>
+      <p className="eyebrow case-cross-platform-diagram-eyebrow"><CircuitUnderlay size="compact">{visual.eyebrow}</CircuitUnderlay></p>
 
       <div
         className={`case-diagram-surface cross-platform-diagram-canvas is-${variant}`}
@@ -93,7 +94,7 @@ export function CrossPlatformFeatureDiagram({ visual }: CrossPlatformFeatureDiag
       <figcaption className="case-diagram-caption">
         <p>
           <span className="case-diagram-caption-marker" aria-hidden="true" />
-          {visual.title}
+          <CircuitUnderlay size="compact">{visual.title}</CircuitUnderlay>
         </p>
       </figcaption>
     </figure>

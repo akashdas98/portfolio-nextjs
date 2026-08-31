@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "prepare:pcb-background": "node scripts/prepare-pcb-background.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

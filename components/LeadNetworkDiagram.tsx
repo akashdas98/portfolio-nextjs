@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useSyncExternalStore } from "react";
 
 import type { LeadNetworkHeroVisualDocument } from "@/lib/case-study/schema";
+import { CircuitUnderlay } from "./CircuitUnderlay";
 
 type LeadNetworkDiagramProps = {
   visual: LeadNetworkHeroVisualDocument;
@@ -42,7 +43,7 @@ export function LeadNetworkDiagram({ visual }: LeadNetworkDiagramProps) {
 
   return (
     <figure className="case-diagram case-lead-network reveal">
-      <p className="eyebrow case-lead-network-eyebrow">{visual.eyebrow}</p>
+      <p className="eyebrow case-lead-network-eyebrow"><CircuitUnderlay size="compact">{visual.eyebrow}</CircuitUnderlay></p>
 
       {variant === "wide" || variant === "tablet" ? (
         <WideLeadNetwork visual={visual} tablet={variant === "tablet"} />
@@ -53,7 +54,7 @@ export function LeadNetworkDiagram({ visual }: LeadNetworkDiagramProps) {
       <figcaption className="case-diagram-caption">
         <p>
           <span className="case-diagram-caption-marker" aria-hidden="true" />
-          {visual.title}
+          <CircuitUnderlay size="compact">{visual.title}</CircuitUnderlay>
         </p>
       </figcaption>
     </figure>

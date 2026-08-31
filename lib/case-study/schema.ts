@@ -2,6 +2,26 @@ import { z } from "zod";
 
 const toneSchema = z.enum(["base", "muted"]);
 
+export const caseStudyBackgroundSchema = z.object({
+  type: z.literal("pcb-svg"),
+  bucket: z.literal("case-study-assets"),
+  objectPath: z
+    .string()
+    .min(1)
+    .max(500)
+    .regex(/^[a-z0-9][a-z0-9._/-]*\.svg$/)
+    .refine((path) => !path.split("/").includes(".."), "Invalid storage object path."),
+  lensObjectPath: z
+    .string()
+    .min(1)
+    .max(500)
+    .regex(/^[a-z0-9][a-z0-9._/-]*\.svg$/)
+    .refine((path) => !path.split("/").includes(".."), "Invalid lens storage object path.")
+    .optional(),
+  width: z.number().finite().positive().max(50000),
+  height: z.number().finite().positive().max(50000),
+});
+
 const diagramNumberSchema = z.number().finite().min(-2000).max(4000);
 const diagramSizeSchema = z.number().finite().positive().max(4000);
 const diagramPathSchema = z
@@ -410,7 +430,8 @@ export const caseStudySectionSchema = z.discriminatedUnion("type", [
 ]);
 
 export const caseStudyDocumentSchema = z.object({
-  schemaVersion: z.literal(2),
+  schemaVersion: z.literal(3),
+  background: caseStudyBackgroundSchema,
   summary: z.string().min(1),
   role: z.string().min(1),
   heroVisual: z
@@ -424,6 +445,7 @@ export const caseStudyDocumentSchema = z.object({
 });
 
 export type CaseStudyDocument = z.infer<typeof caseStudyDocumentSchema>;
+export type CaseStudyBackground = z.infer<typeof caseStudyBackgroundSchema>;
 export type CaseStudySectionDocument = z.infer<typeof caseStudySectionSchema>;
 export type EddHeroVisualDocument = z.infer<typeof eddHeroVisualSchema>;
 export type LeadNetworkHeroVisualDocument = z.infer<typeof leadNetworkHeroVisualSchema>;

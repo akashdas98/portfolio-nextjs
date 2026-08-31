@@ -88,6 +88,8 @@ function animateNumber(element: Element) {
 
   const parsed = parseNumber(element.textContent?.trim() ?? "");
   if (!parsed) return;
+  const textTarget =
+    element.querySelector(":scope .circuit-text-underlay-content") ?? element;
 
   element.setAttribute("data-counted", "true");
 
@@ -100,14 +102,14 @@ function animateNumber(element: Element) {
   function tick(now: number) {
     const progress = Math.min((now - startedAt) / duration, 1);
     const eased = 1 - Math.pow(1 - progress, 3);
-    element.textContent = formatValue(start + distance * eased, parsedNumber);
+    textTarget.textContent = formatValue(start + distance * eased, parsedNumber);
 
     if (progress < 1) {
       requestAnimationFrame(tick);
       return;
     }
 
-    element.textContent = parsedNumber.original;
+    textTarget.textContent = parsedNumber.original;
   }
 
   requestAnimationFrame(tick);
@@ -150,7 +152,6 @@ export function PublicAnimations() {
 
     const revealAnimations = new Set<Animation>();
     const preparedAnimations = new WeakMap<Element, Animation>();
-    const preparedTargets = new Set<Element>();
     const revealFallbacks = new Map<Animation, number>();
 
     function finishReveal(element: Element, animation: Animation) {
@@ -161,7 +162,6 @@ export function PublicAnimations() {
 
       revealFallbacks.delete(animation);
       preparedAnimations.delete(element);
-      preparedTargets.delete(element);
       revealAnimations.delete(animation);
       animation.cancel();
     }
@@ -177,7 +177,6 @@ export function PublicAnimations() {
       element.getAnimations().forEach((animation) => animation.cancel());
       const animation = createRevealAnimation(element);
       preparedAnimations.set(element, animation);
-      preparedTargets.add(element);
       revealAnimations.add(animation);
     }
 
@@ -192,7 +191,6 @@ export function PublicAnimations() {
       }
 
       element.setAttribute("data-revealed", "true");
-      preparedTargets.delete(element);
       animation.effect?.updateTiming({ delay });
       animation.play();
 
@@ -291,39 +289,7 @@ export function PublicAnimations() {
     });
     mutationObserver.observe(publicMain, { childList: true, subtree: true });
 
-    let scrollFrame = 0;
-    function checkPreparedTargets() {
-      scrollFrame = 0;
-      const triggerLine = window.innerHeight * revealTriggerRatio;
-      const entering = Array.from(preparedTargets)
-        .filter((element) => {
-          const bounds = element.getBoundingClientRect();
-          return bounds.top <= triggerLine && bounds.bottom >= 0;
-        })
-        .sort(
-          (first, second) =>
-            first.getBoundingClientRect().top -
-            second.getBoundingClientRect().top,
-        );
-
-      entering.forEach((element, index) => {
-        playRevealTarget(element, index * 70);
-        revealObserver.unobserve(element);
-      });
-    }
-
-    function schedulePreparedCheck() {
-      if (scrollFrame) return;
-      scrollFrame = window.requestAnimationFrame(checkPreparedTargets);
-    }
-
-    window.addEventListener("scroll", schedulePreparedCheck, { passive: true });
-    window.addEventListener("resize", schedulePreparedCheck);
-
     return () => {
-      window.removeEventListener("scroll", schedulePreparedCheck);
-      window.removeEventListener("resize", schedulePreparedCheck);
-      if (scrollFrame) window.cancelAnimationFrame(scrollFrame);
       mutationObserver.disconnect();
       revealObserver.disconnect();
       countObserver.disconnect();

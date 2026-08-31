@@ -1,11 +1,17 @@
+import { preload } from "react-dom";
 import type { AdminProject } from "@/lib/admin/types";
 import type { CaseStudySectionDocument, CaseStudyDocument } from "@/lib/case-study/schema";
+import {
+  getCaseStudyBackgroundLensUrl,
+  getCaseStudyBackgroundUrl,
+} from "@/lib/case-study/background-url";
 
-import { CaseCircuitGlow } from "./CaseCircuitGlow";
+import { CircuitUnderlay } from "./CircuitUnderlay";
 import { CaseStudyBackLink } from "./CaseStudyBackLink";
 import { CrossPlatformFeatureDiagram } from "./CrossPlatformFeatureDiagram";
 import { EddCalculationDiagram } from "./EddCalculationDiagram";
 import { LeadNetworkDiagram } from "./LeadNetworkDiagram";
+import { PublicCircuitBackground } from "./PublicCircuitBackground";
 
 type CaseStudyRendererProps = {
   document: CaseStudyDocument;
@@ -13,17 +19,31 @@ type CaseStudyRendererProps = {
 };
 
 export function CaseStudyRenderer({ document, project }: CaseStudyRendererProps) {
+  const backgroundUrl = getCaseStudyBackgroundUrl(document.background);
+  const backgroundLensUrl = getCaseStudyBackgroundLensUrl(document.background);
+  preload(backgroundUrl, { as: "image", type: "image/svg+xml" });
+
   return (
-    <main id="top" className="case-study-page" data-public-animations>
-      <CaseCircuitGlow />
-      <section className="case-hero shell">
+    <main
+      id="top"
+      className="case-study-page public-circuit-page"
+      data-public-animations
+      data-public-circuit
+    >
+      <PublicCircuitBackground
+        imageUrl={backgroundUrl}
+        lensImageUrl={backgroundLensUrl}
+        sourceWidth={document.background.width}
+        sourceHeight={document.background.height}
+      />
+      <section className="case-hero shell circuit-exposed-section">
         <CaseStudyBackLink />
-        <p className="eyebrow reveal">Case study</p>
-        <p className="case-project-name reveal">{project.name}</p>
-        <h1 className="reveal">{project.title}</h1>
+        <p className="eyebrow reveal"><CircuitUnderlay size="compact">Case study</CircuitUnderlay></p>
+        <p className="case-project-name reveal"><CircuitUnderlay size="compact">{project.name}</CircuitUnderlay></p>
+        <h1 className="reveal"><CircuitUnderlay size="heading">{project.title}</CircuitUnderlay></h1>
         <div className="case-hero-lower reveal">
-          <p>{document.summary}</p>
-          <p className="case-role">{document.role}</p>
+          <p><CircuitUnderlay>{document.summary}</CircuitUnderlay></p>
+          <p className="case-role"><CircuitUnderlay>{document.role}</CircuitUnderlay></p>
         </div>
         {document.heroVisual?.type === "edd-calculation" ? (
           <EddCalculationDiagram visual={document.heroVisual} />
@@ -60,28 +80,28 @@ function CaseStudySection({
               <table className="case-outcome-table">
                 <thead>
                   <tr>
-                    <th scope="col">Metric</th>
-                    <th scope="col">Before</th>
-                    <th scope="col">After</th>
-                    <th scope="col">Impact</th>
+                    <th scope="col"><CircuitUnderlay className="case-outcome-cell-content" size="compact">Metric</CircuitUnderlay></th>
+                    <th scope="col"><CircuitUnderlay className="case-outcome-cell-content" size="compact">Before</CircuitUnderlay></th>
+                    <th scope="col"><CircuitUnderlay className="case-outcome-cell-content" size="compact">After</CircuitUnderlay></th>
+                    <th scope="col"><CircuitUnderlay className="case-outcome-cell-content" size="compact">Impact</CircuitUnderlay></th>
                   </tr>
                 </thead>
                 <tbody>
                   {section.rows.map((row) => (
                     <tr key={row.metric}>
-                      <th scope="row">{row.metric}</th>
-                      <td>{row.before}</td>
-                      <td className="case-table-after">{row.after}</td>
-                      <td className="case-table-impact">{row.impact}</td>
+                      <th scope="row"><CircuitUnderlay className="case-outcome-cell-content" size="compact">{row.metric}</CircuitUnderlay></th>
+                      <td><CircuitUnderlay className="case-outcome-cell-content" size="compact">{row.before}</CircuitUnderlay></td>
+                      <td className="case-table-after"><CircuitUnderlay className="case-outcome-cell-content" size="compact">{row.after}</CircuitUnderlay></td>
+                      <td className="case-table-impact"><CircuitUnderlay className="case-outcome-cell-content" size="compact">{row.impact}</CircuitUnderlay></td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               <div className="case-outcome-footer">
                 <div className="case-outcome-value">
-                  <strong>{section.footer.value}</strong>
-                  <span>{section.footer.label}</span>
-                  <p>{section.footer.detail}</p>
+                  <strong><CircuitUnderlay size="heading">{section.footer.value}</CircuitUnderlay></strong>
+                  <span><CircuitUnderlay size="compact">{section.footer.label}</CircuitUnderlay></span>
+                  <p><CircuitUnderlay>{section.footer.detail}</CircuitUnderlay></p>
                 </div>
               </div>
             </div>
@@ -96,13 +116,13 @@ function CaseStudySection({
             <CaseSectionHeading section={section} />
             <div className="case-before-after reveal">
               <div className="case-comparison-heading" aria-hidden="true">
-                <span>{section.beforeLabel}</span>
-                <span>{section.afterLabel}</span>
+                <span><CircuitUnderlay size="compact">{section.beforeLabel}</CircuitUnderlay></span>
+                <span><CircuitUnderlay size="compact">{section.afterLabel}</CircuitUnderlay></span>
               </div>
               {section.items.map((item) => (
                 <article className="case-comparison-row" key={item.before}>
-                  <p>{item.before}</p>
-                  <p>{item.after}</p>
+                  <p><CircuitUnderlay>{item.before}</CircuitUnderlay></p>
+                  <p><CircuitUnderlay>{item.after}</CircuitUnderlay></p>
                 </article>
               ))}
             </div>
@@ -138,16 +158,16 @@ function CaseStudySection({
           <div className="shell">
             <div className="section-heading split-heading reveal">
               <div>
-                <p className="eyebrow">{section.eyebrow}</p>
-                <h2>{section.title}</h2>
+                <p className="eyebrow"><CircuitUnderlay size="compact">{section.eyebrow}</CircuitUnderlay></p>
+                <h2><CircuitUnderlay size="heading">{section.title}</CircuitUnderlay></h2>
               </div>
-              <p>{section.intro}</p>
+              <p><CircuitUnderlay>{section.intro}</CircuitUnderlay></p>
             </div>
             <ol className="case-workflow reveal" aria-label={section.eyebrow}>
               {section.steps.map((step, index) => (
                 <li key={step}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <strong>{step}</strong>
+                  <span><CircuitUnderlay size="compact">{String(index + 1).padStart(2, "0")}</CircuitUnderlay></span>
+                  <strong><CircuitUnderlay>{step}</CircuitUnderlay></strong>
                 </li>
               ))}
             </ol>
@@ -183,23 +203,23 @@ function CaseStudySection({
         <section className={`${caseSectionClass(section)} impact case-impact-section`}>
           <div className="shell impact-grid reveal">
             <div>
-              <p className="eyebrow">{section.eyebrow}</p>
-              <h2>{section.title}</h2>
+              <p className="eyebrow"><CircuitUnderlay size="compact">{section.eyebrow}</CircuitUnderlay></p>
+              <h2><CircuitUnderlay size="heading">{section.title}</CircuitUnderlay></h2>
             </div>
             <div className="impact-copy">
-              <p>{section.detail}</p>
+              <p><CircuitUnderlay>{section.detail}</CircuitUnderlay></p>
               <dl className="impact-metrics">
                 {section.metrics.map((metric) => (
                   <div key={`${metric.value}-${metric.label}`}>
-                    <dt>{metric.value}</dt>
-                    <dd>{metric.label}</dd>
+                    <dt><CircuitUnderlay size="heading">{metric.value}</CircuitUnderlay></dt>
+                    <dd><CircuitUnderlay size="compact">{metric.label}</CircuitUnderlay></dd>
                   </div>
                 ))}
               </dl>
             </div>
             {section.capabilities ? (
               <p className="capabilities case-impact-capabilities">
-                {section.capabilities.join(", ")}.
+                <CircuitUnderlay>{section.capabilities.join(", ")}.</CircuitUnderlay>
               </p>
             ) : null}
           </div>
@@ -208,14 +228,14 @@ function CaseStudySection({
 
     case "capability-band":
       return (
-        <section className={`section case-capability-band${section.tone === "muted" ? " case-section-muted" : ""}`}>
+        <section className={`section case-capability-band case-section-circuit-exposed${section.tone === "muted" ? " case-section-muted" : ""}`}>
           <div className="shell case-capability-grid reveal">
             <div className="case-capability-heading">
-              <p className="eyebrow">{section.eyebrow}</p>
-              <h2>{section.title}</h2>
+              <p className="eyebrow"><CircuitUnderlay size="compact">{section.eyebrow}</CircuitUnderlay></p>
+              <h2><CircuitUnderlay size="heading">{section.title}</CircuitUnderlay></h2>
             </div>
             <div className="case-capability-copy">
-              {section.showProjectCapabilities ? <p>{project.capabilities.join(", ")}.</p> : null}
+              {section.showProjectCapabilities ? <p><CircuitUnderlay>{project.capabilities.join(", ")}.</CircuitUnderlay></p> : null}
               <div className="case-actions">
                 <a className="button button-primary" href="/#contact">
                   {section.primaryActionLabel}
@@ -236,6 +256,7 @@ function CaseStudySection({
 function caseSectionClass(section: CaseStudySectionDocument) {
   return [
     "case-section",
+    "case-section-circuit-exposed",
     section.tone === "muted" ? "case-section-muted" : "",
     "circuitAnchor" in section && section.circuitAnchor === "section-bottom"
       ? "case-section-circuit-bottom"
@@ -248,8 +269,8 @@ function caseSectionClass(section: CaseStudySectionDocument) {
 function CaseSectionHeading({ section }: { section: CaseStudySectionDocument }) {
   return (
     <div className="section-heading reveal">
-      <p className="eyebrow">{section.eyebrow}</p>
-      <h2>{section.title}</h2>
+      <p className="eyebrow"><CircuitUnderlay size="compact">{section.eyebrow}</CircuitUnderlay></p>
+      <h2><CircuitUnderlay size="heading">{section.title}</CircuitUnderlay></h2>
     </div>
   );
 }
