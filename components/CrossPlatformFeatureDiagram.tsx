@@ -93,8 +93,10 @@ export function CrossPlatformFeatureDiagram({ visual }: CrossPlatformFeatureDiag
 
       <figcaption className="case-diagram-caption">
         <p>
-          <span className="case-diagram-caption-marker" aria-hidden="true" />
-          <CircuitUnderlay size="compact">{visual.title}</CircuitUnderlay>
+          <CircuitUnderlay className="case-diagram-caption-underlay" size="compact">
+            <span className="case-diagram-caption-marker" aria-hidden="true" />
+            {visual.title}
+          </CircuitUnderlay>
         </p>
       </figcaption>
     </figure>

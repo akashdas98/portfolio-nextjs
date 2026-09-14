@@ -2,7 +2,25 @@
 
 A restrained, client-facing portfolio built with Next.js App Router and TypeScript.
 
+## Agent workflow
+
+Open Codex in this repository. [AGENTS.md](AGENTS.md) is the automatic instruction entry point; it requires reading Current Task in [CONTEXT.md](CONTEXT.md), then relevant issue/approval rows on demand before affected project work and preserving changed restart state. Same-session follow-ups reuse valid context; acknowledgements and already-complete continuations need no tool or memory cycle. Detailed rules are loaded only for the affected task through the root routing table. Keep current state small; historical memory is excluded from normal startup.
+
+The dependency-free memory structure checker is:
+
+```bash
+node scripts/check-agent-memory.mjs
+```
+
+It checks file budgets, required state fields, promotion statuses, and agent-document links. Reading and checkpointing are agent-executed instructions, not a background service; this check cannot prove their timing or semantic correctness. See [agent architecture](docs/agent/workflow.md) for ownership, recovery, and fresh-session verification.
+
 ## Run locally
+
+Routing guard operation and the checked parent launcher are documented in
+[the routing guide](scripts/agent-routing/README.md). Project hooks are installed
+in `.codex/hooks.json`; review and trust them using Codex `/hooks` before relying
+on them. Check discovery and trust with `node scripts/agent-runtime/inspect.mjs`.
+The guard does not enforce all parent launches or spending limits.
 
 ```bash
 npm install
@@ -10,6 +28,15 @@ npm run dev
 ```
 
 Open `http://localhost:3000`.
+
+Optionally specify a port (omit it to keep the default of `3000`):
+
+```bash
+npm run dev -- --port 3001
+```
+
+Then open `http://localhost:3001`. The `--` forwards options to Next.js;
+`-p 3001` is also supported.
 
 For testing from another device on the same `192.168.0.x` network, bind the
 development server to the LAN and open the computer's current IPv4 address:
@@ -78,15 +105,17 @@ Notes:
 - `has_case_study` controls whether a project card links to `View Case Study` or the external `Visit Website` action.
 - Case-study content and section composition are stored in `case_study_document` as schema-versioned JSON and validated before rendering.
 - A schema-v3 case-study document owns paired Storage-backed PCB references: an individually classified semantic background plus an exact-geometry spatial lens projection. It can also select a validated hero visual. The promoted Delivery Intelligence document owns the EDD copy, integration nodes, responsive geometry, connections, SVG paths, and compact/mobile/tablet breakpoints; the frontend retains only validated generic renderers, upload validation, and shared visual primitives.
-- Admin project forms accept the prepared semantic/lens pair. The server rejects executable or external SVG content, verifies every semantic primitive retains its renderer ID/class/ownership fields, verifies matching viewBoxes and bounded lens paths, uploads both objects under content-versioned paths with a one-year cache lifetime, and writes both references into the validated document. The Server Action upload limit is 32 MB and the Storage bucket permits 25 MB per SVG.
+- Admin project forms accept the depth-defined semantic/lens pair. The server rejects executable or external SVG content, requires one hidden internal depth reference to the unchanged semantic source, verifies every semantic primitive retains its renderer ID/class/ownership fields, verifies matching viewBoxes and bounded lens paths, uploads both objects under content-versioned paths with a one-year cache lifetime, and writes both references into the validated document. The Server Action upload limit is 32 MB and the Storage bucket permits 25 MB per SVG.
 
 Prepare a PCB Art Generator render before uploading it through admin:
 
 ```bash
 npm run prepare:pcb-background -- path/to/generated.svg path/to/background.svg path/to/background-lens.svg
+npm run attach:pcb-depth -- path/to/background.svg path/to/background-with-depth.svg
 ```
 
-The optional final argument overrides the default `400`-unit lens cell size. The first output preserves every generated line and form—including all small circles and markers—plus the renderer's stable IDs, classifications, labels, and ownership data. The second output compounds the same visible geometry only within local paint cells for the 330px luminance lens. Background removal, palette changes, and deliberate stroke treatment adjust presentation; neither output may add, delete, reroute, reshape, simplify, or reinterpret the renderer's geometry.
+The optional final argument to `prepare:pcb-background` overrides the default `400`-unit lens cell size. Its first output preserves every generated line and form—including all small circles and markers—plus the renderer's stable IDs, classifications, labels, and ownership data. Its second output compounds the same visible geometry only within local paint cells for bounded rendering. `attach:pcb-depth` wraps the unchanged semantic primitives and adds one hidden translated-source definition; it does not paint or visibly duplicate that geometry. Upload the depth-defined semantic output together with the unchanged lens output. At runtime, the public renderer measures native bounds once and builds local vector SVG resources containing only intersecting unchanged paths. Positive geometry and the 1px-down depth highlight paint directly; small negative cutouts use bounded masks. All vector tiles replace the prior layout together after decoding. The viewport-fixed hover lens uses native spatial paths selected from cached bounds, keeping geometry aligned during native scrolling. Exact palette and rendering constraints live in [the visual rules](docs/agent/visual.md).
+
 - Case-study projects are developed locally while their layouts are being iterated. Project-specific content, responsive geometry, paths, and breakpoints are promoted to validated `case_study_document` data only after explicit user approval.
 - Database promotion is the completion gate: upload and verify the finalized document, update seeds/migrations where applicable, then remove duplicated project-specific local data. Only generic renderers and shared visual primitives remain in frontend code.
 - `/work/[slug]` is database-only and returns not found unless the published Supabase project has both an enabled flag and a valid stored document.

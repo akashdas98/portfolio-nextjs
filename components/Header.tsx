@@ -13,10 +13,27 @@ export function Header() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 16);
-    onScroll();
+    let frame: number | null = null;
+    let applied = false;
+
+    const update = () => {
+      frame = null;
+      const scrollTop = Math.max(0, window.scrollY);
+      const next = applied ? scrollTop > 8 : scrollTop > 16;
+      if (next === applied) return;
+      applied = next;
+      setScrolled(next);
+    };
+    const onScroll = () => {
+      if (frame === null) frame = window.requestAnimationFrame(update);
+    };
+
+    update();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      if (frame !== null) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   return (

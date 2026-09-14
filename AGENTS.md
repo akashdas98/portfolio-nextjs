@@ -1,221 +1,97 @@
 # Portfolio Agent Guide
 
-## Architecture Overview
+## Startup - mandatory, automatic
 
-This repository is a Next.js App Router portfolio site for Akash Das.
+Read `CONTEXT.md`'s Current Task first; use the routing table below and retrieve
+only relevant ledger/issues/approval rows before affected work. Reuse valid active
+context and already-injected instructions. Do not load the full ledger, recent
+history, or all routed documents at startup. Inspect Git before edits and preserve
+existing work. Saved runtime observations are historical, not proof of health.
 
-Top-level layout:
+## Required task routing
 
-- `app/`: Next.js routes, metadata, sitemap, robots, global styles, and API routes.
-- `app/work/[slug]/`: public expanded case-study pages for selected projects with available case-study content.
-- `app/admin/`: private admin routes for dashboard, projects, leads, settings, and login.
-- `app/api/contact/route.ts`: contact form endpoint using Zod validation and Resend email delivery.
-- `components/`: reusable UI components for the header, contact form, project cards, and system visuals.
-- `components/AdminLoginForm.tsx`: Supabase Auth login form for the admin panel.
-- `components/AdminProjectForm.tsx`: admin create/edit form for selected-work project records.
-- `components/AdminLeadForm.tsx`: admin action form for lead status, priority, notes, and follow-ups.
-- `components/CaseStudyRenderer.tsx`: server-side renderer for validated, database-backed case-study layout documents.
-- `components/EddCalculationDiagram.tsx`: generic responsive renderer for validated, database-owned EDD content, integrations, geometry, connections, paths, and breakpoints; it uses SVG for database-selected wide variants and native HTML/CSS for database-selected mobile variants.
-- `components/LeadNetworkDiagram.tsx`: generic responsive renderer for validated, database-owned lead-network content, breakpoints, canvas geometry, paths, and nodes; like EDD, it mounts one fixed-viewBox SVG wide/tablet composition or one native HTML mobile/compact recomposition. Wide/tablet peripheral cards are direct native SVG siblings with explicit paint and no transformed groups; only the owned internal perimeter uses one bounded `foreignObject`.
-- `components/CrossPlatformFeatureDiagram.tsx`: generic native HTML/CSS renderer for validated, database-owned cross-platform feature content and breakpoints; it maps shared client platforms into two owned feature lanes and ends at those contribution boundaries without implying ownership of the surrounding product.
-- `lib/admin/`: admin data adapters and TypeScript types.
-- `lib/case-study/`: versioned case-study document validation.
-- `lib/content.ts`: structured website-only fallback content for selected work plus homepage services; it does not contain public case-study documents.
-- `lib/supabase/`: Supabase configuration and browser/server/admin clients.
-- `public/`: website-owned static assets. Promoted project-specific case-study artwork belongs in Supabase Storage, not here.
-- `supabase/schema.sql`: Supabase schema for projects, project case-study documents, leads, and future selected Gmail messages.
-- `supabase/seed.sql`: initial selected-work project seed data.
-- `supabase/migrations/`: incremental migrations applied to linked Supabase environments.
-- `portfolio-structure.md`: durable content, UI/UX direction, service positioning, and technical direction.
-- `positioning.md`: client-facing positioning and safe UI/UX claim.
-- `resume.pdf`: source resume used as reference material.
-- `README.md`: local setup and deployment notes.
-- `proxy.ts`: Next.js proxy guard for protected admin routes.
+Paths are repository-relative. These files carry mandatory rules, not optional background reading. Load only applicable sections not already known, then follow references only
+when needed. Use architecture routing when location/ownership is unclear or a
+contract changes, not for every edit in a known component. Copy/visual tuning
+does not require rereading product positioning unless it changes that contract.
 
-Generated/cache folders such as `.next`, `node_modules`, `out`, `.vercel`, logs, and local environment files should not be committed.
+| Task touches | Read before changing it |
+| --- | --- |
+| Implementation location or architecture boundaries | `docs/agent/architecture.md` |
+| Application code, API, admin/auth, database, project content, schemas, asset ownership, dependencies | `docs/agent/engineering.md` |
+| Copy, page structure, positioning, visual direction | `docs/agent/product.md`, `portfolio-structure.md`, `positioning.md` |
+| Public CSS, layout, typography, motion, diagrams, PCB artwork, SVG preparation | `docs/agent/visual.md` |
+| Install/build/dev processes, LAN, browser verification, tooling | `docs/agent/runtime.md` |
+| Agent instructions, memory, skills, workflow architecture | `docs/agent/workflow.md` |
+| Expanded case-study editorial work | `docs/case-study-evidence-redesign.md` plus product/engineering/visual rules |
+| Independent products or Work catalogue | `docs/work-and-products-overhaul.md` plus product/engineering/visual rules; implementation remains deferred until requested |
+| Future Gmail/admin planning | `docs/admin-projects-and-leads-plan.md` plus engineering rules; older plan schema is historical, not current implementation |
 
-## Required Startup Context
+Use `.codex/skills/visual-design/SKILL.md` for appearance-led frontend work. Concrete project rules and the user's task override generic skill suggestions. Other skills are loaded only when applicable or explicitly requested; do not load the entire skill catalog.
 
-At the start of every task in this repository:
+## Always-active boundaries
 
-1. Read this `AGENTS.md`.
-2. Read `CONTEXT.md`.
-3. Use the `Status Ledger`, `Known Issues`, and `Next Recommended Steps` in `CONTEXT.md` before deciding what to do.
-4. Read `portfolio-structure.md` and `positioning.md` before changing copy, structure, visual direction, or offer positioning.
+- Preserve senior full-stack, practical UI/UX-informed, end-to-end positioning; direct email fallback; accessibility; progressive enhancement; and existing required interactions.
+- Diagnose root causes with evidence before fixing. Reassess when evidence contradicts the diagnosis. Current code establishes implementation, explicit requirements establish intended behavior; neither stale prose nor accidental code silently overrides the other.
+- Public project fallback is website-only. Public case-study routes require published Supabase data, `has_case_study`, and a validated document. Keep public reads anonymous and cached, and invalidate after admin mutations.
+- Case-study iteration is local-first. Database promotion requires explicit approval for that project. Once approved, completion requires verified database/Storage ownership of all project-specific content and layout, aligned seeds/migrations, and removal of local duplicates. No executable database content.
+- Never push `main` while any headless-CMS design/content promotion remains local, pending, or unverified on the server. Before such work, set both the `CONTEXT.md` row and `docs/agent/cms-promotion-status.json` to `awaiting user approval`; only remote database/Storage verification may restore `verified complete`. Keep the fail-closed pre-push gate installed.
+- Preserve immutable PCB source geometry and Storage-owned semantic/lens pairs. Apply the relevant visual requirements; preserve exactly one responsive diagram composition and the opaque diagram canvas.
+- Keep secrets server-only and out of Git. Admin requires both `ADMIN_EMAILS` and matching RLS admin rows.
+- `.next` is single-writer state. Never build beside a running dev writer. Follow the runtime procedure when changing processes or generated output; recheck actual processes and ports.
+- Do not use ownership/ACL changes to repair Git access. Keep generated output, logs, local environment files, and caches out of commits.
+- Do not claim deployment readiness without verified metadata URLs, contact sender configuration, and a production build.
 
-If `AGENTS.md` or `CONTEXT.md` changes during a task, re-read the changed file before continuing.
+## Execution and verification
 
-## Product Boundaries
+Intelligent delegation and explicit cheaper worker model selection are authorized.
+Select model capability and reasoning effort as independent axes for the initial
+route and every reassessment. Model choice answers which capability profile/ceiling
+the work needs; effort answers how much inference, search and verification that
+model should perform. Work class is descriptive, not an allocation ladder. A
+stronger model need not use higher effort, and higher effort does not substitute
+for a capability mismatch. Consider total handoff/review cost, preserve
+requirements, and use focused briefs rather than full-history forks.
 
-The portfolio should position Akash as a senior full-stack developer with UI/UX-informed engineering judgment.
+Before substantial work, record separate model-demand and effort-demand rationales
+plus acceptance checks; reassess either axis independently at meaningful handoffs.
+Before spawning, use the structured routing contract in
+`scripts/agent-routing/README.md`. Automatically select useful
+installed skills/tools; discover missing capabilities only for a concrete need.
+Task-justified installation from a reviewed, pinned trusted source is authorized
+within existing permissions; account consent and expanded access still require
+their actual approval. Preserve stronger capabilities when evidence warrants them.
+The local hook is a guardrail, not protected parent/spending enforcement; never
+claim complete governance or measured savings from its presence.
 
-Preserve these boundaries:
+Spend effort where it changes the result or resolves material uncertainty. Reuse
+sufficient evidence. Verify affected behavior; widen checks when a changed boundary
+or unresolved concern warrants it. For isolated visual tuning, inspect the affected
+composition/interaction; generic skill viewport reviews apply when those variants
+can change. Preserve real-engine verification for engine-specific defects.
 
-- The site is a client-facing portfolio, not a generic developer resume page.
-- The core offer is end-to-end delivery across planning, frontend, backend, deployment, and maintenance.
-- The UI/UX claim must stay practical: clean, professional interfaces using established UI/UX principles, responsive design, and reusable design systems.
-- Do not position Akash as a dedicated UI/UX designer unless the source positioning changes.
-- Service copy should describe outcomes and delivery value more than personal capability claims.
+Keep reads and tool results focused. Recordkeeping supports the task rather than
+creating another task. No fixed reasoning/tool caps or forced delegation.
 
-## Visual Rules
+## Mandatory state checkpoints
 
-The desired impression is cold competence: controlled, sharp, calm, confident, and not sterile.
+Keep restart state useful: what is done, what remains, approval limits and
+relevant dated evidence. Update the existing owner when those facts change or
+unfinished work needs a handoff; link detailed evidence instead of duplicating it.
+An unchanged state or a read-only reply needs no checkpoint. A validation result
+does not create another documentation-and-validation cycle.
 
-Use:
+At a completed or safely handed-off task boundary, proactively recommend `/clear`
+when the accumulated conversation is no longer needed and a compact restart will
+reduce future context cost. Recommend it only after the latest meaningful change
+is checkpointed and there are no unresolved items, active tools/processes/workers,
+pending approvals or context-dependent next steps that would be lost. Use the
+lifecycle checker for a machine-readable readiness decision on substantial work;
+the user invokes `/clear`, and the agent never claims or assumes it occurred.
 
-- Near-black or deep-charcoal backgrounds.
-- Slightly lighter surface layers.
-- Soft off-white primary text.
-- Muted cool-grey secondary text.
-- Low-contrast borders.
-- One restrained icy-blue, steel-blue, or desaturated-cyan accent.
-- Typography-led hierarchy.
-- Spacious but purposeful layouts.
-- Subtle hover and reveal motion.
-- Exposed public content uses proportional dark readability underlays that follow each rendered text line and fade softly to transparent well outside its curved edge; larger text receives a broader fade. Transparent secondary buttons use one underlay around the complete control. Do not add underlays beneath content already enclosed by an opaque surface.
-- Hard-cornered buttons.
-- Hard-cornered card surfaces with slightly thicker borders.
-- Light-blue primary buttons with black text, an offset striped shadow shape, and a slightly larger/separated hover state.
-- Button shadow shapes use solid deep colors with 3px borders and black diagonal negative stripes; do not make them translucent.
-- Primary button hover states must keep black text.
-- `Start a Conversation` uses the same primary button face with a pink striped shadow shape.
-- Project `View Case Study` actions use a pointed arrow-style blue button with horizontal hover motion.
-- Service item tags are plain inline text separated by large accent dots, not pills.
-
-Avoid:
-
-- Bright gradients.
-- Neon cyberpunk styling.
-- Decorative blobs.
-- Fake terminal aesthetics.
-- Code rain.
-- Heavy glassmorphism.
-- Multiple accent colors.
-- Rounded pill buttons for primary actions.
-- Rounded card surfaces.
-- Pill-shaped service tags.
-- Scroll-jacking, parallax, magnetic buttons, cursor effects, or long intro animations.
-
-Every design choice should improve hierarchy, readability, comprehension, navigation, trust, or interaction feedback. If it does not, remove it.
-
-## Copy Rules
-
-Write as an established technical brand, not as a freelancer asking to be trusted.
-
-Prefer phrases like:
-
-- Built for
-- Designed to
-- End-to-end
-- Reliable by design
-- Clear, maintainable, and ready to scale
-- Existing systems, improved without unnecessary disruption
-- Technical complexity translated into dependable products
-
-Avoid phrases like:
-
-- I can help with
-- I can build
-- I can investigate
-- I am able to
-- Whether you need
-- My services include
-
-Use first person selectively. Most copy should focus on what the work delivers.
-
-## Coding Rules
-
-- Prefer the existing project structure over new abstractions.
-- Keep server components as the default.
-- Add client components only when interactivity requires them.
-- Keep JavaScript minimal and purposeful.
-- Avoid unnecessary dependencies and component libraries.
-- Keep content data structured in `lib/content.ts` unless a page-specific reason exists.
-- Public Work should prefer published Supabase projects when available, with `lib/content.ts` as the fallback.
-- Public project reads must use the stateless anonymous Supabase client, not the cookie/auth-aware server client. Keep successful public reads in the tagged Next data cache, deduplicate metadata/page reads, and invalidate the `public-projects` tag immediately after admin project mutations so transient Supabase network failures do not turn every navigation into a blocking live query.
-- Static fallback projects are website-only: they must always expose `Visit Website`, never `View Case Study`.
-- Project cards must use the database-backed `has_case_study` field to choose between `View Case Study` and `Visit Website`; do not infer availability from static content.
-- Finalized case-study layouts must be stored as schema-versioned project data and validated through `lib/case-study/`; do not store executable React, JavaScript, or unrestricted HTML/CSS in the database.
-- Promoted case-study artwork must be project-owned and swappable with its document. Store both the prepared semantic SVG and its exact-geometry spatial lens SVG in the public `case-study-assets` Supabase Storage bucket, then store the validated bucket, both object paths, and intrinsic dimensions in the case-study document. Do not infer repository assets from the project slug or retain promoted project SVG copies under `public/`.
-- Case-study project development is local-first. While the user is actively iterating, project-specific content, layout definitions, diagram geometry, responsive variants, paths, and breakpoints may be developed locally for speed.
-- Do not convert, upload, or remove that local project-specific data until the user explicitly approves database promotion for that project.
-- After explicit approval, database promotion is a mandatory project-completion gate: extend the validated schema as needed; convert every project-specific content and layout value—including hero-visual geometry, nodes, connections, responsive variants, and breakpoints—into the project's database document; upload it to the linked database; verify the stored document and public rendering; update seeds/migrations where applicable; and remove the duplicated local project-specific data.
-- After database promotion, frontend code may retain only generic renderers, safe visual primitives, and shared design tokens. A project is not complete if project-specific layout or diagram data remains hardcoded locally.
-- Never store executable React, JavaScript, or unrestricted HTML/CSS in database documents. Store declarative, bounded, schema-validated layout data that generic frontend renderers interpret.
-- Public case-study routes are database-only. If the Supabase row, availability flag, or validated document is unavailable, the route must not render a static case study.
-- Keep the project and service name `Leads Management`, but describe its ingested units, stored records, volume metrics, and processing workflows as lead activities rather than leads.
-- Keep global visual tokens in `app/globals.css`.
-- Keep PCB readability underlays attached only to the immediate visible content piece—such as a heading, paragraph, list item, label, metric, link, table value, or transparent button—never to the grid, row, cell container, form, or column that positions it. Wrapped text must use the shared semantic `CircuitUnderlay` inline-grid wrapper. Its single canonical content layer and one inert paint source occupy the same grid cell; derive the paint source's text-shaped layout from a data attribute rather than duplicating live React children or nested elements. Force its generated text transparent and put the complete shadow layer at a negative stack level. Do not isolate individual underlay wrappers: all exposed content within one section content plane must share a stacking context so a later heading shadow also remains behind earlier siblings such as eyebrows. Put canonical content at a positive foreground level so shadow opacity cannot overlay or dim glyphs. `box-decoration-break: clone` gives the source each rendered line's rounded geometry. The source color must match the section's declared background color, including base, soft, surface, and blue impact sections; its starting opacity is 30% below the original strength before the existing fade. Extend it beyond the content with a proportional zero-blur spread before applying the Gaussian blur; do not use padding for this extension, because it changes wrapping. Scope unrelated descendant and pseudo-element selectors to their actual component classes. Compact, body, and heading content use progressively larger source extension, radius, strength, and blur. Do not join a semi-transparent fragment fill to a separate shadow, use inset/outer edge shadows, or use a paragraph/layout-box pseudo-element. If the host already uses a pseudo-element for responsive labels or decoration, preserve it and wrap only the visible value. Transparent secondary buttons use one blurred pseudo-element around the complete button rectangle beneath its text and border, with the same section color and 30% opacity reduction. Do not animate these filters, create section-level foreground layers, or apply underlays inside opaque cards, controls, or diagram canvases that already hide the PCB artwork.
-- Keep public typography on the centralized `--font-primary` Segoe UI system stack so local and deployed rendering use the same declared font path; do not reintroduce an unloaded `Inter` label or a separate environment-specific webfont.
-- Every case-study diagram must use the shared `case-diagram` foreground layer and opaque `case-diagram-surface` canvas. The page circuit pattern and its pointer glow may remain visible around a diagram, but must never show through or paint over the diagram canvas.
-- Keep the public PCB pointer response as a bounded 330px native SVG lens. Each background is a paired asset: the visible semantic SVG preserves every renderer primitive, group, stable ID, class, ownership label, and geometry attribute for future targeted animation; a separate exact-geometry spatial lens projection may compound primitives only within local cells to bound pointer repainting. The lens uses luminance paint so positive geometry illuminates while dark negative geometry cuts the glow out. Its active geometry has a near-white blue/pink-tinted core plus one visually continuous, saturated halo that fades outside the forms; keep each tone in its lens-local section clip so colors remain spatially local at boundaries. The halo uses identical-color 4.25px compositor contributions at 0.95 alpha to form one smooth field with roughly 70% higher edge intensity, an effective 7.4px spread, a gentle initial decline, and a slightly earlier outer falloff. Apply the lens-wide radial envelope as the final mask around each already-filtered core-and-halo composite—not as the geometry's pre-filter fill—so blur cannot pull brighter inner opacity to the viewport boundary. The envelope begins easing down at 8% of the radius and uses a long staged tail: opacity is already 0.2 by 80%, 0.08 by 90%, and 0.01 by 96% before reaching zero at the unchanged 165px edge. This keeps the full radius while preventing the SVG viewport boundary from reading as a cutoff. Use `#007cff` for blue and `#df3a94` for pink; do not introduce differently colored or visibly separate inner bands. Do not replace this with SVG Gaussian-blur filter primitives: profiling showed roughly one-second pointer-frame stalls, while the compositor drop-shadow path retained about 6ms p95. Move only the local lens SVG viewport at pointer time. Never flatten either asset into document-spanning compound paths, which defeat paint culling and make the local lens repaint the full-page geometry on every pointer frame. The PCB Art Generator render is the immutable source of visual geometric identity: preparation and optimization must not add, remove, omit, reroute, reconnect, reshape, simplify, or procedurally reinterpret any generated line, circle, marker, chip, path, or other form, regardless of its size or perceived decorative value. Styling adjustments such as background removal, palette changes, and deliberate stroke treatment are allowed only when they do not change the authored forms or topology. Never turn ignored line fills into active fills, recolor negative markers into foreground geometry, connect independent subpaths, or discard small circles/markers. The semantic SVG—not the compounded lens projection—is the authoritative animation-target surface and must remain classified and individually targetable through preparation and Storage promotion. Do not rasterize the source artwork, mount a document-sized moving mask/filter surface, or reintroduce a per-scroll geometry fallback. Touch/coarse-pointer devices must not assign or decode the hover lens image.
-- Keep every font size on the centralized typography scale in `app/globals.css`. Component and breakpoint rules must reference a `--font-size-*` token; add a deliberately named standard to the scale when a genuinely distinct role is required instead of introducing a one-off numeric size.
-- Keep semantic HTML, accessible labels, keyboard navigation, visible focus states, and reduced-motion support.
-- Public reveal motion must never reset already-painted content to a hidden state. The verified initial entrance is the autonomous CSS keyframe: it begins before first paint and completes to canonical visible styles even without JavaScript. This behavior is locked by fresh-profile iPhone verification; do not reintroduce a paint-gated bootstrap, device-specific timing, or delayed JavaScript start unless new evidence reproduces a failure with freshly delivered assets. After hydration, JavaScript may take ownership only of content that begins below the shared reveal line, replacing its CSS entrance with a paused scroll reveal. Animation registration must rebind to the active public page on route changes, while reduced-motion rendering remains immediately visible.
-- Do not commit secrets. Contact form configuration belongs in `.env.local`, based on `.env.example`.
-- Keep admin data access through `lib/admin/` and Supabase utilities through `lib/supabase/`.
-- Keep `SUPABASE_SECRET_KEY` server-only. Never reference it from client components.
-- Admin access must be restricted by both the server-side `ADMIN_EMAILS` allowlist and matching `public.admin_users` rows in Supabase RLS.
-
-## Tooling Rules
-
-- Install dependencies with `npm install`.
-- Run the local dev server with `npm run dev`.
-- LAN development uses the bounded `192.168.0.*` entry in `allowedDevOrigins`; do not replace it with the machine's current DHCP address, because that recreates the client-asset failure when the address changes.
-- LAN development assets deliberately use `Cache-Control: no-store, max-age=0, must-revalidate`; Next.js retains its framework-owned `no-cache, must-revalidate` policy for development HTML. All development responses also carry legacy no-cache/expiry headers, and the development layout reloads pages restored from the browser back/forward cache. Keep these safeguards development-only so normal production content hashing and caching remain intact.
-- Build with `npm run build`.
-- Treat `.next` as single-writer state. Before starting either development or a production build, inspect the repository-specific `npm`/`next` process tree and the intended port; never infer that an earlier launcher is stopped or alive.
-- Never run `npm run build` while a Next.js development server is running in this repository. Before building, stop only the verified process tree for this repository, confirm its listener is closed, validate that the resolved deletion target is this repository's `.next`, remove that generated cache, and only then build.
-- After any production build—or whenever generated-asset state is uncertain—use a clean LAN-development restart: stop the verified repository process tree, confirm the port is closed, validate and remove only this repository's `.next`, start exactly one `npm run dev` writer, confirm `.next/dev` exists and `.next/BUILD_ID` does not, and request the site through its current LAN origin.
-- A LAN restart is not verified merely because its launcher command returned. Before handoff, confirm the actual Next server process is alive, the expected port is listening, the LAN HTML returns `200`, its referenced CSS and JavaScript assets also return successfully, HTML carries Next's must-revalidate policy, and CSS/JavaScript carry the development no-store policy. When testing client behavior, additionally verify that the delivered assets contain the current implementation and exercise the affected behavior against the LAN origin at the relevant viewport.
-- If localhost or emulation disagrees with a real device, first audit running processes, `.next` ownership, asset URLs/statuses, cache headers, hydration, and the exact LAN-delivered CSS/JavaScript. Correct an inconsistent toolchain state before changing UI behavior. Real-device results remain authoritative after the delivery path is clean.
-- Start a production build with `npm start`.
-- `npm run lint` currently calls `next lint`; verify the installed Next.js version still supports that command before relying on it.
-- Do not use Playwright or browser screenshots for straightforward issues that can be determined from markup, selectors, CSS, or layout rules. Use rendered browser inspection only when the task genuinely requires visual judgment—for example composition, hierarchy, density, motion, responsive behavior, or an ambiguity that code inspection cannot resolve.
-
-Current local shell note:
-
-- Node `v18.17.1` is on PATH.
-- Current `latest` dependency resolution includes packages that require Node 20+.
-- Use Node 20+ for local install/build unless dependencies are intentionally pinned lower.
-- Supabase admin/auth work depends on `@supabase/supabase-js` and `@supabase/ssr`.
-- Case-study SVG preparation is repository-owned and dependency-free: validate the semantic/lens pair, renderer classifications, matching viewBoxes, element bounds, and forbidden content before Storage upload. Do not reintroduce generic SVG optimization that can discard IDs/classes or alter authored geometry.
-
-## Mandatory Update Protocol
-
-After every meaningful change:
-
-- Update `CONTEXT.md` with what changed, why it changed, current status, verification, known issues, and next steps.
-- Keep `CONTEXT.md` compact. It is current working memory, not a full historical changelog.
-- Keep `Recent Changes` to the latest high-signal entries only.
-- Update `AGENTS.md` if architecture boundaries, workflow rules, dependencies, tools, or product guidance changed.
-- Update `README.md` when setup, deployment, or required environment variables change.
-
-A meaningful change includes changed positioning, changed layout, changed dependency/tooling, changed form behavior, changed deployment requirements, verification results, or completion-status changes.
-
-For case-study projects, completion-status changes must also record whether database promotion is awaiting user approval, approved and in progress, or verified complete.
-
-## Git Notes
-
-The repository was initialized on branch `main`.
-
-Git safe-directory has been configured for this exact repository path for the current shell user:
-
-`E:/Documents/Projects/Freelance Starter Pack/portfolio-nextjs`
-
-Do not use ownership or ACL changes to fix Git access unless the user explicitly asks. The safe-directory entry is the intended non-ownership-changing fix.
-
-## Visual design work
-
-For appearance-led frontend tasks involving stylized compositions, decorative
-systems, procedural graphics, SVG/Canvas artwork, or significant visual
-art-direction work, use the `visual-design` skill in
-`.codex/skills/visual-design/SKILL.md`.
-
-## Do Not
-
-- Do not make the site feel like a fake terminal, cyberpunk demo, animated showcase, or generic SaaS landing page.
-- Do not add decorative motion that delays access to content.
-- Do not add broad dependency weight for simple UI.
-- Do not remove the direct email fallback when editing the contact form.
-- Do not claim the site is deployment-ready until metadata URLs, contact sender configuration, and a production build are verified.
+CONTEXT keeps the required task/ledger/issue/next-step sections and at most five
+recent entries. Keep AGENTS <=8 KiB and CONTEXT <=12 KiB. Promotion status remains
+`awaiting user approval`, `approved and in progress`, or `verified complete`, with
+project-specific approval scope. Preserve unresolved issues and recovery evidence.
+The routed rule owns changed requirements; README owns setup/operation.
+`node scripts/check-agent-memory.mjs` validates memory structure and links.

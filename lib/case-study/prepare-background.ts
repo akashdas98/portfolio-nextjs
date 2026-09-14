@@ -6,6 +6,7 @@ const MAX_SEMANTIC_SVG_BYTES = 25 * 1024 * 1024;
 const MAX_LENS_SVG_BYTES = 5 * 1024 * 1024;
 const SEMANTIC_ELEMENTS = new Set([
   "svg",
+  "use",
   "g",
   "path",
   "polyline",
@@ -17,6 +18,7 @@ const SEMANTIC_ELEMENTS = new Set([
 const SEMANTIC_GRAPHICS = new Set(["path", "polyline", "polygon", "line", "circle", "rect"]);
 const FORBIDDEN_SVG_CONTENT =
   /<\s*(?:script|foreignObject|image|use|iframe|object|embed|style|link|a|metadata)\b|\bon[a-z]+\s*=|\b(?:href|xlink:href)\s*=|url\s*\(|<!|<\?/i;
+const DEPTH_SOURCE_USE = /<use id="pcb-depth-source" href="#pcb-semantic-source"\/>/g;
 
 function readElements(source: string) {
   return [...source.matchAll(/<\/?\s*([a-zA-Z][\w:-]*)\b/g)].map((match) =>
@@ -44,13 +46,31 @@ function assertSafeSvg(source: string) {
 }
 
 function assertSemanticSvg(source: string) {
-  assertSafeSvg(source);
   if (
     !/\bdata-schema="pcb-art-semantic-svg"/.test(source) ||
     !/\bdata-schema-version="1\.0"/.test(source)
   ) {
     throw new Error("The background must be a prepared PCB semantic SVG v1.0 asset.");
   }
+  if (
+    !/\bdata-depth-schema="translated-source-v1"/.test(source) ||
+    !/\bdata-depth-offset-css-px="1"/.test(source)
+  ) {
+    throw new Error("The semantic SVG must contain the validated depth-geometry definition.");
+  }
+  const depthSourceUses = source.match(DEPTH_SOURCE_USE) ?? [];
+  if (depthSourceUses.length !== 1 || (source.match(/<use\b/g) ?? []).length !== 1) {
+    throw new Error("The semantic SVG must contain exactly one safe internal depth-geometry reference.");
+  }
+  if (
+    !/<g id="pcb-depth-geometry" class="pcb-depth-geometry" data-role="depth-geometry" data-direction="down" visibility="hidden">/.test(source) ||
+    (source.match(/\bid="pcb-semantic-source"/g) ?? []).length !== 1 ||
+    /<(?:defs|linearGradient|stop|filter|mask)\b/.test(source)
+  ) {
+    throw new Error("The semantic SVG depth definition or source group is malformed.");
+  }
+  const sanitizedSource = source.replace(DEPTH_SOURCE_USE, "");
+  assertSafeSvg(sanitizedSource);
   if (/\b(?:class="[^"]*\bpcb-background\b|data-kind="background")/.test(source)) {
     throw new Error("The prepared semantic SVG must not retain the renderer background canvas.");
   }
@@ -78,7 +98,9 @@ function assertSemanticSvg(source: string) {
     throw new Error("Every semantic SVG primitive must retain its renderer ID and classification.");
   }
 
-  const groupCount = (source.match(/<g\b/g) ?? []).length;
+  const groupCount = (
+    source.match(/<g\b[^>]*\bclass="[^"]*\bpcb-entity\b[^"]*"/g) ?? []
+  ).length;
   const declaredGroupCount = Number(source.match(/\bdata-semantic-entity-count="(\d+)"/)?.[1]);
   if (groupCount !== declaredGroupCount) {
     throw new Error("The semantic SVG entity count does not match its declaration.");

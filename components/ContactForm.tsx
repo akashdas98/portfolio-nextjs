@@ -179,9 +179,8 @@ export function ContactForm() {
       </label>
       <label className={errors.budget ? "has-error" : undefined}>
         <span>
-          <CircuitUnderlay size="compact">
-            Budget range <em>optional</em>
-          </CircuitUnderlay>
+          <CircuitUnderlay size="compact">Budget range</CircuitUnderlay>
+          <em><CircuitUnderlay size="compact">optional</CircuitUnderlay></em>
         </span>
         <select
           name="budget"

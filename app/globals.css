@@ -229,17 +229,25 @@ p {
   inset: 0 0 auto;
   z-index: 50;
   border-bottom: 1px solid transparent;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  background-color: transparent;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.156);
   transition:
-    background 180ms ease,
+    background-color 180ms ease,
     border-color 180ms ease,
     box-shadow 180ms ease;
 }
 .site-header.is-scrolled {
-  background: rgba(10, 13, 16, 0.88);
+  background-color: rgba(10, 13, 16, 0.88);
   border-color: var(--line);
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.286);
   backdrop-filter: blur(18px);
+}
+@media (hover: none) and (pointer: coarse) {
+  .site-header.is-scrolled {
+    background-color: rgba(10, 13, 16, 0.96);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 .header-inner {
   height: 76px;
@@ -485,9 +493,9 @@ p {
   gap: var(--space-project-list-gap);
 }
 .selected-work-section {
-  --circuit-underlay-color: var(--bg-soft);
+  --circuit-underlay-color: var(--surface);
   padding-block: var(--space-section-y);
-  background: var(--bg-soft);
+  background: var(--surface);
 }
 .project-card {
   padding: var(--space-project-card-padding);
@@ -753,24 +761,20 @@ p {
  */
 .public-circuit-page .circuit-text-underlay {
   --circuit-underlay-radius: 0.34em;
-  --circuit-underlay-strength: 0.7;
+  --circuit-underlay-strength: 0.91;
   --circuit-underlay-feather: 18px;
   --circuit-underlay-source-extension: 10px;
-  display: inline-grid;
-  width: fit-content;
+  display: inline-block;
+  width: auto;
   max-width: 100%;
   position: relative;
   vertical-align: baseline;
   background: transparent;
   box-shadow: none;
 }
-.public-circuit-page .circuit-text-underlay-shadow,
-.public-circuit-page .circuit-text-underlay-content {
-  grid-area: 1 / 1;
-  min-width: 0;
-}
 .public-circuit-page .circuit-text-underlay-shadow {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: -1;
   color: transparent !important;
   -webkit-text-fill-color: transparent !important;
@@ -808,13 +812,13 @@ p {
 }
 .public-circuit-page .circuit-text-underlay[data-circuit-underlay="compact"] {
   --circuit-underlay-radius: 0.4em;
-  --circuit-underlay-strength: 0.644;
+  --circuit-underlay-strength: 0.8372;
   --circuit-underlay-feather: 12px;
   --circuit-underlay-source-extension: 7px;
 }
 .public-circuit-page .circuit-text-underlay[data-circuit-underlay="heading"] {
   --circuit-underlay-radius: 0.28em;
-  --circuit-underlay-strength: 0.7;
+  --circuit-underlay-strength: 0.91;
   --circuit-underlay-feather: 30px;
   --circuit-underlay-source-extension: 16px;
 }
@@ -830,27 +834,275 @@ p {
   z-index: -1;
   border-radius: 8px;
   background: var(--circuit-underlay-color);
-  opacity: 0.462;
+  opacity: 0.6006;
   filter: blur(14px);
   pointer-events: none;
+}
+
+/*
+ * Static elevation keeps exposed UI edges legible over PCB geometry. Open
+ * rules receive a border-shaped source whose section-colored shadow spreads
+ * and fades on both sides of the stroke. Opaque closed surfaces hide the
+ * inward half of the same treatment and therefore show only exterior depth.
+ */
+.public-circuit-page {
+  --circuit-shadow-strength: 91%;
+}
+
+/* Shared stacking planes keep every rule halo behind all canonical content. */
+.public-circuit-page :is(
+  .service-list,
+  .capability-list,
+  .case-before-after,
+  .case-outcome-table,
+  .principles,
+  .case-workflow
+) {
+  position: relative;
+  isolation: isolate;
+  box-shadow: none;
+}
+.public-circuit-page :is(
+  .proof-strip,
+  .service-list,
+  .capability-list,
+  .case-diagram-caption,
+  .case-outcome-footer,
+  .impact-metrics,
+  .case-impact-capabilities
+) {
+  --circuit-rule-color: var(--line);
+  --circuit-rule-width: 1px;
+  position: relative;
+  box-shadow: none;
+}
+.public-circuit-page :is(
+  .proof-strip,
+  .case-diagram-caption,
+  .case-outcome-footer,
+  .impact-metrics,
+  .case-impact-capabilities
+) {
+  isolation: isolate;
+}
+.public-circuit-page :is(
+  .proof-strip,
+  .service-list,
+  .capability-list,
+  .case-diagram-caption,
+  .case-outcome-footer,
+  .impact-metrics,
+  .case-impact-capabilities
+)::before {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--circuit-rule-width);
+  background: var(--circuit-rule-color);
+  box-shadow: 0 0 18px 10px
+    color-mix(
+      in srgb,
+      var(--circuit-underlay-color) var(--circuit-shadow-strength),
+      transparent
+    );
+  pointer-events: none;
+}
+.public-circuit-page .case-outcome-footer {
+  --circuit-rule-color: var(--accent);
+  --circuit-rule-width: 2px;
+}
+.public-circuit-page :is(
+  .impact-metrics,
+  .case-impact-capabilities
+) {
+  --circuit-rule-color: rgba(229, 240, 255, 0.2);
+}
+.public-circuit-page :is(
+  .service-row,
+  .capability-list > div,
+  .case-comparison-heading,
+  .case-comparison-row:not(:last-child),
+  .case-outcome-table thead tr > :first-child,
+  .case-outcome-table tbody tr:not(:last-child) > :first-child
+) {
+  --circuit-rule-color: var(--line);
+  --circuit-rule-width: 1px;
+  position: relative;
+  box-shadow: none;
+}
+.public-circuit-page :is(
+  .service-row,
+  .capability-list > div,
+  .case-comparison-heading,
+  .case-comparison-row:not(:last-child),
+  .case-outcome-table thead tr > :first-child,
+  .case-outcome-table tbody tr:not(:last-child) > :first-child
+)::after {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--circuit-rule-width);
+  background: var(--circuit-rule-color);
+  box-shadow: 0 0 18px 10px
+    color-mix(
+      in srgb,
+      var(--circuit-underlay-color) var(--circuit-shadow-strength),
+      transparent
+    );
+  pointer-events: none;
+}
+/* A generated child of a table row becomes an extra fixed-layout column.
+ * Anchor the full-width rule to one of the four real cells instead. */
+.public-circuit-page .case-outcome-table tr > :first-child::after {
+  right: auto;
+  width: 400%;
+}
+.public-circuit-page :is(
+  .principles,
+  .case-workflow
+) {
+  --circuit-grid-rule-color: var(--line);
+  --circuit-grid-rule-width: 1px;
+}
+.public-circuit-page .principles {
+  --circuit-grid-rule-width: 2px;
+}
+.public-circuit-page :is(.principles, .case-workflow)::before,
+.public-circuit-page :is(.principles, .case-workflow)::after,
+.public-circuit-page :is(.principles > div, .case-workflow > li)::before,
+.public-circuit-page :is(.principles > div, .case-workflow > li)::after {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  background: var(--circuit-grid-rule-color);
+  box-shadow: 0 0 18px 10px
+    color-mix(
+      in srgb,
+      var(--circuit-underlay-color) var(--circuit-shadow-strength),
+      transparent
+    );
+  pointer-events: none;
+}
+.public-circuit-page :is(.principles, .case-workflow)::before {
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--circuit-grid-rule-width);
+}
+.public-circuit-page :is(.principles, .case-workflow)::after {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--circuit-grid-rule-width);
+}
+.public-circuit-page :is(.principles > div, .case-workflow > li) {
+  position: relative;
+  box-shadow: none;
+}
+.public-circuit-page :is(.principles > div, .case-workflow > li)::before {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--circuit-grid-rule-width);
+}
+.public-circuit-page :is(.principles > div, .case-workflow > li)::after {
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--circuit-grid-rule-width);
+}
+.public-circuit-page :is(
+  .project-card,
+  .case-narrative-block,
+  .case-detail-card,
+  .case-system-card,
+  .case-decision-card,
+  .case-diagram-surface
+) {
+  box-shadow: 0 0 30px 16px
+    color-mix(
+      in srgb,
+      var(--circuit-underlay-color) var(--circuit-shadow-strength),
+      transparent
+    );
+}
+.public-circuit-page :is(
+  .contact-form input,
+  .contact-form textarea,
+  .contact-form select
+) {
+  box-shadow: 0 0 18px 10px
+    color-mix(
+      in srgb,
+      var(--circuit-underlay-color) var(--circuit-shadow-strength),
+      transparent
+    );
+}
+.public-circuit-page .direct-links a {
+  --circuit-rule-color: rgba(158, 216, 242, 0.35);
+  --circuit-rule-width: 1px;
+  position: relative;
+  isolation: isolate;
+  box-shadow: none;
+}
+.public-circuit-page .direct-links a::after {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: var(--circuit-rule-width);
+  background: var(--circuit-rule-color);
+  box-shadow: 0 0 18px 10px
+    color-mix(
+      in srgb,
+      var(--circuit-underlay-color) var(--circuit-shadow-strength),
+      transparent
+    );
+  pointer-events: none;
+}
+.public-circuit-page .case-back-link-arrow {
+  filter: drop-shadow(
+    0 0 8px
+      color-mix(
+        in srgb,
+        var(--circuit-underlay-color) var(--circuit-shadow-strength),
+        transparent
+      )
+  );
 }
 .public-circuit-art {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: 1;
+  overflow: hidden;
+  contain: strict;
   pointer-events: none;
-  background-image: var(--public-circuit-image);
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center top;
-  opacity: 0.055;
+}
+.public-circuit-art-vector {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  will-change: transform;
 }
 .public-circuit-glow-lens {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 330px;
-  height: 330px;
+  width: 615px;
+  height: 615px;
   z-index: 1;
   contain: strict;
   pointer-events: none;
@@ -860,7 +1112,56 @@ p {
 }
 .public-circuit-glow-lens.is-active {
   opacity: 1;
-  transition-duration: 0ms;
+  transition: opacity 120ms ease-out;
+}
+.public-circuit-glow-lens.is-active.is-trailing {
+  opacity: 0.86;
+}
+.public-circuit-glow-lens [data-circuit-halo="blue"] {
+  filter:
+    drop-shadow(0 0 4.25px rgb(0 124 255 / 0.95))
+    drop-shadow(0 0 4.25px rgb(0 124 255 / 0.95))
+    drop-shadow(0 0 4.25px rgb(0 124 255 / 0.95));
+}
+.public-circuit-glow-lens [data-circuit-halo="pink"] {
+  filter:
+    drop-shadow(0 0 4.25px rgb(223 58 148 / 0.95))
+    drop-shadow(0 0 4.25px rgb(223 58 148 / 0.95))
+    drop-shadow(0 0 4.25px rgb(223 58 148 / 0.95));
+}
+.public-circuit-pointer-trail {
+  --circuit-pointer-trail-color: 0 124 255;
+  --circuit-pointer-trail-core: #edf9ff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  contain: strict;
+  width: 260px;
+  height: 260px;
+  pointer-events: none;
+  will-change: transform;
+}
+.public-circuit-pointer-trail[data-tone="muted"] {
+  --circuit-pointer-trail-color: 223 58 148;
+  --circuit-pointer-trail-core: #fff0f8;
+}
+.public-circuit-pointer-trail-paint {
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  mix-blend-mode: screen;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+.public-circuit-pointer-trail-glow {
+  filter:
+    drop-shadow(0 0 4.25px rgb(var(--circuit-pointer-trail-color) / 0.9))
+    drop-shadow(0 0 4.25px rgb(var(--circuit-pointer-trail-color) / 0.72));
+}
+.public-circuit-pointer-trail-core {
+  fill: var(--circuit-pointer-trail-core);
 }
 .case-diagram {
   position: relative;
@@ -975,6 +1276,17 @@ p {
   font-weight: 400;
   letter-spacing: normal;
   line-height: 1.68;
+}
+/* Match the canonical caption's leading marker in the inert paint source. */
+.public-circuit-page .case-diagram-caption-underlay .circuit-text-underlay-shadow-shape::before {
+  content: "" !important;
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 14px;
+}
+.public-circuit-page .case-diagram-caption-underlay .circuit-text-underlay-shadow-shape::after {
+  content: attr(data-circuit-shadow) !important;
 }
 .edd-diagram-svg {
   display: block;
@@ -2248,7 +2560,7 @@ p {
   column-gap: var(--space-case-outcome-payoff-column-gap);
   row-gap: 10px;
 }
-.case-outcome-footer span {
+.case-outcome-value > span {
   grid-column: 1;
   grid-row: 2;
   color: var(--accent);
@@ -2347,7 +2659,7 @@ p {
   padding: 0 0 var(--space-stack-sm);
   border-bottom: 1px solid var(--line);
 }
-.case-comparison-heading span {
+.case-comparison-heading > span {
   color: var(--accent);
   font-size: var(--font-size-caption);
   font-weight: 650;
@@ -2400,7 +2712,7 @@ p {
   border-right: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
-.case-workflow span {
+.case-workflow > li > span {
   color: var(--subtle);
   font-size: var(--font-size-caption);
   letter-spacing: 0.08em;
@@ -2742,8 +3054,8 @@ p {
 }
 
 .about-section {
-  --circuit-underlay-color: var(--bg-soft);
-  background: var(--bg-soft);
+  --circuit-underlay-color: var(--surface);
+  background: var(--surface);
   padding-block: var(--space-section-y);
 }
 .about-grid {
@@ -2778,7 +3090,7 @@ p {
   border-right: 2px solid var(--line);
   border-bottom: 2px solid var(--line);
 }
-.principles span {
+.principles > div > span {
   color: var(--subtle);
   font-size: var(--font-size-caption);
 }
@@ -2852,7 +3164,7 @@ p {
   color: var(--muted);
   font-size: var(--font-size-small);
 }
-.contact-form label span {
+.contact-form label > span {
   display: flex;
   justify-content: space-between;
 }
@@ -2892,7 +3204,14 @@ p {
 .contact-form textarea:focus,
 .contact-form select:focus {
   border-color: var(--accent);
-  box-shadow: inset 0 0 0 1px rgba(158, 216, 242, 0.32);
+  box-shadow:
+    0 0 18px 10px
+      color-mix(
+        in srgb,
+        var(--circuit-underlay-color) var(--circuit-shadow-strength),
+        transparent
+      ),
+    inset 0 0 0 1px rgba(158, 216, 242, 0.416);
 }
 .contact-form .has-error input,
 .contact-form .has-error textarea,
@@ -3526,10 +3845,18 @@ p {
   .service-list,
   .capability-list {
     border-top: 0;
+    box-shadow: none;
+  }
+  .public-circuit-page :is(.service-list, .capability-list)::before {
+    content: none;
   }
   .service-row:last-child {
     padding-bottom: 0;
     border-bottom: 0;
+    box-shadow: none;
+  }
+  .public-circuit-page .service-row:last-child::after {
+    content: none;
   }
   .principles {
     grid-template-columns: 1fr 1fr;
@@ -3538,6 +3865,10 @@ p {
   .capability-list > div:last-child {
     padding-bottom: 0;
     border-bottom: 0;
+    box-shadow: none;
+  }
+  .public-circuit-page .capability-list > div:last-child::after {
+    content: none;
   }
   .form-footer > .button-primary {
     margin-left: 8px;
@@ -3607,6 +3938,25 @@ p {
   .case-outcome-table tr:last-child {
     border-bottom: 0;
   }
+  .public-circuit-page .case-outcome-table tr > :first-child::after {
+    content: none;
+  }
+  .public-circuit-page .case-outcome-table tbody tr:not(:last-child) {
+    position: relative;
+  }
+  .public-circuit-page .case-outcome-table tbody tr:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    z-index: -2;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 1px;
+    background: var(--line);
+    box-shadow: 0 0 18px 10px
+      color-mix(in srgb, var(--circuit-underlay-color) var(--circuit-shadow-strength), transparent);
+    pointer-events: none;
+  }
   .case-outcome-table th,
   .case-outcome-table td {
     padding: 0;
@@ -3624,6 +3974,9 @@ p {
   }
   .case-outcome-table td + td {
     margin-top: var(--space-stack-xs);
+  }
+  .public-circuit-page .case-outcome-table td > .circuit-text-underlay {
+    width: 100%;
   }
   .case-outcome-table td::before {
     color: var(--accent);
@@ -3827,6 +4180,10 @@ p {
   .service-row:last-child {
     padding-bottom: 0;
     border-bottom: 0;
+    box-shadow: none;
+  }
+  .public-circuit-page .service-row:last-child::after {
+    content: none;
   }
   .service-row > div:last-child {
     grid-column: auto;
@@ -3851,6 +4208,10 @@ p {
   .capability-list > div:last-child {
     padding-bottom: 0;
     border-bottom: 0;
+    box-shadow: none;
+  }
+  .public-circuit-page .capability-list > div:last-child::after {
+    content: none;
   }
   .field-row {
     grid-template-columns: 1fr;

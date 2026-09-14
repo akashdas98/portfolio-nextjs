@@ -1,0 +1,42 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"E:/Documents/Projects/Freelance Starter Pack/portfolio-nextjs/scripts/agent-routing/hook.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Adaptive routing guard"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"E:/Documents/Projects/Freelance Starter Pack/portfolio-nextjs/scripts/agent-routing/hook.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Adaptive routing guard"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "(^|[.:_])(spawn_agent|Agent)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"E:/Documents/Projects/Freelance Starter Pack/portfolio-nextjs/scripts/agent-routing/hook.mjs\"",
+            "timeout": 10,
+            "statusMessage": "Adaptive routing guard"
+          }
+        ]
+      }
+    ]
+  }
+}

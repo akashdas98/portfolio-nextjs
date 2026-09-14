@@ -102,7 +102,7 @@ export function AdminProjectForm({ action, project, disabled = false, submitLabe
       </label>
 
       <label>
-        <span>Case-study PCB semantic background (SVG)</span>
+        <span>Case-study PCB semantic background with depth definition (SVG)</span>
         <input
           name="caseStudyBackground"
           type="file"

@@ -21,7 +21,7 @@ type CaseStudyRendererProps = {
 export function CaseStudyRenderer({ document, project }: CaseStudyRendererProps) {
   const backgroundUrl = getCaseStudyBackgroundUrl(document.background);
   const backgroundLensUrl = getCaseStudyBackgroundLensUrl(document.background);
-  preload(backgroundUrl, { as: "image", type: "image/svg+xml" });
+  preload(backgroundLensUrl, { as: "fetch", crossOrigin: "anonymous" });
 
   return (
     <main

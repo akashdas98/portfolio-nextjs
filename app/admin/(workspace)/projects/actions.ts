@@ -98,7 +98,9 @@ async function uploadCaseStudyBackground(
   const hasLens = lensFile instanceof File && lensFile.size > 0;
   if (!hasSemantic && !hasLens) return null;
   if (!hasSemantic || !hasLens) {
-    throw new Error("Upload both the prepared semantic background SVG and its matching lens SVG.");
+    throw new Error(
+      "Upload both the depth-defined semantic background SVG and its matching lens SVG.",
+    );
   }
   if (!(semanticFile instanceof File) || !(lensFile instanceof File)) {
     throw new Error("The prepared PCB uploads are invalid.");

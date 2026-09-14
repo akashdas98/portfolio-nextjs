@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "check:main-cms-push": "node scripts/check-main-cms-push.mjs",
+    "attach:pcb-depth": "node scripts/attach-pcb-depth-definition.mjs",
     "prepare:pcb-background": "node scripts/prepare-pcb-background.mjs",
     "dev": "next dev",
     "build": "next build",

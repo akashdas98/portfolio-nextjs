@@ -11,7 +11,7 @@ const countSelector = [
   ".case-outcome-footer strong",
   ".case-system-card strong",
   ".service-number",
-  ".principles span",
+  ".principles > div > span",
 ].join(", ");
 
 const numberPattern = /[-+]?\d[\d,]*(?:\.\d+)?/;
@@ -241,15 +241,8 @@ export function PublicAnimations() {
     const observedRevealTargets = new WeakSet<Element>();
     const observedCountTargets = new WeakSet<Element>();
 
-    function startsBeyondRevealLine(element: Element) {
-      return element.getBoundingClientRect().top > window.innerHeight * revealTriggerRatio;
-    }
-
-    function registerRevealTarget(element: Element) {
-      if (observedRevealTargets.has(element)) return;
-      observedRevealTargets.add(element);
-
-      if (!startsBeyondRevealLine(element)) {
+    function registerRevealTarget(element: Element, startsBeyondRevealLine: boolean) {
+      if (!startsBeyondRevealLine) {
         element.setAttribute("data-revealed", "true");
         return;
       }
@@ -258,34 +251,70 @@ export function PublicAnimations() {
       revealObserver.observe(element);
     }
 
-    function registerCountTarget(element: Element) {
-      if (observedCountTargets.has(element)) return;
-      if (parseNumber(element.textContent?.trim() ?? "")) {
-        observedCountTargets.add(element);
-
-        if (!startsBeyondRevealLine(element)) {
-          element.setAttribute("data-counted", "true");
-          return;
-        }
-
-        countObserver.observe(element);
+    function registerCountTarget(element: Element, startsBeyondRevealLine: boolean) {
+      if (!startsBeyondRevealLine) {
+        element.setAttribute("data-counted", "true");
+        return;
       }
+
+      countObserver.observe(element);
     }
 
-    function registerTree(node: Node) {
-      if (!(node instanceof Element)) return;
+    function registerTrees(nodes: Iterable<Node>) {
+      const revealTargets: Element[] = [];
+      const countTargets: Element[] = [];
 
-      if (node.matches(revealSelector)) registerRevealTarget(node);
-      node.querySelectorAll(revealSelector).forEach(registerRevealTarget);
+      for (const node of nodes) {
+        if (!(node instanceof Element)) continue;
 
-      if (node.matches(countSelector)) registerCountTarget(node);
-      node.querySelectorAll(countSelector).forEach(registerCountTarget);
+        const revealCandidates = [
+          ...(node.matches(revealSelector) ? [node] : []),
+          ...node.querySelectorAll(revealSelector),
+        ];
+        revealCandidates.forEach((element) => {
+          if (observedRevealTargets.has(element)) return;
+          observedRevealTargets.add(element);
+          revealTargets.push(element);
+        });
+
+        const countCandidates = [
+          ...(node.matches(countSelector) ? [node] : []),
+          ...node.querySelectorAll(countSelector),
+        ];
+        countCandidates.forEach((element) => {
+          if (
+            observedCountTargets.has(element) ||
+            !parseNumber(element.textContent?.trim() ?? "")
+          ) {
+            return;
+          }
+          observedCountTargets.add(element);
+          countTargets.push(element);
+        });
+      }
+
+      const revealLine = window.innerHeight * revealTriggerRatio;
+      const revealRegistrations = revealTargets.map((element) => ({
+        element,
+        startsBeyondRevealLine: element.getBoundingClientRect().top > revealLine,
+      }));
+      const countRegistrations = countTargets.map((element) => ({
+        element,
+        startsBeyondRevealLine: element.getBoundingClientRect().top > revealLine,
+      }));
+
+      revealRegistrations.forEach(({ element, startsBeyondRevealLine }) =>
+        registerRevealTarget(element, startsBeyondRevealLine),
+      );
+      countRegistrations.forEach(({ element, startsBeyondRevealLine }) =>
+        registerCountTarget(element, startsBeyondRevealLine),
+      );
     }
 
-    registerTree(publicMain);
+    registerTrees([publicMain]);
 
     const mutationObserver = new MutationObserver((records) => {
-      records.forEach((record) => record.addedNodes.forEach(registerTree));
+      registerTrees(records.flatMap((record) => Array.from(record.addedNodes)));
     });
     mutationObserver.observe(publicMain, { childList: true, subtree: true });
 
