@@ -1,19 +1,18 @@
 {
-  "schemaVersion": 1,
   "sourceLabel": "public/pcb-backgrounds/home-lens.svg",
-  "layout": {
-    "scale": 0.5,
-    "offsetX": 0,
-    "offsetY": 0
-  },
+  "expectedCompositionKey": "home-960x512-v1",
   "selectionReserveCssPx": 2,
-  "regions": [
-    {
-      "id": "home-midpage-cross-partitions",
-      "x": 448,
-      "y": 2048,
-      "width": 512,
-      "height": 512
-    }
-  ]
+  "composition": {
+    "schemaVersion": 1,
+    "compositionKey": "home-960x512-v1",
+    "canvas": { "x": 448, "y": 2048, "width": 512, "height": 512 },
+    "layout": { "scale": 0.5, "offsetX": 0, "offsetY": 0 },
+    "cells": [
+      { "id": "home-midpage-cross-partitions", "x": 448, "y": 2048, "width": 512, "height": 512, "empty": false }
+    ],
+    "toneIntervals": [
+      { "top": 2048, "bottom": 2304, "tone": "base" },
+      { "top": 2304, "bottom": 2560, "tone": "muted" }
+    ]
+  }
 }

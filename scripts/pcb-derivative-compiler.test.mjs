@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -31,9 +31,19 @@ function input(source) {
     source,
     sourceLabel: "fixture/lens.svg",
     compilerSha256: COMPILER_DIGEST,
-    layout: { scale: 0.5, offsetX: 10, offsetY: 20 },
+    expectedCompositionKey: "fixture-28x8-v1",
     selectionReserveCssPx: 2,
-    regions: [{ id: "ordered-region", x: 8, y: 18, width: 28, height: 8 }],
+    composition: {
+      schemaVersion: 1,
+      compositionKey: "fixture-28x8-v1",
+      canvas: { x: 8, y: 18, width: 28, height: 8 },
+      layout: { scale: 0.5, offsetX: 10, offsetY: 20 },
+      cells: [{ id: "ordered-region", x: 8, y: 18, width: 28, height: 8, empty: false }],
+      toneIntervals: [
+        { top: 18, bottom: 22, tone: "base" },
+        { top: 22, bottom: 26, tone: "muted" },
+      ],
+    },
   };
 }
 
@@ -53,7 +63,10 @@ test("compiler output is deterministic and preserves selected source path string
 
   const artifact = first.artifacts[0];
   const emittedPaths = [...artifact.source.matchAll(/<path\b[^>]*\/>/g)].map((match) => match[0]);
-  assert.deepEqual(emittedPaths, artifact.sourcePathIndices.map((index) => fixture.paths[index]));
+  const selectedPaths = artifact.sourcePathIndices.map((index) => fixture.paths[index]);
+  for (const selected of selectedPaths) {
+    assert.equal(emittedPaths.filter((emitted) => emitted === selected).length, 2);
+  }
   assert.deepEqual(artifact.sourcePathIndices, [...artifact.sourcePathIndices].sort((a, b) => a - b));
   assert.ok(emittedPaths.some((source) => source.includes('fill="white"')));
   assert.ok(emittedPaths.some((source) => source.includes('fill="black"')));
@@ -71,8 +84,47 @@ test("selection reserve is converted from CSS pixels into source coordinates", (
   assert.match(compilation.artifacts[0].source, /transform="translate\(2 2\) scale\(0\.5\)"/);
 
   const oversized = input(fixture.source);
-  oversized.regions[0].width = MAX_PCB_DERIVATIVE_CSS_DIMENSION + 1;
+  oversized.composition.canvas.width = MAX_PCB_DERIVATIVE_CSS_DIMENSION + 1;
+  oversized.composition.cells[0].width = MAX_PCB_DERIVATIVE_CSS_DIMENSION + 1;
   assert.throws(() => compilePcbDerivatives(oversized), /at most 512/);
+});
+
+test("composition identity, coverage, explicit empty cells, and final paint order fail closed", () => {
+  const fixture = lensFixture();
+  const mismatched = input(fixture.source);
+  mismatched.expectedCompositionKey = "fixture-28x8-v2";
+  assert.throws(() => compilePcbDerivatives(mismatched), /Unexpected PCB composition key/);
+
+  const gap = input(fixture.source);
+  gap.composition.cells[0].width = 27;
+  assert.throws(() => compilePcbDerivatives(gap), /completely cover/);
+
+  const compilation = compilePcbDerivatives(input(fixture.source));
+  const svg = compilation.artifacts[0].source;
+  assert.ok(svg.indexOf('data-layer="depth"') < svg.indexOf('data-layer="main"'));
+  assert.match(svg, /id="main-cutouts"/);
+  assert.match(svg, /offset="0\.5" stop-color="#0f1115"\/><stop offset="0\.5" stop-color="#090d11"/);
+
+  const withEmptyCell = input(fixture.source);
+  withEmptyCell.expectedCompositionKey = "fixture-28x16-v1";
+  withEmptyCell.composition.compositionKey = "fixture-28x16-v1";
+  withEmptyCell.composition.canvas.height = 16;
+  withEmptyCell.composition.cells.push({
+    id: "declared-empty", x: 8, y: 26, width: 28, height: 8, empty: true,
+  });
+  withEmptyCell.composition.toneIntervals = [
+    { top: 18, bottom: 26, tone: "base" },
+    { top: 26, bottom: 34, tone: "muted" },
+  ];
+  const emptyCompilation = compilePcbDerivatives(withEmptyCell);
+  assert.equal(emptyCompilation.artifacts.length, 1);
+  assert.deepEqual(
+    emptyCompilation.manifest.derivatives.map(({ id, empty, filename }) => ({ id, empty, filename })),
+    [
+      { id: "ordered-region", empty: false, filename: emptyCompilation.artifacts[0].filename },
+      { id: "declared-empty", empty: true, filename: null },
+    ],
+  );
 });
 
 test("CLI writes byte-identical hashed outputs for identical inputs", async () => {
@@ -83,13 +135,10 @@ test("CLI writes byte-identical hashed outputs for identical inputs", async () =
   const firstOutput = path.join(root, "first");
   const secondOutput = path.join(root, "second");
   await writeFile(sourceFilename, fixture.source, "utf8");
-  await writeFile(configFilename, JSON.stringify({
-    schemaVersion: 1,
-    sourceLabel: "fixture/lens.svg",
-    layout: { scale: 0.5, offsetX: 10, offsetY: 20 },
-    selectionReserveCssPx: 2,
-    regions: [{ id: "ordered-region", x: 8, y: 18, width: 28, height: 8 }],
-  }), "utf8");
+  const config = input(fixture.source);
+  delete config.source;
+  delete config.compilerSha256;
+  await writeFile(configFilename, JSON.stringify(config), "utf8");
 
   const cli = path.resolve("scripts/compile-pcb-derivatives.mjs");
   const run = (output) => spawnSync(process.execPath, [
@@ -124,9 +173,43 @@ test("CLI writes byte-identical hashed outputs for identical inputs", async () =
   assert.equal(manifest.derivatives[0].sha256, digest(derivativeSource));
 });
 
+test("CLI removes only stale generated artifacts when recompiling an output directory", async () => {
+  const fixture = lensFixture();
+  const root = await mkdtemp(path.join(tmpdir(), "pcb-derivative-stale-test-"));
+  const sourceFilename = path.join(root, "lens.svg");
+  const configFilename = path.join(root, "composition.json");
+  const output = path.join(root, "output");
+  const config = input(fixture.source);
+  delete config.source;
+  delete config.compilerSha256;
+  await writeFile(sourceFilename, fixture.source, "utf8");
+  await writeFile(configFilename, JSON.stringify(config), "utf8");
+  await mkdir(output);
+  await writeFile(path.join(output, "old-region.00000000000000000000.svg"), "stale", "utf8");
+  await writeFile(path.join(output, "manifest.00000000000000000000.json"), "stale", "utf8");
+  await writeFile(path.join(output, "notes.txt"), "preserve", "utf8");
+
+  const result = spawnSync(process.execPath, [
+    "--experimental-strip-types",
+    path.resolve("scripts/compile-pcb-derivatives.mjs"),
+    sourceFilename,
+    configFilename,
+    output,
+  ], { encoding: "utf8" });
+  assert.equal(result.status, 0, result.stderr);
+
+  const report = JSON.parse(result.stdout);
+  assert.deepEqual(
+    (await readdir(output)).sort(),
+    [report.manifest, ...report.derivatives, "notes.txt"].sort(),
+  );
+  assert.equal(await readFile(path.join(output, "notes.txt"), "utf8"), "preserve");
+});
+
 test("homepage representative derivative is bounded and crosses ordered source partitions", async () => {
   const provenanceFiles = [
     ["lib/pcb/spatial.ts", new URL("../lib/pcb/spatial.ts", import.meta.url)],
+    ["scripts/pcb-composition-plan.mjs", new URL("./pcb-composition-plan.mjs", import.meta.url)],
     ["scripts/pcb-derivative-compiler.mjs", new URL("./pcb-derivative-compiler.mjs", import.meta.url)],
     ["scripts/compile-pcb-derivatives.mjs", new URL("./compile-pcb-derivatives.mjs", import.meta.url)],
   ];
@@ -147,9 +230,9 @@ test("homepage representative derivative is bounded and crosses ordered source p
     source,
     sourceLabel: config.sourceLabel,
     compilerSha256: provenanceHash.digest("hex"),
-    layout: config.layout,
+    composition: config.composition,
+    expectedCompositionKey: config.expectedCompositionKey,
     selectionReserveCssPx: config.selectionReserveCssPx,
-    regions: config.regions,
   });
   const artifact = compilation.artifacts[0];
   assert.ok(artifact.pathCount > 1);
@@ -158,12 +241,16 @@ test("homepage representative derivative is bounded and crosses ordered source p
   ));
   assert.ok(artifact.source.includes('fill="white"'));
   assert.ok(artifact.source.includes('fill="black"'));
+  assert.match(artifact.source, /data-schema="pcb-art-static-region-svg"/);
   assert.ok(artifact.cssBounds.width <= MAX_PCB_DERIVATIVE_CSS_DIMENSION);
   assert.ok(artifact.cssBounds.height <= MAX_PCB_DERIVATIVE_CSS_DIMENSION);
 
   const sourcePaths = [...source.matchAll(/<path\b[^>]*\/>/g)].map((match) => match[0]);
   const derivativePaths = [...artifact.source.matchAll(/<path\b[^>]*\/>/g)].map((match) => match[0]);
-  assert.deepEqual(derivativePaths, artifact.sourcePathIndices.map((index) => sourcePaths[index]));
+  const selectedPaths = artifact.sourcePathIndices.map((index) => sourcePaths[index]);
+  for (const selected of selectedPaths) {
+    assert.equal(derivativePaths.filter((emitted) => emitted === selected).length, 2);
+  }
 
   const checkedOutput = new URL("../prototypes/pcb-derivative-compiler/home/", import.meta.url);
   const checkedFiles = (await readdir(checkedOutput)).sort();

@@ -1,16 +1,19 @@
 import { createHash } from "node:crypto";
 
 import { parsePcbLensSvg } from "../lib/pcb/spatial.ts";
+import { createPcbCompositionPlan } from "./pcb-composition-plan.mjs";
 
 export const PCB_DERIVATIVE_COMPILER_NAME = "portfolio-pcb-derivative-compiler";
-export const PCB_DERIVATIVE_COMPILER_VERSION = "0.1.0-prototype";
+export const PCB_DERIVATIVE_COMPILER_VERSION = "0.2.0-prototype";
 export const MAX_PCB_DERIVATIVE_CSS_DIMENSION = 512;
 
-const MAX_REGIONS = 64;
-const MAX_SCALE = 1_000;
 const MAX_RESERVE_CSS_PX = 64;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
-const REGION_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const DEPTH_OFFSET_CSS_PX = 1;
+const STATIC_PALETTES = {
+  main: { base: "#0f1115", muted: "#090d11", impact: "#0e325f" },
+  depth: { base: "#1c2126", muted: "#29323a", impact: "#315686" },
+};
 
 function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
@@ -43,19 +46,6 @@ function intersects(first, second) {
     first.bottom >= second.top && first.top <= second.bottom;
 }
 
-function validateRegion(region, ids) {
-  if (!region || typeof region !== "object") throw new Error("Every region must be an object.");
-  if (!REGION_ID_PATTERN.test(region.id)) {
-    throw new Error(`Region id ${JSON.stringify(region.id)} must be a lowercase kebab-case token.`);
-  }
-  if (ids.has(region.id)) throw new Error(`Region id ${region.id} is duplicated.`);
-  ids.add(region.id);
-  finiteNumber(region.x, `Region ${region.id} x`);
-  finiteNumber(region.y, `Region ${region.id} y`);
-  positiveNumber(region.width, `Region ${region.id} width`, MAX_PCB_DERIVATIVE_CSS_DIMENSION);
-  positiveNumber(region.height, `Region ${region.id} height`, MAX_PCB_DERIVATIVE_CSS_DIMENSION);
-}
-
 function sourceQueryBounds(
   region,
   layout,
@@ -69,21 +59,58 @@ function sourceQueryBounds(
   };
 }
 
+function paletteStops(plan, palette) {
+  return plan.toneIntervals.flatMap((interval, index) => {
+    const topOffset = (interval.top - plan.canvas.y) / plan.canvas.height;
+    const bottomOffset = (interval.bottom - plan.canvas.y) / plan.canvas.height;
+    const color = palette[interval.tone];
+    const previous = plan.toneIntervals[index - 1];
+    const previousColor = previous ? palette[previous.tone] : null;
+    return [
+      ...(previousColor && previousColor !== color
+        ? [`<stop offset="${formatNumber(topOffset)}" stop-color="${previousColor}"/>`]
+        : []),
+      `<stop offset="${formatNumber(topOffset)}" stop-color="${color}"/>`,
+      `<stop offset="${formatNumber(bottomOffset)}" stop-color="${color}"/>`,
+    ];
+  }).join("");
+}
+
 function derivativeSvg(
   input,
-  region,
+  plan,
+  cell,
   sourceSha256,
   pathSources,
 ) {
-  const translateX = input.layout.offsetX - region.x;
-  const translateY = input.layout.offsetY - region.y;
+  const positive = pathSources.filter((source) => !source.includes('="black"'));
+  const negative = pathSources.filter((source) => source.includes('="black"'));
+  const mixedPaint = pathSources.some((source) => source.includes('="black"') && source.includes('="white"'));
+  const mainStops = paletteStops(plan, STATIC_PALETTES.main);
+  const depthStops = paletteStops(plan, STATIC_PALETTES.depth);
+  const bounds = `x="0" y="0" width="${formatNumber(cell.width)}" height="${formatNumber(cell.height)}"`;
+  let definitions = "";
+  let paint = "";
+  for (const layer of ["depth", "main"]) {
+    const depthOffset = layer === "depth" ? DEPTH_OFFSET_CSS_PX : 0;
+    const transform = `translate(${formatNumber(plan.layout.offsetX - cell.x)} ${formatNumber(plan.layout.offsetY - cell.y + depthOffset)}) scale(${formatNumber(plan.layout.scale)})`;
+    const gradientTop = (plan.canvas.y - plan.layout.offsetY - depthOffset) / plan.layout.scale;
+    const gradientBottom = gradientTop + plan.canvas.height / plan.layout.scale;
+    definitions += `<linearGradient id="${layer}-palette" x1="0" y1="${formatNumber(gradientTop)}" x2="0" y2="${formatNumber(gradientBottom)}" gradientUnits="userSpaceOnUse">${layer === "depth" ? depthStops : mainStops}</linearGradient>`;
+    if (mixedPaint) {
+      definitions += `<mask id="${layer}-geometry" ${bounds} maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" style="mask-type:luminance"><g transform="${transform}">${pathSources.join("")}</g></mask>`;
+      paint += `<rect data-layer="${layer}" ${bounds} fill="url(#${layer}-palette)" mask="url(#${layer}-geometry)"/>`;
+    } else {
+      definitions += `<mask id="${layer}-cutouts" ${bounds} maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" style="mask-type:luminance"><rect ${bounds} fill="white"/><g transform="${transform}">${negative.join("")}</g></mask>`;
+      paint += `<g data-layer="${layer}" class="pcb-static-${layer}" mask="url(#${layer}-cutouts)" transform="${transform}">${positive.join("")}</g>`;
+    }
+  }
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${formatNumber(region.width)}" height="${formatNumber(region.height)}" viewBox="0 0 ${formatNumber(region.width)} ${formatNumber(region.height)}"`,
-    ` data-schema="pcb-art-region-svg" data-schema-version="0.1" data-source-schema="pcb-art-lens-svg"`,
-    ` data-source-sha256="${sourceSha256}" data-compiler-sha256="${input.compilerSha256}" data-region-id="${region.id}">`,
-    `<g transform="translate(${formatNumber(translateX)} ${formatNumber(translateY)}) scale(${formatNumber(input.layout.scale)})">`,
-    ...pathSources,
-    "</g></svg>",
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${formatNumber(cell.width)}" height="${formatNumber(cell.height)}" viewBox="0 0 ${formatNumber(cell.width)} ${formatNumber(cell.height)}"`,
+    ` data-schema="pcb-art-static-region-svg" data-schema-version="0.2" data-source-schema="pcb-art-lens-svg"`,
+    ` data-source-sha256="${sourceSha256}" data-compiler-sha256="${input.compilerSha256}" data-composition-key="${plan.compositionKey}" data-region-id="${cell.id}">`,
+    `<style>.pcb-static-depth [fill="white"]{fill:url(#depth-palette)}.pcb-static-depth [stroke="white"]{stroke:url(#depth-palette)}.pcb-static-main [fill="white"]{fill:url(#main-palette)}.pcb-static-main [stroke="white"]{stroke:url(#main-palette)}</style>`,
+    `<defs>${definitions}</defs>${paint}</svg>`,
   ].join("");
 }
 
@@ -95,26 +122,15 @@ export function compilePcbDerivatives(input) {
   if (typeof input.compilerSha256 !== "string" || !SHA256_PATTERN.test(input.compilerSha256)) {
     throw new Error("The compiler provenance must be a full lowercase SHA-256 digest.");
   }
-  const layout = input.layout;
-  if (!layout || typeof layout !== "object") throw new Error("The compiler requires a layout mapping.");
-  positiveNumber(layout.scale, "Layout scale", MAX_SCALE);
-  finiteNumber(layout.offsetX, "Layout offsetX");
-  finiteNumber(layout.offsetY, "Layout offsetY");
+  const plan = createPcbCompositionPlan(input.composition, input.expectedCompositionKey);
   finiteNumber(input.selectionReserveCssPx, "Selection reserve");
   if (input.selectionReserveCssPx < 0 || input.selectionReserveCssPx > MAX_RESERVE_CSS_PX) {
     throw new Error(`Selection reserve must be between zero and ${MAX_RESERVE_CSS_PX} CSS px.`);
   }
-  if (!Array.isArray(input.regions) || input.regions.length === 0 || input.regions.length > MAX_REGIONS) {
-    throw new Error(`The compiler requires between 1 and ${MAX_REGIONS} regions.`);
-  }
-
-  const ids = new Set();
-  for (const region of input.regions) validateRegion(region, ids);
-
   const parsed = parsePcbLensSvg(input.source);
   const sourceSha256 = sha256(input.source);
-  const artifacts = input.regions.map((region) => {
-    const query = sourceQueryBounds(region, layout, input.selectionReserveCssPx);
+  const cells = plan.cells.map((cell) => {
+    const query = sourceQueryBounds(cell, plan.layout, input.selectionReserveCssPx);
     const sourcePathIndices = [];
     const pathSources = [];
     parsed.paths.forEach((path, index) => {
@@ -122,21 +138,29 @@ export function compilePcbDerivatives(input) {
       sourcePathIndices.push(index);
       pathSources.push(path.source);
     });
-    if (pathSources.length === 0) {
-      throw new Error(`Region ${region.id} does not intersect any source paths.`);
+    const empty = pathSources.length === 0;
+    if (empty !== cell.empty) {
+      throw new Error(`Cell ${cell.id} declared empty=${cell.empty} but compiled empty=${empty}.`);
     }
-
-    const source = derivativeSvg(input, region, sourceSha256, pathSources);
+    if (empty) {
+      return {
+        id: cell.id, empty: true, filename: null, source: null, sha256: null,
+        bytes: 0, pathCount: 0, sourcePathIndices, cssBounds: { ...cell },
+        sourceQueryBounds: query,
+      };
+    }
+    const source = derivativeSvg(input, plan, cell, sourceSha256, pathSources);
     const digest = sha256(source);
     return {
-      id: region.id,
-      filename: `${region.id}.${digest.slice(0, 20)}.svg`,
+      id: cell.id,
+      empty: false,
+      filename: `${cell.id}.${digest.slice(0, 20)}.svg`,
       source,
       sha256: digest,
       bytes: utf8Bytes(source),
       pathCount: pathSources.length,
       sourcePathIndices,
-      cssBounds: { ...region },
+      cssBounds: { ...cell },
       sourceQueryBounds: query,
     };
   });
@@ -158,14 +182,13 @@ export function compilePcbDerivatives(input) {
       version: PCB_DERIVATIVE_COMPILER_VERSION,
       sha256: input.compilerSha256,
     },
-    layout: {
-      scale: layout.scale,
-      offsetX: layout.offsetX,
-      offsetY: layout.offsetY,
+    composition: {
+      ...plan,
       selectionReserveCssPx: input.selectionReserveCssPx,
     },
-    derivatives: artifacts.map((artifact) => ({
+    derivatives: cells.map((artifact) => ({
       id: artifact.id,
+      empty: artifact.empty,
       filename: artifact.filename,
       sha256: artifact.sha256,
       bytes: artifact.bytes,
@@ -182,6 +205,6 @@ export function compilePcbDerivatives(input) {
     manifestFilename: `manifest.${manifestSha256.slice(0, 20)}.json`,
     manifestSource,
     manifestSha256,
-    artifacts,
+    artifacts: cells.filter((cell) => !cell.empty),
   };
 }

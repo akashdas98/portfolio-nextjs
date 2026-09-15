@@ -12,21 +12,54 @@
   },
   "compiler": {
     "name": "portfolio-pcb-derivative-compiler",
-    "version": "0.1.0-prototype",
-    "sha256": "5ae2f5dc7aac32d93205de256aa32382e54d00c02c2382de98086c104a135d44"
+    "version": "0.2.0-prototype",
+    "sha256": "b8cc2208d8a803c3bdda072064133f8fcd850e74b77ee9f85888e01af85ca826"
   },
-  "layout": {
-    "scale": 0.5,
-    "offsetX": 0,
-    "offsetY": 0,
+  "composition": {
+    "schemaVersion": 1,
+    "compositionKey": "home-960x512-v1",
+    "canvas": {
+      "x": 448,
+      "y": 2048,
+      "width": 512,
+      "height": 512
+    },
+    "layout": {
+      "scale": 0.5,
+      "offsetX": 0,
+      "offsetY": 0
+    },
+    "cells": [
+      {
+        "id": "home-midpage-cross-partitions",
+        "x": 448,
+        "y": 2048,
+        "width": 512,
+        "height": 512,
+        "empty": false
+      }
+    ],
+    "toneIntervals": [
+      {
+        "top": 2048,
+        "bottom": 2304,
+        "tone": "base"
+      },
+      {
+        "top": 2304,
+        "bottom": 2560,
+        "tone": "muted"
+      }
+    ],
     "selectionReserveCssPx": 2
   },
   "derivatives": [
     {
       "id": "home-midpage-cross-partitions",
-      "filename": "home-midpage-cross-partitions.d9e6b68d45f10b004f84.svg",
-      "sha256": "d9e6b68d45f10b004f847a760fcf0cee6299001ea2aed64817d316f54d8f8809",
-      "bytes": 235088,
+      "empty": false,
+      "filename": "home-midpage-cross-partitions.7335c424ecbe38f9cee1.svg",
+      "sha256": "7335c424ecbe38f9cee18b76fe0ca7f9aa00100ed7769b63c18e2c0a7ae2148c",
+      "bytes": 471382,
       "pathCount": 45,
       "sourcePathIndices": [
         1,
@@ -80,7 +113,8 @@
         "x": 448,
         "y": 2048,
         "width": 512,
-        "height": 512
+        "height": 512,
+        "empty": false
       },
       "sourceQueryBounds": {
         "left": 892,
