@@ -13,7 +13,7 @@
   "compiler": {
     "name": "portfolio-pcb-derivative-compiler",
     "version": "0.2.0-prototype",
-    "sha256": "b8cc2208d8a803c3bdda072064133f8fcd850e74b77ee9f85888e01af85ca826"
+    "sha256": "e0b31661a94539748d0f8d02b07b8aeb64fb5f800caa8743e9e579463ee0182f"
   },
   "composition": {
     "schemaVersion": 1,
@@ -57,9 +57,9 @@
     {
       "id": "home-midpage-cross-partitions",
       "empty": false,
-      "filename": "home-midpage-cross-partitions.7335c424ecbe38f9cee1.svg",
-      "sha256": "7335c424ecbe38f9cee18b76fe0ca7f9aa00100ed7769b63c18e2c0a7ae2148c",
-      "bytes": 471382,
+      "filename": "home-midpage-cross-partitions.805c54053fe4200974e0.svg",
+      "sha256": "805c54053fe4200974e0a8c36d01adc02d1cded6c18e6356ce9320adff7302eb",
+      "bytes": 471396,
       "pathCount": 45,
       "sourcePathIndices": [
         1,

@@ -102,7 +102,7 @@ function derivativeSvg(
       paint += `<rect data-layer="${layer}" ${bounds} fill="url(#${layer}-palette)" mask="url(#${layer}-geometry)"/>`;
     } else {
       definitions += `<mask id="${layer}-cutouts" ${bounds} maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" style="mask-type:luminance"><rect ${bounds} fill="white"/><g transform="${transform}">${negative.join("")}</g></mask>`;
-      paint += `<g data-layer="${layer}" class="pcb-static-${layer}" mask="url(#${layer}-cutouts)" transform="${transform}">${positive.join("")}</g>`;
+      paint += `<g data-layer="${layer}" class="pcb-static-${layer}" mask="url(#${layer}-cutouts)"><g transform="${transform}">${positive.join("")}</g></g>`;
     }
   }
   return [

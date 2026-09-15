@@ -103,6 +103,8 @@ test("composition identity, coverage, explicit empty cells, and final paint orde
   const svg = compilation.artifacts[0].source;
   assert.ok(svg.indexOf('data-layer="depth"') < svg.indexOf('data-layer="main"'));
   assert.match(svg, /id="main-cutouts"/);
+  assert.match(svg, /<g data-layer="main" class="pcb-static-main" mask="url\(#main-cutouts\)"><g transform="/);
+  assert.doesNotMatch(svg, /data-layer="main"[^>]*mask="url\(#main-cutouts\)"[^>]*transform=/);
   assert.match(svg, /offset="0\.5" stop-color="#0f1115"\/><stop offset="0\.5" stop-color="#090d11"/);
 
   const withEmptyCell = input(fixture.source);

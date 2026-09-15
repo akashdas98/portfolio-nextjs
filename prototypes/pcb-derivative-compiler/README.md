@@ -21,6 +21,29 @@ Publishing a new manifest removes only obsolete files matching the compiler's
 strict hashed artifact naming contract; unrelated files in the output directory
 are preserved.
 
+Verify rendered equivalence with:
+
+```powershell
+npm run verify:pcb-derivative-render
+```
+
+The gate compiles the checked 512px region afresh, verifies that its manifest and
+SVG remain byte-identical to the checked artifacts, and compares it in installed
+headless Chromium's software paint path at DPR 4 against an independent
+all-source reference. The reference does not use the compiler's selected indices or gradient builder: it
+paints every immutable source path through explicit solid-color tone clips. A
+second four-cell rendering places seams at x=241 and y=271, away from the tone
+boundary, and is checked against both the reference and the monolithic derivative.
+Sharp reads the browser PNGs for global RGB, foreground occupancy, negative-cutout,
+tone, and seam-band assertions. SVG, HTML, browser profiles, and PNGs exist only in
+an operating-system temporary directory and are removed after a passing run; the
+command writes no repository output.
+
+The software paint path is explicit because this Windows sandbox cannot launch
+Chrome's GPU process. Chromium still owns SVG parsing, external-image isolation,
+masking, gradients, clipping, and rasterization; Sharp only reads the resulting
+PNG pixels.
+
 Current limits: this prototype consumes the prepared homepage lens projection,
 not the larger semantic master. Its checked plan proves one representative
 512px homepage composition only; it does not yet define the production

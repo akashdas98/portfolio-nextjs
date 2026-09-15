@@ -5,15 +5,15 @@ Updated: 2026-09-15. Read `AGENTS.md`.
 ## Current Task
 
 - Objective: redesign the PCG-generated PCB background and glow pipeline for much better performance while preserving generated geometry and visual identity. Restore performant touch glow; excluding touch is not acceptable.
-- Status: composition prototype implemented on `feature/pcb-renderer-redesign`; production remains unchanged.
+- Status: composition prototype and rendered-equivalence gate implemented on `feature/pcb-renderer-redesign`; production remains unchanged.
 - Source contract: the PCB Art Generator/PCG renderer is the sole geometry author. Preserve semantic primitives, IDs/classes, ownership, topology, cutouts and paint order through derivatives. Screenshots only validate appearance; current `PublicCircuitBackground.tsx` specifies interaction behavior. This repo contains the export/preparation pipeline, not the generator source; inspect that source before changing PCG itself.
 - Desktop contract: preserve its current effect one-for-one. Touch: activate on contact anywhere; follow drag including scroll; keep halo/flame/flicker and geometry trails but omit jitters; hold at the final touched spot for 6s, then fade opacity and size. No lag/blanking.
 - Root diagnosis: the browser acts as an asset compiler: hydration creates arbitrary `/api/pcb` regions and Blob SVGs; scale `max(pageWidth/sourceWidth,pageHeight/sourceHeight)` couples all art to document height; desktop continuously rewrites a large SVG mask/filter stack.
 - Direction: PCG master → trusted derivative compiler → stable static renderer, plus a separate interaction renderer using the same evaluator. Responsive evidence rules out fixed breakpoint-height plans; either page composition becomes deterministic or a server compiler consumes an authenticated layout. Compare bounded native-SVG and GPU lenses. Exact GPU trails require a viewport surface plus bounded work buffers; one 615px canvas cannot cover separated trails.
 - Unresolved: choose deterministic-page versus authenticated server-layout compilation; inspect PCG source; wire/measure static derivatives; compare SVG/GPU with touch activation and scroll; prove mobile glow fidelity and no blanking on physical iPhone.
-- Completed: touch/coarse glow shell/listeners/requests/animations removed; static PCB and desktop glow/trails preserved. No database, Storage, deployment or PCG mutation authorized.
-- Verification: build, TypeScript, synthetic WebKit/Chromium touch and desktop/static/reduced-motion checks passed. Physical-iPhone confirmation remains pending. Evidence: `.tmp-contour-audit/`. Recheck runtime.
-- Prototype evidence: a fail-closed composition plan owns layout identity, bounded cell coverage, empty cells and tone intervals. The compiler emits one displayable hashed 512px derivative with 45 preserved positive/cutout paths, depth-before-main paint and provenance; it now removes only stale generated artifacts after publishing a new manifest while preserving unrelated files. The shared evaluator drives the unchanged SVG adapter. All 18 PCB tests pass. Chromium pages measured 390x10625, 753x7620 and 1425x7073; mapping flips from height- to width-driven, disproving fixed-height families. TypeScript remains blocked only by the recorded `baseUrl` deprecation. Rendered derivative equivalence remains unproved; this proves boundaries, not speedup.
+- Completed: touch/coarse glow removed; static PCB and desktop glow/trails preserved. A temp-only Chromium DPR-4 gate compares a fresh derivative and non-tone-aligned four-cell mosaic with an independent all-source oracle. No database, Storage, deployment or PCG mutation authorized.
+- Verification: prior build, TypeScript and synthetic browser checks passed. The 2026-09-15 rendered gate passes RGB/occupancy, tone, cutout and seam assertions in Chrome software paint; all 18 PCB tests pass. Physical-iPhone confirmation remains pending. Run `npm run verify:pcb-derivative-render`; prior `.tmp-contour-audit/` evidence is historical.
+- Prototype evidence: the gate exposed an output-mask/source-transform coordinate bug that made the checked derivative transparent in Chromium. Nesting transformed geometry inside the masked output-space group corrected it. The regenerated 512px derivative preserves 45 paths, depth-before-main paint and provenance. Four-cell seams at x=241/y=271 have no missing run. Production remains unwired and performance unproved; prior page measurements rule out fixed-height families.
 
 
 ### Routing task outcome (preserve)
@@ -71,14 +71,10 @@ Updated: 2026-09-15. Read `AGENTS.md`.
 
 ## Recent Changes
 
+- 2026-09-15: Added a temp-only DPR-4 Chromium rendered-equivalence gate; it exposed and corrected the derivative compiler's transformed-mask coordinate bug, regenerated checked hashes, and verified a non-tone-aligned four-cell mosaic with no missing seam run.
+
 - 2026-09-15: Made derivative recompilation converge on the manifest-owned generated file set without deleting unrelated output-directory files; 18 PCB tests pass.
 
 - 2026-09-15: Measured live responsive composition and rejected fixed breakpoint-height derivative families: page reflow changes height continuously and flips the source mapping from height-driven to width-driven.
 
 - 2026-09-15: Extended the PCB compiler prototype with a fail-closed composition plan and directly displayable static derivative paint (hard tone transitions, bounded cutout masks, depth before main); production remains unwired and 17 focused tests pass.
-
-- 2026-09-15: Added a fail-closed `main` pre-push gate: the pushed commit's CMS registry must show every promotion remotely verified.
-
-- 2026-09-15: On `feature/pcb-renderer-redesign`, added a deterministic hashed derivative-compiler prototype and extracted the exact envelope evaluator behind the unchanged SVG adapter. Production wiring and GPU choice remain gated on visual/performance comparisons.
-
-- 2026-09-15: Specified separate touch glow: contact-anywhere activation, drag/scroll following, full non-jitter animation and trails, six-second final-position hold, then opacity+size fade; mobile lag/blanking remains disallowed.
