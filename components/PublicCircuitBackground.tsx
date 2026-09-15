@@ -1,6 +1,14 @@
 "use client";
 
 import { useEffect, useId, useRef, useState, type RefObject } from "react";
+import {
+  createEnvelopeDirections,
+  envelopeContourPath,
+  evaluateEnvelopeDisplacements,
+  smoothStep,
+  type EnvelopeEvaluatorConfig,
+  type EnvelopeWave,
+} from "@/lib/pcb/envelope-evaluator";
 
 type PublicCircuitBackgroundProps = {
   imageUrl: string;
@@ -69,15 +77,7 @@ type FlameLobe = {
   animation: Animation | null;
 };
 
-type EdgeLeak = {
-  active: boolean;
-  amplitude: number;
-  angle: number;
-  attackDuration: number;
-  decayDuration: number;
-  startedAt: number;
-  wavelength: number;
-};
+type EdgeLeak = EnvelopeWave;
 
 const BLUE_ENVELOPE_STOPS: EnvelopeStop[] = [
   { offset: 0, opacity: 0.96 },
@@ -159,10 +159,14 @@ const ENVELOPE_CONTOURS = Array.from({ length: 128 }, (_, index) => {
     pink: envelopeOpacityAt(PINK_ENVELOPE_STOPS, offset - 1 / 256),
   };
 });
-const ENVELOPE_DIRECTIONS = Array.from({ length: 256 }, (_, index) => {
-  const angle = (index / 256) * Math.PI * 2;
-  return { angle, x: Math.cos(angle), y: Math.sin(angle) };
-});
+const ENVELOPE_DIRECTIONS = createEnvelopeDirections(256);
+const ENVELOPE_EVALUATOR_CONFIG: EnvelopeEvaluatorConfig = {
+  baseRadius: BASE_ENVELOPE_RADIUS,
+  directions: ENVELOPE_DIRECTIONS,
+  maxDisplacement: EDGE_MAX_DISPLACEMENT,
+  tinyMaxDisplacement: EDGE_TINY_MAX_AMPLITUDE,
+  warpStart: ENVELOPE_WARP_START,
+};
 
 function sampleTinyWave(wave: EdgeLeak, timestamp: number, seedPhase = false) {
   const fast = Math.random() < EDGE_TINY_FAST_PROBABILITY;
@@ -179,58 +183,6 @@ function sampleTinyWave(wave: EdgeLeak, timestamp: number, seedPhase = false) {
   // absolute renewal interval while the visible attack and decay stay slower.
   const cycleDuration = (wave.attackDuration + wave.decayDuration) * EDGE_TINY_CYCLE_MULTIPLIER;
   wave.startedAt = timestamp - (seedPhase ? Math.random() * cycleDuration : 0);
-}
-
-function envelopeDisplacements(leaks: EdgeLeak[], timestamp: number, tinyWaves: EdgeLeak[] = []) {
-  const displacements = new Array<number>(ENVELOPE_DIRECTIONS.length).fill(0);
-  const step = Math.PI * 2 / ENVELOPE_DIRECTIONS.length;
-  function addWave(wave: EdgeLeak, limit: number) {
-    if (!wave.active) return;
-    const elapsed = timestamp - wave.startedAt;
-    const progress = elapsed <= wave.attackDuration
-      ? elapsed / wave.attackDuration
-      : 1 - (elapsed - wave.attackDuration) / wave.decayDuration;
-    const amplitude = wave.amplitude * smoothStep(progress);
-    const halfAngle = wave.wavelength / BASE_ENVELOPE_RADIUS;
-    // Visit only the few directions inside this wave, not every wave at every angle.
-    const first = Math.ceil((wave.angle - halfAngle) / step);
-    const last = Math.floor((wave.angle + halfAngle) / step);
-    for (let sample = first; sample <= last; sample += 1) {
-      const index = (sample % displacements.length + displacements.length) % displacements.length;
-      const distance = Math.abs(sample * step - wave.angle) / halfAngle;
-      const weight = (1 - distance * distance) ** 3;
-      displacements[index] += (1 - displacements[index] / limit) * amplitude * weight;
-    }
-  }
-  // Dense tiny waves stay tiny even where they overlap; large waves keep their range.
-  tinyWaves.forEach((wave) => addWave(wave, EDGE_TINY_MAX_AMPLITUDE));
-  leaks.forEach((wave) => addWave(wave, EDGE_MAX_DISPLACEMENT));
-  return displacements;
-}
-
-function envelopeContourRadius(offset: number, displacement: number) {
-  const radius = offset * BASE_ENVELOPE_RADIUS;
-  const distance = Math.max(0, Math.min(EDGE_MAX_DISPLACEMENT, displacement));
-  const edgeWeight = smoothStep((offset - ENVELOPE_WARP_START) / (0.8 - ENVELOPE_WARP_START));
-  const outerProgress = Math.max(0, (offset - ENVELOPE_WARP_START) / (1 - ENVELOPE_WARP_START));
-  // Every jitter transports shape and luminance through the same contour map.
-  // Advancing the brighter shoulder contours within the warped edge raises its
-  // average brightness; the untouched contour luminances still fade to zero.
-  // The quadratic transport is monotone at full strength, and its blend scales
-  // linearly with displacement, including the compact lateral/temporal falloff.
-  const brightnessTransport = BASE_ENVELOPE_RADIUS * (1 - ENVELOPE_WARP_START) *
-    outerProgress * (1 - outerProgress);
-  return radius + distance * edgeWeight +
-    (distance / EDGE_MAX_DISPLACEMENT) * brightnessTransport;
-}
-
-function envelopeContourPath(contour: typeof ENVELOPE_CONTOURS[number], displacements: number[]) {
-  const baseRadius = contour.offset * BASE_ENVELOPE_RADIUS;
-  const displacementScale = envelopeContourRadius(contour.offset, 1) - baseRadius;
-  return ENVELOPE_DIRECTIONS.map(({ x, y }, index) => {
-    const radius = baseRadius + displacementScale * displacements[index];
-    return `${index === 0 ? "M" : "L"}${(LENS_RADIUS + x * radius).toFixed(2)} ${(LENS_RADIUS + y * radius).toFixed(2)}`;
-  }).join("") + "Z";
 }
 
 function sampleFlameRadius() {
@@ -254,10 +206,6 @@ function envelopeOpacityAt(stops: EnvelopeStop[], offset: number) {
   return lower.opacity + (upper.opacity - lower.opacity) * progress;
 }
 
-function smoothStep(progress: number) {
-  const clamped = Math.max(0, Math.min(1, progress));
-  return clamped * clamped * (3 - 2 * clamped);
-}
 
 function rectPath(top: number, bottom: number, width = LENS_DIAMETER) {
   return `M0 ${top}H${width}V${bottom}H0Z`;
@@ -962,10 +910,20 @@ function CircuitInteraction({
           sampleTinyWave(wave, timestamp, !wave.active);
         }
       });
-      const displacements = envelopeDisplacements(edgeLeaks, timestamp, tinyWaves);
+      const displacements = evaluateEnvelopeDisplacements(
+        edgeLeaks,
+        tinyWaves,
+        timestamp,
+        ENVELOPE_EVALUATOR_CONFIG,
+      );
       envelopeContours.forEach((contour) => {
         if (contour.offset <= ENVELOPE_WARP_START) return;
-        const path = envelopeContourPath(contour, displacements);
+        const path = envelopeContourPath(
+          contour.offset,
+          displacements,
+          LENS_RADIUS,
+          ENVELOPE_EVALUATOR_CONFIG,
+        );
         contour.elements.forEach((element) => element.setAttribute("d", path));
       });
       edgeEnvelopeFrame = window.requestAnimationFrame(paintEdgeEnvelope);

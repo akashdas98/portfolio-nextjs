@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "sourceLabel": "public/pcb-backgrounds/home-lens.svg",
+  "layout": {
+    "scale": 0.5,
+    "offsetX": 0,
+    "offsetY": 0
+  },
+  "selectionReserveCssPx": 2,
+  "regions": [
+    {
+      "id": "home-midpage-cross-partitions",
+      "x": 448,
+      "y": 2048,
+      "width": 512,
+      "height": 512
+    }
+  ]
+}

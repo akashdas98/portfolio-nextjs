@@ -1,0 +1,93 @@
+{
+  "schema": "pcb-art-derivative-manifest",
+  "schemaVersion": "0.1",
+  "source": {
+    "label": "public/pcb-backgrounds/home-lens.svg",
+    "sha256": "22d199bc707ed953feb2cd1be5520f02e86435a5c949c235c63de37889b33cfc",
+    "bytes": 3199670,
+    "schema": "pcb-art-lens-svg",
+    "width": 2400,
+    "height": 12082.5,
+    "pathCount": 754
+  },
+  "compiler": {
+    "name": "portfolio-pcb-derivative-compiler",
+    "version": "0.1.0-prototype",
+    "sha256": "5ae2f5dc7aac32d93205de256aa32382e54d00c02c2382de98086c104a135d44"
+  },
+  "layout": {
+    "scale": 0.5,
+    "offsetX": 0,
+    "offsetY": 0,
+    "selectionReserveCssPx": 2
+  },
+  "derivatives": [
+    {
+      "id": "home-midpage-cross-partitions",
+      "filename": "home-midpage-cross-partitions.d9e6b68d45f10b004f84.svg",
+      "sha256": "d9e6b68d45f10b004f847a760fcf0cee6299001ea2aed64817d316f54d8f8809",
+      "bytes": 235088,
+      "pathCount": 45,
+      "sourcePathIndices": [
+        1,
+        6,
+        95,
+        96,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        145,
+        147,
+        148,
+        155,
+        299,
+        310,
+        313,
+        340,
+        341,
+        380,
+        381,
+        382,
+        391,
+        417,
+        423,
+        429,
+        460,
+        461,
+        514,
+        532,
+        544,
+        558,
+        559,
+        560,
+        573,
+        583,
+        584,
+        586,
+        587,
+        637,
+        664,
+        709,
+        730,
+        736,
+        746
+      ],
+      "cssBounds": {
+        "id": "home-midpage-cross-partitions",
+        "x": 448,
+        "y": 2048,
+        "width": 512,
+        "height": 512
+      },
+      "sourceQueryBounds": {
+        "left": 892,
+        "top": 4092,
+        "right": 1924,
+        "bottom": 5124
+      }
+    }
+  ]
+}

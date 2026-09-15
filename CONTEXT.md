@@ -5,15 +5,15 @@ Updated: 2026-09-15. Read `AGENTS.md`.
 ## Current Task
 
 - Objective: redesign the PCG-generated PCB background and desktop glow pipeline for much better performance while preserving generated geometry and the current effect one-for-one. Touch glow stays removed.
-- Status2026-09-15: Astra reviews checkpointed; no redesign code implemented. Continue here after `/clear`.
+- Status2026-09-15: prototype implemented on `feature/pcb-renderer-redesign`; production renderer remains unchanged.
 - Source contract: the PCB Art Generator/PCG renderer is the sole geometry author. Preserve semantic primitives, IDs/classes, ownership, topology, cutouts and paint order through derivatives. Screenshots only validate appearance; current `PublicCircuitBackground.tsx` specifies interaction behavior. This repo contains the export/preparation pipeline, not the generator source; inspect that source before changing PCG itself.
 - Desktop contract: preserve pointer following, exact local paths/cutouts, section tone clips, white core/triple halo, envelope/flicker/flame motion, 128×256 coupled contour deformation, 384 tiny states, 12 large waves, eight live-geometry trails, scroll alignment and lifecycle. Trails use current shared geometry, scale 0.92→0.98→1.04 and take one center-selected tone.
 - Root diagnosis: the browser acts as an asset compiler: hydration creates arbitrary `/api/pcb` regions and Blob SVGs; scale `max(pageWidth/sourceWidth,pageHeight/sourceHeight)` couples all art to document height; desktop continuously rewrites a large SVG mask/filter stack.
 - Direction: PCG semantic master → build/promotion compiler emitting hashed local SVG derivatives + spatial manifest → stable static renderer, with a separate desktop interaction renderer using the same numeric evaluator. Compare a bounded native-SVG lens against a GPU prototype. Exact GPU trails require a viewport final surface plus bounded work buffers; one 615px canvas cannot cover separated trails. Canvas/WebGL is not inherently faster.
-- Unresolved: decide the document-height composition contract; inspect PCG source; prove derivative boundaries/cutouts/transforms; prototype SVG/GPU fidelity and performance; validate desktop and physical iPhone. `home.svg`≈16.65MB/~35.5k primitives; `home-lens.svg`≈3.2MB/754 paths. Avoid page-height raster surfaces (390×12000 at DPR3≈169MB RGBA).
+- Unresolved: decide document-height composition; inspect PCG source; wire/measure a static derivative renderer; build the GPU comparison fixture; validate Chromium/WebKit/iPhone. Avoid page-height raster surfaces.
 - Completed: touch/coarse glow shell/listeners/requests/animations removed; static PCB and desktop glow/trails preserved. No database, Storage, deployment or PCG mutation authorized.
 - Verification: build, TypeScript, synthetic WebKit/Chromium touch and desktop/static/reduced-motion checks passed. Physical-iPhone confirmation remains pending. Evidence: `.tmp-contour-audit/`. Recheck runtime.
-- Allocation: Astra high/xhigh for cross-renderer fidelity and memory/paint reasoning. Next acceptance: mechanism map, prototype, comparisons, measurements and physical-device gate.
+- Prototype evidence: deterministic compiler emits one hashed 512px homepage derivative with 45 byte/order-preserved positive/cutout paths and provenance; renderer-neutral evaluator now drives the unchanged SVG contour adapter. Focused suites and TypeScript pass. This proves boundaries, not a speedup.
 
 
 ### Routing task outcome (preserve)
@@ -73,7 +73,7 @@ Updated: 2026-09-15. Read `AGENTS.md`.
 
 - 2026-09-15: Added a fail-closed `main` pre-push gate: the pushed commit's CMS registry must show every promotion remotely verified.
 
-- 2026-09-15: Checkpointed the PCB redesign review. PCG remains geometry authority; future work must use its semantic export and current interaction code, separate build-time derivatives from desktop effects, and prove fidelity/performance.
+- 2026-09-15: On `feature/pcb-renderer-redesign`, added a deterministic hashed derivative-compiler prototype and extracted the exact envelope evaluator behind the unchanged SVG adapter. Production wiring and GPU choice remain gated on visual/performance comparisons.
 
 - 2026-09-15: Removed glow entirely from touch input after real-device blanking/lag persisted. Touch mounts no interaction shell and performs no geometry requests or animations; desktop glow/static PCB remain. Removed the temporary paint-audit UI.
 
