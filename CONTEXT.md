@@ -7,7 +7,7 @@ Updated: 2026-09-15. Read `AGENTS.md`.
 - Objective: redesign the PCG-generated PCB background and glow pipeline for much better performance while preserving generated geometry and visual identity. Restore performant touch glow; excluding touch is not acceptable.
 - Status2026-09-15: prototype implemented on `feature/pcb-renderer-redesign`; production renderer remains unchanged.
 - Source contract: the PCB Art Generator/PCG renderer is the sole geometry author. Preserve semantic primitives, IDs/classes, ownership, topology, cutouts and paint order through derivatives. Screenshots only validate appearance; current `PublicCircuitBackground.tsx` specifies interaction behavior. This repo contains the export/preparation pipeline, not the generator source; inspect that source before changing PCG itself.
-- Desktop contract: preserve its current effect one-for-one. Touch must restore the same visual identity through a mobile-appropriate interaction lifecycle without reintroducing scroll lag or blanking; implementation simplification requires demonstrated visual equivalence.
+- Desktop contract: preserve its current effect one-for-one. Touch: activate on contact anywhere; follow drag including scroll; keep halo/flame/flicker and geometry trails but omit jitters; hold at the final touched spot for 6s, then fade opacity and size. No lag/blanking.
 - Root diagnosis: the browser acts as an asset compiler: hydration creates arbitrary `/api/pcb` regions and Blob SVGs; scale `max(pageWidth/sourceWidth,pageHeight/sourceHeight)` couples all art to document height; desktop continuously rewrites a large SVG mask/filter stack.
 - Direction: PCG semantic master → build/promotion compiler emitting hashed local SVG derivatives + spatial manifest → stable static renderer, with a separate desktop interaction renderer using the same numeric evaluator. Compare a bounded native-SVG lens against a GPU prototype. Exact GPU trails require a viewport final surface plus bounded work buffers; one 615px canvas cannot cover separated trails. Canvas/WebGL is not inherently faster.
 - Unresolved: decide document-height composition; inspect PCG source; wire/measure static derivatives; compare SVG/GPU with touch activation and scroll; prove mobile glow fidelity and no blanking on physical iPhone.
@@ -75,7 +75,7 @@ Updated: 2026-09-15. Read `AGENTS.md`.
 
 - 2026-09-15: On `feature/pcb-renderer-redesign`, added a deterministic hashed derivative-compiler prototype and extracted the exact envelope evaluator behind the unchanged SVG adapter. Production wiring and GPU choice remain gated on visual/performance comparisons.
 
-- 2026-09-15: Removed glow entirely from touch input after real-device blanking/lag persisted. Touch mounts no interaction shell and performs no geometry requests or animations; desktop glow/static PCB remain. Removed the temporary paint-audit UI.
+- 2026-09-15: Specified separate touch glow: contact-anywhere activation, drag/scroll following, full non-jitter animation and trails, six-second final-position hold, then opacity+size fade; mobile lag/blanking remains disallowed.
 
 - 2026-09-13: Corrected the touch/halo regression: restored desktop's exact glow treatment, removed mobile contour rewriting and duplicate event streams, deferred lens population off startup, bounded touch to intersecting paths, and fixed timer cleanup. Mobile startup/touch profiling, desktop interaction, reduced motion and TypeScript checks pass; real-device acceptance pending.
 
