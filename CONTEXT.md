@@ -4,9 +4,9 @@ Updated: 2026-09-24. Read `AGENTS.md`.
 
 ## Current Task
 
-- Objective: redesign the PCG-generated PCB background and glow pipeline for much better performance while preserving generated geometry and visual identity. Restore performant touch glow; excluding touch is not acceptable.
-- Scope/approval: user approved production enablement of the accepted touch renderer on 2026-09-22. No database/Storage/deployment or PCG mutation is authorized.
-- Status: Parent feature complete on `feature/pcb-renderer-redesign`. The user confirms mouse/touch glow and scrolling feel good and accepts slight iPad pinch-zoom softness. This is experience acceptance, not a measured overall speedup; the branch remains uncommitted and undeployed.
+- Objective: release the accepted PCB renderer redesign locally, then resolve the user's Supabase CMS push request without deployment.
+- Scope/approval: user authorized commit and merge to `main` and requested a Supabase CMS push on 2026-09-24; deployment is excluded. User clarified this is a universal site-wide renderer change, not a case-study update. No PCG mutation is authorized. No CMS document, Storage or migration delta exists to push.
+- Status: Parent feature complete and merged locally to `main` at `04dd60c` (feature commit `dd3118e`). Mouse/touch glow and scrolling were user-accepted, including slight iPad pinch-zoom softness. This is experience acceptance, not a measured overall speedup. `main` has not been pushed to GitHub or deployed.
 - Source contract: the PCB Art Generator/PCG renderer is the sole geometry author. Preserve semantic primitives, IDs/classes, topology, cutouts and paint order. Screenshots only validate appearance; `components/public-circuit/` specifies interaction behavior. This repo does not contain the generator source; inspect it before changing PCG itself.
 - Desktop contract: preserve its current effect one-for-one. Touch: activate on contact anywhere; follow drag including scroll; keep halo/flame/flicker and geometry trails but omit jitters; hold at the final touched spot for 6s, then fade opacity and size. No lag/blanking.
 - Root diagnosis: hydration compiles arbitrary `/api/pcb` regions and Blob SVGs in-browser; document-height scaling couples all artwork to layout; desktop rewrites a large SVG mask/filter stack. Naive 512px derivatives multiply decoded geometry by about 3.45x-3.98x, so compression alone does not solve parse/paint cost.
@@ -15,7 +15,7 @@ Updated: 2026-09-24. Read `AGENTS.md`.
 - Completed: touch retains the frozen desktop flame field with approved size/jitter exceptions, persistent 420px front/back canvases, atomic pixels+origin publication, retained last-valid paint, active+latest preparation, guarded worker halo and Canvas fallback. Static SVG geometry now paints once into per-tile Canvas; desktop SVG is unchanged. Pointer cancellation keeps the touch interaction in contact until actual lift.
 - Verification: 2026-09-24 clean production build passed; 42 touch tests plus browser-pixel check and 14 related tests passed. Production Chrome showed 42 ready static canvases, separate hybrid lifecycles, and zero interaction canvases/lenses/trails after live reduced-motion switch. Physical iPad touch captures remain 25ms/28ms ready RAF p95. This is not a before/after overall performance comparison. Dev LAN restored and assets checked.
 - Prototype evidence: the gate corrected a mask/transform bug and rejected grouped shared definitions that repainted cutouts. Ordered per-path references fixed correctness and cut raw/gzip output about 48%, but runtime benefit remains unproved and production is unwired.
-- Remaining: follow the ordered task table below. All PCB feature rows are done; preserve the accepted branch for separate commit/release decisions. Deployment was not authorized.
+- Remaining: follow the ordered task table below. All PCB feature rows and the local merge are complete. Existing Supabase case-study documents and artwork are untouched; the universal renderer takes effect only when app code is deployed in a separately authorized step. Do not deploy now.
 
 | Order | PCB feature task | State | Exit condition |
 | ---: | --- | --- | --- |
@@ -42,13 +42,13 @@ Updated: 2026-09-24. Read `AGENTS.md`.
 | Delivery Intelligence promotion | verified complete | Preserve database/Storage ownership and aligned seeds/migrations. |
 | Leads Management promotion | verified complete | Preserve database ownership and lead-activity wording. |
 | Horecah promotion | verified complete | Preserve database ownership and scoped product claims. |
-| PCB artwork/rendering | Redesign accepted; glow/scroll/zoom and production checks complete; no overall speedup claim | Reopen only for reproduced performance/visual failure; branch remains uncommitted and undeployed. |
+| PCB artwork/rendering | Redesign accepted and merged locally to `main`; no overall speedup claim | Reopen only for reproduced performance/visual failure; no deployment. |
 | Reveal motion | Autonomous CSS first entrance locked by prior fresh-profile iPhone verification; JS owns only initially below-fold targets at 94% line | Preserve route rebinding, progressive enhancement, reduced motion, and LAN cache safeguards. |
 | Admin/auth/contact | Auth, project/lead admin and Resend contact implemented | Verify browser login/edit and production sender/env before launch claims; Gmail, richer filters and deletion remain unbuilt. |
 | Identity/deployment | Metadata/assets implemented; source URL `https://freebirdakash.vercel.app` | Reconcile actual host/domain when deployment is in scope. |
 | Dependencies | `latest` ranges remain; Node 24 previously installed successfully; lockfile uses public npm registry | Check current Node executable (old shells resolved 18); use Node 20+ for app installs/builds. Audit/pinning still pending. |
 | Runtime/build | Clean production build passed 2026-09-24; dev LAN restored with HTML/CSS/JS asset and cache checks | Recheck actual processes/ports next session; follow single-writer procedure. |
-| Git/GitHub | Private `akashdas98/portfolio-nextjs`; current PCB work is on feature branch | Preserve working changes; historical auth/push evidence is not current verification. |
+| Git/GitHub | Private `akashdas98/portfolio-nextjs`; PCB feature merged locally to `main` at `04dd60c` | `main` remains ahead of origin; no GitHub push or deployment in this handoff. |
 | Main push gate | `main` push requires every entry in `docs/agent/cms-promotion-status.json` to be `verified complete`; pre-push validates the pushed commit | Downgrade registry and CONTEXT before local CMS iteration; restore only after remote verification. |
 | Future Work/products | Direction approved in principle, implementation deferred | `docs/work-and-products-overhaul.md`: live independent flagship before client work, later supporting products, `/work` catalogue, distinct Product Stories. Start only when requested and evidence is ready. |
 
@@ -62,14 +62,14 @@ Updated: 2026-09-24. Read `AGENTS.md`.
 
 ## Next Recommended Steps
 
-1. PCB redesign is accepted locally. Preserve the branch and its uncommitted work; any commit, merge, or deployment is a separate decision. Reopen only on a reproduced issue.
+1. PCB redesign is committed and merged locally. No Supabase CMS push is applicable to this universal renderer change; existing case-study data and layout remain owned by Supabase. Deployment remains excluded.
 2. Re-evaluate dependency advisories/pinning and complete admin login/project-edit browser review on the next relevant task. Verify production host/domain, deployment env and Resend sender before declaring launch readiness.
 3. Address confirmed mojibake deliberately; keep Gmail sync and Work/products redesign deferred until explicitly requested.
 
 ## Recent Changes
 
-- 2026-09-24: Corrected PCB task tracking after user clarified the touch-lag detour did not finish the parent performance redesign. Ordered feature tasks now put performance work before release review; memory checker enforces first-unfinished activation and active parent state. Two focused tests, memory and diff checks pass.
 - 2026-09-24: User approved checkpoint-based `/clear` readiness. Lifecycle v3 allows documented pending work; only stale checkpoints, uncaptured handoff details or in-flight operations block. Six tests, memory and diff checks pass. Task tracking remains separate; only the user invokes `/clear`.
 - 2026-09-24: User accepted corrected desktop trail. `<use>` had referenced lens geometry whose live culling changed old samples; per-sample ordered SVG path snapshots now remain fixed. Chrome verified 42 frozen paths through a fast jump, full decay/removal, visible afterimages, hybrid/reduced-motion isolation. TypeScript and diff check pass; no build beside dev writer.
 - 2026-09-24: PCB diagnostic URL switches now run only in development; capture POST was already 404 outside development. TypeScript, production-route check and development-overlay check pass. Production build remains part of branch review.
-- 2026-09-24: User accepted mouse/touch glow, scrolling, and slight iPad pinch-zoom softness. Clean build, focused tests, browser hybrid/reduced-motion checks, diff review, and LAN restart passed. Static DPR backing estimate is a monitored risk without a reported failure. PCB redesign accepted locally; no measured overall speedup claim, commit, or deployment.
+- 2026-09-24: User accepted mouse/touch glow, scrolling, and slight iPad pinch-zoom softness. Clean build, focused tests, browser hybrid/reduced-motion checks, diff review, and LAN restart passed. Static DPR backing estimate is a monitored risk without a reported failure. No measured overall speedup claim or deployment.
+- 2026-09-24: Committed the PCB release with changelog (`dd3118e`) and merged to local `main` (`04dd60c`). User clarified the change is universal; the merge has no CMS document, Storage or migration delta, so no Supabase push applies. Existing dynamic case-study content/layout remains intact. No GitHub push or deployment.
