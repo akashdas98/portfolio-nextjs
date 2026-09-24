@@ -11,13 +11,11 @@ const cliPath = fileURLToPath(new URL("./lifecycle-cli.mjs", import.meta.url));
 
 function lifecycle(overrides = {}) {
   return {
-    schema_version: 1,
+    schema_version: 3,
     meaningful_change_revision: 4,
     checkpoint_revision: 4,
-    task_state: "complete",
     unresolved_items: [],
     active_operations: [],
-    recommendation_state: "clear-candidate",
     ...overrides,
   };
 }
@@ -30,19 +28,15 @@ test("a stale checkpoint is not clear-ready", () => {
   assert.deepEqual(result.blockers, ["checkpoint is stale"]);
 });
 
-test("unfinished work and a non-clear recommendation block readiness", () => {
-  const result = evaluateLifecycle(lifecycle({
-    task_state: "in-progress",
-    recommendation_state: "continue",
-  }));
-  assert.equal(result.clear_ready, false);
-  assert.equal(result.checks.task_complete_declared, false);
-  assert.match(result.blockers.join("; "), /task is not declared complete/);
-  assert.match(result.blockers.join("; "), /semantic clear recommendation/);
+test("a fresh handoff is clear-ready without declaring feature completion", () => {
+  const result = evaluateLifecycle(lifecycle());
+  assert.equal(result.valid, true);
+  assert.equal(result.clear_ready, true);
+  assert.equal("task_complete_declared" in result.checks, false);
 });
 
-test("active operations and unresolved items block without exposing their text", () => {
-  const secretItem = "private customer detail";
+test("active operations and uncaptured handoff details block without exposing their text", () => {
+  const secretItem = "private context detail not yet checkpointed";
   const secretOperation = "worker handling private repository";
   const result = evaluateLifecycle(lifecycle({
     unresolved_items: [secretItem],
@@ -56,7 +50,7 @@ test("active operations and unresolved items block without exposing their text",
   assert.doesNotMatch(output, new RegExp(secretOperation));
 });
 
-test("fresh checkpoint with declared completion and no blockers is clear-ready", () => {
+test("fresh checkpoint with no handoff blockers is clear-ready", () => {
   const result = evaluateLifecycle(lifecycle());
   assert.equal(result.valid, true);
   assert.equal(result.status, "clear-ready");
@@ -67,6 +61,8 @@ test("fresh checkpoint with declared completion and no blockers is clear-ready",
 test("malformed manifests are rejected", () => {
   assert.equal(evaluateLifecycle(null).valid, false);
   assert.equal(evaluateLifecycle(lifecycle({ schema_version: 2 })).valid, false);
+  assert.equal(evaluateLifecycle(lifecycle({ task_state: "complete" })).valid, false);
+  assert.equal(evaluateLifecycle(lifecycle({ recommendation_state: "clear-candidate" })).valid, false);
   assert.equal(evaluateLifecycle(lifecycle({ unexpected: true })).valid, false);
   assert.equal(evaluateLifecycle(lifecycle({ checkpoint_revision: 5 })).valid, false);
   assert.equal(evaluateLifecycle(lifecycle({ unresolved_items: [""] })).valid, false);
@@ -105,4 +101,3 @@ test("CLI uses distinct ready, blocked, and malformed exit codes", async () => {
     await rm(dir, { recursive: true, force: true });
   }
 });
-

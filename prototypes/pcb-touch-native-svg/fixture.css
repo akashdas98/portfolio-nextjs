@@ -1,0 +1,81 @@
+html,
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #0b0f13;
+  color: #d8eef8;
+  overscroll-behavior: auto;
+  touch-action: auto;
+}
+
+[data-pcb-page] {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #0b0f13;
+}
+
+.pcb-source {
+  position: absolute;
+  inset: 0 auto auto 0;
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: .2;
+  pointer-events: none;
+}
+
+.pcb-touch-live,
+.pcb-touch-trail {
+  position: absolute;
+  z-index: 2;
+  width: 615px;
+  height: 615px;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+.pcb-touch-live-paint,
+.pcb-touch-trail-paint {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.pcb-touch-live [data-halo-band],
+.pcb-touch-trail [data-halo-band] {
+  fill: #007cff;
+  filter: blur(5px) drop-shadow(0 0 3px rgb(0 124 255 / .98));
+}
+
+.pcb-touch-live [data-core],
+.pcb-touch-trail [data-core] {
+  fill: #edf9ff;
+  filter: drop-shadow(0 0 1.75px rgb(0 124 255 / .95));
+}
+
+[data-tone="pink"] [data-halo-band] {
+  fill: #df3a94;
+  filter: blur(5px) drop-shadow(0 0 3px rgb(223 58 148 / .98));
+}
+
+[data-tone="pink"] [data-core] {
+  fill: #fff0f8;
+  filter: drop-shadow(0 0 1.75px rgb(223 58 148 / .95));
+}
+
+.pcb-touch-trail {
+  width: 260px;
+  height: 260px;
+  opacity: 0;
+  z-index: 1;
+  will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pcb-touch-live,
+  .pcb-touch-trail {
+    display: none;
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "schema": "pcb-art-derivative-manifest",
+  "schemaVersion": "0.1",
+  "source": {
+    "label": "public/pcb-backgrounds/home-lens.svg",
+    "sha256": "22d199bc707ed953feb2cd1be5520f02e86435a5c949c235c63de37889b33cfc",
+    "bytes": 3199670,
+    "schema": "pcb-art-lens-svg",
+    "width": 2400,
+    "height": 12082.5,
+    "pathCount": 754
+  },
+  "compiler": {
+    "name": "portfolio-pcb-derivative-compiler",
+    "version": "0.2.0-prototype",
+    "sha256": "e0b31661a94539748d0f8d02b07b8aeb64fb5f800caa8743e9e579463ee0182f"
+  },
+  "composition": {
+    "schemaVersion": 1,
+    "compositionKey": "home-960x512-v1",
+    "canvas": {
+      "x": 448,
+      "y": 2048,
+      "width": 512,
+      "height": 512
+    },
+    "layout": {
+      "scale": 0.5,
+      "offsetX": 0,
+      "offsetY": 0
+    },
+    "cells": [
+      {
+        "id": "home-midpage-cross-partitions",
+        "x": 448,
+        "y": 2048,
+        "width": 512,
+        "height": 512,
+        "empty": false
+      }
+    ],
+    "toneIntervals": [
+      {
+        "top": 2048,
+        "bottom": 2304,
+        "tone": "base"
+      },
+      {
+        "top": 2304,
+        "bottom": 2560,
+        "tone": "muted"
+      }
+    ],
+    "selectionReserveCssPx": 2
+  },
+  "derivatives": [
+    {
+      "id": "home-midpage-cross-partitions",
+      "empty": false,
+      "filename": "home-midpage-cross-partitions.805c54053fe4200974e0.svg",
+      "sha256": "805c54053fe4200974e0a8c36d01adc02d1cded6c18e6356ce9320adff7302eb",
+      "bytes": 471396,
+      "pathCount": 45,
+      "sourcePathIndices": [
+        1,
+        6,
+        95,
+        96,
+        138,
+        139,
+        140,
+        141,
+        142,
+        143,
+        145,
+        147,
+        148,
+        155,
+        299,
+        310,
+        313,
+        340,
+        341,
+        380,
+        381,
+        382,
+        391,
+        417,
+        423,
+        429,
+        460,
+        461,
+        514,
+        532,
+        544,
+        558,
+        559,
+        560,
+        573,
+        583,
+        584,
+        586,
+        587,
+        637,
+        664,
+        709,
+        730,
+        736,
+        746
+      ],
+      "cssBounds": {
+        "id": "home-midpage-cross-partitions",
+        "x": 448,
+        "y": 2048,
+        "width": 512,
+        "height": 512,
+        "empty": false
+      },
+      "sourceQueryBounds": {
+        "left": 892,
+        "top": 4092,
+        "right": 1924,
+        "bottom": 5124
+      }
+    }
+  ]
+}

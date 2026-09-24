@@ -1,7 +1,6 @@
 const MODEL_CLASS = Object.freeze({
-  "gpt-5.6-luna": "luna",
-  "gpt-5.6-sol": "sol",
-  "gpt-5.6-terra": "terra",
+  "gpt-6-luna": "luna",
+  "gpt-6-sol": "sol",
   "gpt-6-astra": "astra",
 });
 
@@ -270,7 +269,8 @@ export function evaluatePreToolUse(event) {
 
 export const PARENT_POLICY = [
   "Use adaptive routing for each meaningful handoff: choose installed skills, tools, integrations, and reusable scripts before adding capability.",
-  "Select model and reasoning effort independently for the initial route and every reassessment. Model choice addresses capability profile and ceiling; effort addresses inference depth, search, branching, and verification within that model. Work class is descriptive, not an allocation ladder; stronger models do not imply higher effort, and higher effort cannot substitute for a capability mismatch.",
+  "For this repository, use docs/agent/delegation-system.md as the decision and future-upgrade entrypoint. First assess the task's capability, reasoning work, consequences, and reviewability; then compare viable GPT-6 model-effort pairs using relevant benchmarks and completed-task evidence. Benchmarks do not classify task difficulty.",
+  "Select model and reasoning effort independently for the initial route and every reassessment. At reassessment, evaluate the remaining work from new task evidence before comparing viable pairs; a benchmark crossing alone is not a trigger. Model choice addresses capability profile and ceiling; effort addresses inference depth, search, branching, and verification within that model. Work class is descriptive, not an allocation ladder; stronger models do not imply higher effort, and higher effort cannot substitute for a capability mismatch.",
   "Use routing schema version 2 with separate model_demand and effort_demand reasons and evidence. Reassess model-only, effort-only, both, or neither as evidence changes, including independent downgrades after diagnosis.",
   "Do not force a cheap-model failure before an appropriate stronger initial allocation, and do not claim token or cost savings without measured completed-task evidence.",
   "Discover a missing capability only when task-relevant. Auto-install only from a trusted reviewed source when the task justifies it and no credentials, account consent, protected configuration, or external-write permission is required.",

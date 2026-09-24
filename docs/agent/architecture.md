@@ -11,7 +11,11 @@ Top-level layout:
 - `app/admin/`: private admin routes for dashboard, projects, leads, settings, and login.
 - `app/api/contact/route.ts`: contact form endpoint using Zod validation and Resend email delivery.
 - `components/`: reusable UI components for the header, contact form, project cards, and system visuals.
-- `components/PublicCircuitBackground.tsx`: regional vector projection and on-demand native SVG interaction; excludes admin and reduced-motion interaction.
+- `components/PublicCircuitBackground.tsx`: deterministic PCB orchestration for the static projection and independently owned desktop/touch interaction renderers; excludes admin and reduced-motion interaction.
+- `components/public-circuit/StaticCircuitVector.tsx`: regional static vector projection ownership.
+- `components/public-circuit/DesktopCircuitInteraction.tsx`: frozen on-demand native SVG desktop interaction ownership.
+- `components/public-circuit/TouchCanvasInteraction.tsx`: accepted bounded Canvas touch lifecycle and paint ownership.
+- `components/public-circuit/shared.ts`: non-React shared geometry acquisition, renderer types, and constants used by more than one PCB renderer.
 - `components/CircuitUnderlay.tsx`: shared semantic text and inert readability paint source. Exact stacking/paint requirements live in `visual.md`.
 - `components/PublicAnimations.tsx`: progressively enhanced reveals; preserves CSS first-paint ownership and rebinds below-fold animation on route changes.
 - `components/CaseStudyBackLink.tsx`: browser-back behavior with a synthesized `/#work` history entry for direct arrivals.

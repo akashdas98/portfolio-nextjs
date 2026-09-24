@@ -7,6 +7,12 @@ holds compact restart state; routed documents own detailed requirements/evidence
 
 ## Runtime policy
 
+The active two-stage routing decision and the general upgrade entrypoint are in
+`docs/agent/delegation-system.md`: assess the task's capability and reasoning
+demands first, then compare viable model-effort pairs using relevant evidence.
+The GPT-6 benchmark matrix informs pair comparison; it does not classify task
+difficulty. Apply this policy at initial allocation and meaningful reassessment.
+
 Codex 0.154.0 defaults V2 ordinary-effort sessions to explicit-request-only mode.
 The user config now sets `features.multi_agent_v2.multi_agent_mode_hint_text` to
 replace that policy with economical delegation independent of reasoning effort.
@@ -19,6 +25,25 @@ effort, and effort cannot compensate for a capability mismatch. Avoid cloned
 history, duplicate work and empty polling.
 
 ## Adaptive routing implementation
+
+2026-09-23 GPT-6 migration: the active routing evaluator and launch guard accept
+only `gpt-6-astra`, `gpt-6-sol`, and `gpt-6-luna`. Existing effort limits stay the
+same in this Codex spawn tool: Astra and Sol support low through ultra; Luna
+supports low through max. The current API model pages separately document
+effort only through max; this guard models the Codex tool contract.
+Model and effort evidence gates, reassessment rules, and work-class independence
+are unchanged. Historical GPT-5.6 routes below are records, not current options.
+
+OpenAI's September 2026 article and its SVG chart labels show meaningful
+cross-effort tradeoffs. On FrontierCode, Sol medium slightly beats Astra low
+(45.9% versus 45.3%) at $0.80 versus $1.70 per task. On DeepSWE, Astra low
+is substantially better than Sol medium (67.0% versus 56.6%). The complete
+chart matrix, evaluation context and routing implications are in
+`docs/agent/gpt-6-routing-evidence.md`. Select both axes for the actual task;
+these API-priced benchmark results do not establish local Codex savings.
+Sources:
+https://openai.com/index/introducing-gpt-6-sol-and-luna/
+https://developers.openai.com/api/docs/guides/latest-model
 
 2026-09-14 Terra inclusion: Portfolio's evaluator now accepts `gpt-5.6-terra`
 at low through ultra, matching the live spawn tool's supported combinations.
@@ -130,17 +155,32 @@ Startup loads Current Task, then relevant routes/issue/approval rows on demand.
 Preserve unfinished work and historical evidence without loading them indiscriminately.
 Do not shrink tool schemas or remove project requirements just to reduce context.
 Natural task handoffs preserve current decisions without replaying completed work.
+When asked for the next task, resolve the scope from the active branch and Current
+Task first, then check the routed requirement for unfinished work. The general
+Next Recommended Steps list is a later backlog while an active feature still has
+an ordered remaining item. If a completed subtask and an unfinished requirement
+appear to conflict, reconcile their scope in CONTEXT before answering; do not
+silently treat subtask acceptance as feature completion.
+For a multi-step active feature, Current Task owns one ordered task table with
+`active`, `queued`, and `done` states. Exactly the first unfinished row is `active`;
+later rows stay `queued`. A detour closes only its own row or recorded subtask.
+Do not promote final regression, release review, or backlog ahead of an unfinished
+feature outcome. Keep the parent Status and Remaining line aligned with that table;
+Next Recommended Steps points to it instead of maintaining a second task order.
+The memory checker validates this structure, while the agent must still reconcile
+the actual task truth against user corrections and evidence.
 
 Meaningful changes require a durable checkpoint in the existing owning document;
-read-only answers, unchanged state and validation-only results do not. At completed
-or safely handed-off boundaries, the agent should recommend `/clear` when the prior
-conversation has become disposable. Recommendation requires a fresh checkpoint,
-declared completion, no unresolved items or active operations, and an affirmative
-semantic judgment that clearing is useful. `scripts/agent-routing/lifecycle-cli.mjs`
-validates those declared conditions and returns distinct ready, blocked and invalid
-statuses without exposing item text. It cannot observe unrecorded work, invoke
-`/clear`, or replace the agent's completion judgment. The user performs `/clear`;
-SessionStart then restores the compact policy and normal Current Task routing.
+read-only answers, unchanged state and validation-only results do not. Finish
+affected regression checks before calling a code change verified; pending human
+verification can be recorded explicitly. Run `scripts/agent-routing/lifecycle-cli.mjs`
+after each meaningful checkpoint. At a safe handoff, suggest `/clear` naturally
+whenever it returns ready. Version 3 checks checkpoint freshness, uncaptured
+handoff details and in-flight operations. Feature completion, queued tasks,
+documented pending checks and stable services do not block readiness. Task
+tracking continues independently. The checker cannot verify checkpoint contents,
+observe unrecorded work or invoke `/clear`; the user performs it. SessionStart
+restores Current Task routing.
 
 Memory checkers establish structure only. Fresh-process policy inspection establishes
 injection; actual delegated work establishes worker selection. Neither proves quota
