@@ -7,6 +7,9 @@ only relevant ledger/issues/approval rows before affected work. Reuse valid acti
 context and already-injected instructions. Do not load the full ledger, recent
 history, or all routed documents at startup. Inspect Git before edits and preserve
 existing work. Saved runtime observations are historical, not proof of health.
+For "what's next?" on an active branch, use Current Task's Remaining order and
+the routed rule before backlog. Reconcile status;
+subtask acceptance does not close the feature.
 
 ## Required task routing
 
@@ -23,6 +26,7 @@ does not require rereading product positioning unless it changes that contract.
 | Public CSS, layout, typography, motion, diagrams, PCB artwork, SVG preparation | `docs/agent/visual.md` |
 | Install/build/dev processes, LAN, browser verification, tooling | `docs/agent/runtime.md` |
 | Agent instructions, memory, skills, workflow architecture | `docs/agent/workflow.md` |
+| Model, reasoning, delegation, or agent-system upgrades | `docs/agent/delegation-system.md` plus workflow rules |
 | Expanded case-study editorial work | `docs/case-study-evidence-redesign.md` plus product/engineering/visual rules |
 | Independent products or Work catalogue | `docs/work-and-products-overhaul.md` plus product/engineering/visual rules; implementation remains deferred until requested |
 | Future Gmail/admin planning | `docs/admin-projects-and-leads-plan.md` plus engineering rules; older plan schema is historical, not current implementation |
@@ -53,8 +57,8 @@ stronger model need not use higher effort, and higher effort does not substitute
 for a capability mismatch. Consider total handoff/review cost, preserve
 requirements, and use focused briefs rather than full-history forks.
 
-Before substantial work, record separate model-demand and effort-demand rationales
-plus acceptance checks; reassess either axis independently at meaningful handoffs.
+Before substantial work, record separate model/effort rationales and acceptance
+checks; reassess either axis independently at meaningful handoffs.
 Before spawning, use the structured routing contract in
 `scripts/agent-routing/README.md`. Automatically select useful
 installed skills/tools; discover missing capabilities only for a concrete need.
@@ -81,13 +85,11 @@ unfinished work needs a handoff; link detailed evidence instead of duplicating i
 An unchanged state or a read-only reply needs no checkpoint. A validation result
 does not create another documentation-and-validation cycle.
 
-At a completed or safely handed-off task boundary, proactively recommend `/clear`
-when the accumulated conversation is no longer needed and a compact restart will
-reduce future context cost. Recommend it only after the latest meaningful change
-is checkpointed and there are no unresolved items, active tools/processes/workers,
-pending approvals or context-dependent next steps that would be lost. Use the
-lifecycle checker for a machine-readable readiness decision on substantial work;
-the user invokes `/clear`, and the agent never claims or assumes it occurred.
+After each meaningful change, verify affected behavior and checkpoint the
+result, including pending human checks and exact next steps. Run the lifecycle
+checker after the checkpoint. At a safe handoff, suggest `/clear` whenever it
+reports ready. Queued work is not a blocker; uncaptured context and in-flight
+operations are. The user invokes `/clear`; never assume it ran.
 
 CONTEXT keeps the required task/ledger/issue/next-step sections and at most five
 recent entries. Keep AGENTS <=8 KiB and CONTEXT <=12 KiB. Promotion status remains

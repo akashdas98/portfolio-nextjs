@@ -12,6 +12,7 @@ import {
   evaluateDecision,
   evaluatePreToolUse,
   isSpawnAgentTool,
+  SUPPORTED_MODELS,
 } from "./evaluator.mjs";
 
 const hookPath = fileURLToPath(new URL("./hook.mjs", import.meta.url));
@@ -38,7 +39,7 @@ function routing(overrides = {}) {
     },
     allocation: { phase: "initial", previous: null },
     capabilities: ["node:test"],
-    model: "gpt-5.6-sol",
+    model: "gpt-6-sol",
     reasoning_effort: "medium",
     ...overrides,
   };
@@ -69,10 +70,15 @@ function runHook(input, args = []) {
 }
 
 test("malformed and unknown routing decisions are denied", () => {
+  assert.deepEqual([...SUPPORTED_MODELS], ["gpt-6-luna", "gpt-6-sol", "gpt-6-astra"]);
   assert.equal(evaluateDecision(null).allowed, false);
   assert.equal(evaluateDecision(routing({ surprise: true })).allowed, false);
   assert.equal(evaluateDecision(routing({ model: "unknown-model" })).allowed, false);
   assert.equal(evaluateDecision(routing({ work_class: "difficult" })).allowed, false);
+  for (const model of ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]) {
+    assert.equal(evaluateDecision(routing({ model })).allowed, false, model);
+    assert.equal(evaluatePreToolUse(event(routing({ model }))).allowed, false, model);
+  }
 });
 
 test("legacy, unsupported, and insufficient axis declarations are denied clearly", () => {
@@ -87,7 +93,7 @@ test("legacy, unsupported, and insufficient axis declarations are denied clearly
   assert.equal(evaluateDecision(routing({ model_demand: { ...routing().model_demand, evidence: [] } })).allowed, false);
   assert.equal(evaluateDecision(routing({ reasoning_effort: "high" })).allowed, false);
   assert.equal(evaluateDecision(routing({
-    model: "gpt-5.6-luna",
+    model: "gpt-6-luna",
     reasoning_effort: "ultra",
     effort_demand: { ...routing().effort_demand, evidence: ["A concrete blocker exists."] },
   })).allowed, false);
@@ -96,7 +102,7 @@ test("legacy, unsupported, and insufficient axis declarations are denied clearly
   assert.equal(evaluateDecision(routing({
     allocation: {
       phase: "reassessment",
-      previous: { model: "gpt-5.6-luna", reasoning_effort: "ultra" },
+      previous: { model: "gpt-6-luna", reasoning_effort: "ultra" },
       trigger: "Reconsider the invalid prior route.",
     },
   })).allowed, false);
@@ -104,9 +110,9 @@ test("legacy, unsupported, and insufficient axis declarations are denied clearly
 
 test("work_class is descriptive and all supported model-effort pairs pass with axis evidence", () => {
   for (const work_class of ["routine", "implementation", "complex"]) {
-    for (const model of ["gpt-5.6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-6-astra"]) {
+    for (const model of ["gpt-6-luna", "gpt-6-sol", "gpt-6-astra"]) {
       for (const reasoning_effort of ["low", "medium", "high", "xhigh", "max", "ultra"]) {
-        if (model === "gpt-5.6-luna" && reasoning_effort === "ultra") continue;
+        if (model === "gpt-6-luna" && reasoning_effort === "ultra") continue;
         const decision = routing({
           work_class,
           model,
@@ -124,11 +130,11 @@ test("work_class is descriptive and all supported model-effort pairs pass with a
   }
 });
 
-test("Terra preserves independent evidence and supports reassessment in both directions", () => {
-  const terra = routing({ model: "gpt-5.6-terra" });
-  assert.equal(evaluateDecision({ ...terra, model_demand: { ...terra.model_demand, evidence: [] } }).allowed, false);
-  assert.equal(evaluateDecision({ ...terra, reasoning_effort: "high" }).allowed, false);
-  for (const [model, previousModel] of [["gpt-5.6-terra", "gpt-5.6-sol"], ["gpt-5.6-sol", "gpt-5.6-terra"]]) {
+test("GPT-6 tiers preserve independent evidence and support reassessment in both directions", () => {
+  const sol = routing({ model: "gpt-6-sol" });
+  assert.equal(evaluateDecision({ ...sol, model_demand: { ...sol.model_demand, evidence: [] } }).allowed, false);
+  assert.equal(evaluateDecision({ ...sol, reasoning_effort: "high" }).allowed, false);
+  for (const [model, previousModel] of [["gpt-6-astra", "gpt-6-sol"], ["gpt-6-sol", "gpt-6-astra"]]) {
     const decision = routing({ model, allocation: {
       phase: "reassessment",
       previous: { model: previousModel, reasoning_effort: "medium" },
@@ -143,10 +149,10 @@ test("Terra preserves independent evidence and supports reassessment in both dir
 
 test("initial and all four reassessment transitions validate independently", () => {
   const cases = [
-    ["model-only", "gpt-5.6-luna", "medium"],
-    ["effort-only", "gpt-5.6-sol", "low"],
-    ["both", "gpt-5.6-luna", "low"],
-    ["neither", "gpt-5.6-sol", "medium"],
+    ["model-only", "gpt-6-luna", "medium"],
+    ["effort-only", "gpt-6-sol", "low"],
+    ["both", "gpt-6-luna", "low"],
+    ["neither", "gpt-6-sol", "medium"],
   ];
   assert.equal(evaluateDecision(routing()).transition, "initial");
   for (const [transition, model, reasoning_effort] of cases) {
@@ -155,7 +161,7 @@ test("initial and all four reassessment transitions validate independently", () 
       reasoning_effort,
       allocation: {
         phase: "reassessment",
-        previous: { model: "gpt-5.6-sol", reasoning_effort: "medium" },
+        previous: { model: "gpt-6-sol", reasoning_effort: "medium" },
         trigger: "New evidence changed the allocation assessment.",
       },
       effort_demand: {
@@ -172,7 +178,7 @@ test("each changed reassessment axis requires its own evidence, including downgr
   const previous = { model: "gpt-6-astra", reasoning_effort: "high" };
   const allocation = { phase: "reassessment", previous, trigger: "Diagnosis is complete." };
   const modelDowngrade = evaluateDecision(routing({
-    model: "gpt-5.6-luna",
+    model: "gpt-6-luna",
     reasoning_effort: "high",
     allocation,
     model_demand: { ...routing().model_demand, evidence: [] },
@@ -231,6 +237,9 @@ test("resume gets parent context", () => {
   assert.match(output.hookSpecificOutput.additionalContext, /recommend \/clear/);
   assert.match(output.hookSpecificOutput.additionalContext, /model and reasoning effort independently/);
   assert.match(output.hookSpecificOutput.additionalContext, /schema version 2/);
+  assert.match(output.hookSpecificOutput.additionalContext, /delegation-system\.md/);
+  assert.match(output.hookSpecificOutput.additionalContext, /Benchmarks do not classify task difficulty/);
+  assert.match(output.hookSpecificOutput.additionalContext, /remaining work from new task evidence/);
   const promptResponse = runHook({
     hook_event_name: "UserPromptSubmit",
     prompt: "Implement the task.",
@@ -248,10 +257,10 @@ test("targeted logging failure denies; successful audit contains no prompt", asy
     assert.match(failed.stdout, /audit write failed/);
 
     const auditPath = join(dir, "audit.jsonl");
-    const passed = runHook(event(routing({ model: "gpt-5.6-terra" })), ["--audit", auditPath]);
+    const passed = runHook(event(routing({ model: "gpt-6-sol" })), ["--audit", auditPath]);
     assert.equal(passed.stdout, "");
     const record = JSON.parse(await readFile(auditPath, "utf8"));
-    assert.equal(record.model, "gpt-5.6-terra");
+    assert.equal(record.model, "gpt-6-sol");
     assert.deepEqual(Object.keys(record), ["session_id", "tool_use_id", "model", "reasoning_effort", "reasons"]);
     assert.doesNotMatch(JSON.stringify(record), /Do the task/);
   } finally {
@@ -482,7 +491,7 @@ test("parent launcher validates then passes fixed model, effort, JSON mode, and 
     assert.equal(launched.status, 0, launched.stderr);
     const capture = JSON.parse(await readFile(capturePath, "utf8"));
     assert.deepEqual(capture.args, [
-      "exec", "--model", "gpt-5.6-sol", "--config", 'model_reasoning_effort="medium"', "--json", "-",
+      "exec", "--model", "gpt-6-sol", "--config", 'model_reasoning_effort="medium"', "--json", "-",
     ]);
     assert.equal(capture.input, "Stubbed parent task.");
   } finally {

@@ -4,6 +4,28 @@ import { fileURLToPath } from "node:url";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
+export function checkTaskOrder(task) {
+  const errors = [];
+  const rows = [...task.matchAll(/^\| (\d+) \| ([^|]+) \| (done|active|queued) \| ([^|]+) \|$/gm)]
+    .map((match) => ({ order: Number(match[1]), name: match[2].trim(), state: match[3] }));
+  if (rows.length === 0) return ["Current Task has no ordered feature tasks"];
+  if (rows.some((row, index) => row.order !== index + 1)) errors.push("Feature task order must be consecutive from 1");
+  const firstUnfinished = rows.findIndex((row) => row.state !== "done");
+  if (firstUnfinished >= 0 && rows.some((row, index) => row.state !== (index < firstUnfinished ? "done" : index === firstUnfinished ? "active" : "queued"))) {
+    errors.push("Exactly the first unfinished feature task must be active; later tasks must be queued");
+  }
+  if (firstUnfinished >= 0 && !/^- Status: Parent .* active\b/m.test(task)) {
+    errors.push("Unfinished feature tasks require an active parent Status");
+  }
+  if (firstUnfinished < 0 && !task.includes("- Status: Parent feature complete")) {
+    errors.push("All feature tasks are done but parent Status is not complete");
+  }
+  if (!task.includes("- Remaining: follow the ordered task table below.")) {
+    errors.push("Remaining must point to the ordered feature tasks");
+  }
+  return errors;
+}
+
 // Structural checks only: never infer truth, approval, or read compliance.
 export function checkAgentMemory(root = repositoryRoot) {
   const errors = [];
@@ -33,6 +55,7 @@ export function checkAgentMemory(root = repositoryRoot) {
   for (const field of ["Objective", "Status", "Scope/approval", "Completed", "Remaining", "Verification"]) {
     if (!task.includes(`- ${field}:`)) errors.push(`Missing current-task field: ${field}`);
   }
+  errors.push(...checkTaskOrder(task));
   if (!/^Updated: \d{4}-\d{2}-\d{2}\./m.test(context)) errors.push("Missing ISO Updated date");
   const recent = context.split("## Recent Changes")[1]?.split(/\r?\n## /)[0] ?? "";
   if ((recent.match(/^- /gm) ?? []).length > 5) errors.push("Recent Changes exceeds five entries");

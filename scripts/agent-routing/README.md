@@ -5,6 +5,11 @@ hook command, an advisory decision checker, a capability eligibility checker, an
 an opt-in parent launch wrapper. It is a practical guardrail, not hard runtime
 governance.
 
+For the actual model/effort decision and future agent-system upgrades, start with
+`docs/agent/delegation-system.md`. The evaluator checks declared evidence and
+supported combinations; it cannot infer task difficulty or prove that a route
+minimizes completed-task cost.
+
 ## Worker contract
 
 Every covered `spawn_agent` / `Agent` call must explicitly set `model`,
@@ -27,12 +32,15 @@ specific declarations: a narrow subtle judgment may use Astra-low, a long tracta
 investigation may use Sol-high, and bounded multi-step work may use Luna-medium.
 Non-Luna models require model-specific evidence; high, xhigh, max and ultra require
 effort-specific evidence. Evidence for one axis cannot satisfy the other. Luna
-supports effort through max; Sol, Terra and Astra support through ultra. No cheap-model
+supports effort through max; Sol and Astra support through ultra. No cheap-model
 failure is required before a justified stronger initial allocation.
 
-The supported model list is explicit: Luna, Sol, Terra and Astra. Terra is an
-option for balanced agentic coding work, not a mandatory step between models.
-Its model evidence and effort evidence follow the same independent requirements.
+The supported model list is explicit: GPT-6 Luna, Sol and Astra. GPT-5.6
+models, including Terra, are no longer eligible for new routes.
+Use capability and effort demands together: a Sol medium route can match or beat
+Astra low for some coding work at lower measured benchmark task cost, while
+Astra low leads Sol medium on longer engineering and computer-use evaluations.
+See `docs/agent/gpt-6-routing-evidence.md` for the SVG point values and limits.
 Validation and audit logging share the evaluator's model list. Runtime inventory
 changes still require reviewing this list; it is not discovered automatically.
 
@@ -79,13 +87,17 @@ Check lifecycle state before recommending `/clear`:
 node scripts/agent-routing/lifecycle-cli.mjs --check-lifecycle lifecycle.json
 ```
 
-The version 1 manifest records `meaningful_change_revision`,
-`checkpoint_revision`, `task_state`, `unresolved_items`, `active_operations`, and
-`recommendation_state`. Exit `0` means the declared state is clear-ready, `1`
-means valid but blocked, and `2` means invalid input. Readiness requires a fresh
-checkpoint, completed task, no unresolved items or active operations, and an
-agent-declared clear candidate. Output contains only counts and generic blocker
-labels. This checker cannot observe unrecorded work or invoke `/clear`; the user
+The version 3 manifest records `meaningful_change_revision`,
+`checkpoint_revision`, `unresolved_items`, and `active_operations`.
+Exit `0` means the declared state is clear-ready, `1` means valid but blocked,
+and `2` means invalid input. Readiness requires a fresh checkpoint, no uncaptured
+handoff details, and no in-flight operations whose control would be lost. Record
+queued tasks, pending verification, approvals and known issues in the checkpoint;
+they do not block clearing once the resume state is complete. A stable dev server
+is not an in-flight operation merely because it remains listening. Feature/task
+completion is tracked separately and is not a clear-readiness condition. Output
+contains only counts and generic blocker labels. This checker cannot inspect
+checkpoint semantics, discover unrecorded work or invoke `/clear`; the user
 retains control of clearing the session.
 
 Check a parent allocation without launching it:
