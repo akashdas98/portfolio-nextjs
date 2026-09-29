@@ -1,5 +1,9 @@
 # Changelog
 
+## v2 first-paint correction - 2026-09-30
+
+Visible PCB tiles now appear together before UI entrance, while belowfold preparation continues. Bounded regional batches and shared spatial coverage reduce separate geometry requests. See [verification and release notes](docs/releases/v2-pcb-first-paint.md).
+
 ## v2.0.0 — 2026-09-30
 
 All changes since the last push to `main` (`dedf30d4`) are included in v2.

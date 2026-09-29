@@ -9,6 +9,7 @@ import {
   parsePcbLensSvg,
   resolvePcbSource,
   selectPcbPaths,
+  selectPcbPathBatch,
   type PcbRegion,
   type PcbSpatialIndex,
 } from "@/lib/pcb/spatial";
@@ -119,4 +120,8 @@ async function loadIndex(source: string) {
 
 export async function loadPcbRegion(source: string, region: PcbRegion) {
   return selectPcbPaths(await loadIndex(source), region);
+}
+
+export async function loadPcbRegions(source: string, regions: PcbRegion[]) {
+  return selectPcbPathBatch(await loadIndex(source), regions);
 }

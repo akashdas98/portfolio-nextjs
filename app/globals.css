@@ -129,6 +129,22 @@ body {
   }
 }
 
+@keyframes public-reveal-ready-entry {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes public-pcb-startup-hold {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   main[data-public-animations] .reveal,
   main[data-public-animations] .reveal-item {
@@ -158,6 +174,33 @@ body {
 
   .case-hero > .reveal:nth-child(6) {
     --public-reveal-delay: 350ms;
+  }
+
+  main[data-public-animations] [data-reveal-scroll="true"],
+  main[data-public-animations] [data-reveal-initial="done"] {
+    animation: none;
+  }
+
+  main[data-public-animations] [data-reveal-initial="ready"] {
+    animation-name: public-reveal-ready-entry;
+  }
+}
+
+/* The server's pending art state holds only first entrances. CSS releases
+ * these after eight seconds if hydration or artwork initialization fails.
+ * Without scripting the canonical page remains immediately accessible. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  main[data-public-animations]:has(.public-circuit-art[data-viewport-state="pending"])
+    :is(.reveal, .reveal-item):not([data-reveal-scroll="true"]):not([data-reveal-initial="done"]) {
+    animation-delay: calc(8s + var(--public-reveal-delay));
+  }
+
+}
+
+@media (scripting: enabled) {
+  body:has(main[data-public-animations] .public-circuit-art[data-viewport-state="pending"])
+    :is(.site-header, .site-footer):not([data-pcb-entrance="done"]) {
+    animation: public-pcb-startup-hold 8s step-end backwards;
   }
 }
 
@@ -4260,5 +4303,17 @@ p {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Reduced motion preserves the paint order with an instantaneous release. */
+@media (scripting: enabled) and (prefers-reduced-motion: reduce) {
+  main[data-public-animations]:has(.public-circuit-art[data-viewport-state="pending"])
+    :is(.reveal, .reveal-item):not([data-revealed="true"]),
+  body:has(main[data-public-animations] .public-circuit-art[data-viewport-state="pending"])
+    :is(.site-header, .site-footer):not([data-pcb-entrance="done"]) {
+    animation: public-pcb-startup-hold 8s step-end backwards !important;
+    animation-duration: 8s !important;
+    transform: none;
   }
 }

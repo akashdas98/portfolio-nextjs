@@ -5,7 +5,7 @@ import {
   IMPACT_SECTION_SELECTOR,
   MUTED_SECTION_SELECTOR,
   SPECIAL_IMPACT_SECTION_SELECTOR,
-  loadLensGeometry,
+  loadLensGeometryBatch,
   sectionRanges,
   type ToneRange,
 } from "@/components/public-circuit/shared";
@@ -116,6 +116,8 @@ export function StaticCircuitVector({
     let layoutFrame: number | null = null;
     let previousLayoutKey = "";
     const allocatedObjectUrls = new Set<string>();
+    let checkViewport = () => {};
+    const paintFrames = new Set<number>();
 
     async function renderLayout() {
       const pageRect = pageElement.getBoundingClientRect();
@@ -151,6 +153,7 @@ export function StaticCircuitVector({
       });
       if (layoutKey === previousLayoutKey) return;
       previousLayoutKey = layoutKey;
+      const previousLayoutComplete = artElement.dataset.renderState === "ready";
       const version = ++renderVersion;
       const renderStartedAt = performance.now();
       artElement.dataset.renderState = "rendering-vector";
@@ -164,10 +167,12 @@ export function StaticCircuitVector({
         STATIC_RASTER_MAX_PIXEL_RATIO,
         Math.max(1, window.devicePixelRatio || 1),
       );
-      const initialLayout = artElement.childElementCount === 0;
+      const initialLayout = !previousLayoutComplete || artElement.childElementCount === 0;
+      let replaceStartupTiles = initialLayout && artElement.childElementCount > 0;
       function releaseUnpublishedFallbacks() {
-        if (initialLayout) return;
+        const mountedUrls = new Set(Array.from(artElement.querySelectorAll("img"), (image) => image.src));
         for (const url of retainedObjectUrls) {
+          if (mountedUrls.has(url)) continue;
           URL.revokeObjectURL(url);
           allocatedObjectUrls.delete(url);
         }
@@ -178,6 +183,71 @@ export function StaticCircuitVector({
           tiles.push({ top, left });
         }
       }
+      const allTiles = [...tiles];
+      const decoded = new Map<string, HTMLElement>();
+      const published = new Set<string>();
+      const key = (tile: { top: number; left: number }) => `${tile.top}:${tile.left}`;
+      const visibleTiles = () => {
+        const viewportTop = window.scrollY - pageDocumentTop;
+        return allTiles.filter((tile) => tile.top < viewportTop + window.innerHeight &&
+          tile.top + STATIC_VECTOR_TILE_SIZE > viewportTop);
+      };
+      let publication = 0;
+      let pendingPublication = "";
+      const afterPaint = (callback: () => void) => {
+        const frame = requestAnimationFrame(() => {
+          paintFrames.delete(frame);
+          const next = requestAnimationFrame(() => {
+            paintFrames.delete(next);
+            if (version === renderVersion) callback();
+          });
+          paintFrames.add(next);
+        });
+        paintFrames.add(frame);
+      };
+      checkViewport = () => {
+        if (version !== renderVersion || !initialLayout) return;
+        const visible = visibleTiles();
+        if (!visible.every((tile) => decoded.has(key(tile)))) {
+          artElement.dataset.currentViewportState = "pending";
+          publication += 1;
+          pendingPublication = "";
+          return;
+        }
+        const additions = visible.filter((tile) => !published.has(key(tile)));
+        if (!additions.length && artElement.dataset.currentViewportState === "ready") return;
+        const signature = visible.map(key).join("|");
+        if (!additions.length && pendingPublication === signature) return;
+        pendingPublication = signature;
+        for (const tile of additions) published.add(key(tile));
+        const elements = additions.map((tile) => decoded.get(key(tile))!);
+        if (replaceStartupTiles) {
+          artElement.replaceChildren(...elements);
+          replaceStartupTiles = false;
+        } else artElement.append(...elements);
+        const currentPublication = ++publication;
+        afterPaint(() => {
+          if (currentPublication !== publication) return;
+          artElement.dataset.currentViewportState = "ready";
+          if (artElement.dataset.viewportState !== "ready") {
+            artElement.dataset.viewportState = "ready";
+            artElement.dataset.firstViewportMs = String(Math.round(performance.now()));
+          }
+          artElement.dispatchEvent(new CustomEvent("pcb:viewport-ready", { bubbles: true }));
+        });
+      };
+      checkViewport();
+      // Fetch a bounded regional cohort before decoding it. This removes a
+      // network round trip per tile without requesting the entire source.
+      let geometryQueue: Promise<unknown> = Promise.resolve();
+      const prepared = new Map<string, ReturnType<typeof loadLensGeometryBatch>>();
+      const activeTiles = new Set<string>();
+      const region = ({ top, left }: { top: number; left: number }) => ({
+        x: (left - renderLeft - 1) / renderScale,
+        y: (top - STATIC_DEPTH_OFFSET - 1) / renderScale,
+        width: (Math.min(STATIC_VECTOR_TILE_SIZE, width - left) + 2) / renderScale,
+        height: (Math.min(STATIC_VECTOR_TILE_SIZE, height - top) + STATIC_DEPTH_OFFSET + 2) / renderScale,
+      });
       // First paint is local: decoding below-fold art cannot hold the viewport
       // hostage. Replacement layouts remain atomic so resizing never mixes two
       // differently aligned projections. At most two local resources are in flight.
@@ -191,15 +261,37 @@ export function StaticCircuitVector({
             );
             return distance(a) - distance(b) || a.top - b.top || a.left - b.left;
           });
-          const { top, left } = tiles.shift()!;
+          const selected = tiles.shift()!;
+          activeTiles.add(key(selected));
+          const { top, left } = selected;
           const tileWidth = Math.min(STATIC_VECTOR_TILE_SIZE, width - left);
           const tileHeight = Math.min(STATIC_VECTOR_TILE_SIZE, height - top);
-          const localPaths = await loadLensGeometry(lensImageUrl, {
-            x: (left - renderLeft - 1) / renderScale,
-            y: (top - STATIC_DEPTH_OFFSET - 1) / renderScale,
-            width: (tileWidth + 2) / renderScale,
-            height: (tileHeight + STATIC_DEPTH_OFFSET + 2) / renderScale,
-          });
+          if (!prepared.has(key(selected))) {
+            const visibleKeys = new Set(visibleTiles().map(key));
+            const selectedVisible = visibleKeys.has(key(selected));
+            const cohort = [selected, ...tiles.filter((tile) => !prepared.has(key(tile)) &&
+              (!selectedVisible || visibleKeys.has(key(tile)))).slice(0, 7)];
+            const batch = geometryQueue.then(() => {
+              if (version !== renderVersion) throw new Error("Superseded PCB layout.");
+              return loadLensGeometryBatch(lensImageUrl, cohort.map(region));
+            });
+            geometryQueue = batch.catch(() => {});
+            cohort.forEach((tile, index) => {
+              const candidate = batch.then((paths) => [paths[index]]);
+              // All cohort promises acquire a rejection handler immediately;
+              // a later tile may not reach its await after a layout failure.
+              void candidate.catch(() => {});
+              prepared.set(key(tile), candidate);
+            });
+            // Rapid scroll jumps must not grow the staging cache indefinitely.
+            for (const candidateKey of prepared.keys()) {
+              if (prepared.size <= 16) break;
+              if (!activeTiles.has(candidateKey)) prepared.delete(candidateKey);
+            }
+          }
+          const [localPaths] = await prepared.get(key(selected))!;
+          prepared.delete(key(selected));
+          activeTiles.delete(key(selected));
           if (version !== renderVersion) return;
           const positive = localPaths.filter((path) => !path.source.includes('="black"'))
             .map((path) => path.source).join("");
@@ -279,10 +371,8 @@ export function StaticCircuitVector({
           }
           tileElements.push(tileElement);
           if (initialLayout) {
-            artElement.append(tileElement);
-            if (!artElement.dataset.firstTileMs) {
-              artElement.dataset.firstTileMs = String(Math.round(performance.now()));
-            }
+            decoded.set(key(selected), tileElement);
+            checkViewport();
           }
         }
       }
@@ -300,12 +390,20 @@ export function StaticCircuitVector({
         releaseUnpublishedFallbacks();
         previousLayoutKey = "";
         artElement.dataset.renderState = "error";
+        artElement.dataset.viewportState = "failed";
+        artElement.dataset.currentViewportState = "failed";
+        artElement.dispatchEvent(new CustomEvent("pcb:viewport-ready", { bubbles: true }));
         artElement.dataset.renderError = failure.reason instanceof Error
           ? failure.reason.message : "PCB projection failed.";
         return;
       }
 
       artElement.replaceChildren(...tileElements);
+      afterPaint(() => {
+        artElement.dataset.viewportState = "ready";
+        artElement.dataset.currentViewportState = "ready";
+        artElement.dispatchEvent(new CustomEvent("pcb:viewport-ready", { bubbles: true }));
+      });
       artElement.classList.add("is-ready");
       artElement.dataset.renderState = "ready";
       artElement.dataset.renderDurationMs = String(
@@ -330,6 +428,8 @@ export function StaticCircuitVector({
     const resizeObserver = new ResizeObserver(scheduleLayout);
     resizeObserver.observe(pageElement);
     window.addEventListener("resize", scheduleLayout);
+    const onScroll = () => checkViewport();
+    window.addEventListener("scroll", onScroll, { passive: true });
     scheduleLayout();
 
     return () => {
@@ -337,6 +437,8 @@ export function StaticCircuitVector({
       if (layoutFrame !== null) window.cancelAnimationFrame(layoutFrame);
       resizeObserver.disconnect();
       window.removeEventListener("resize", scheduleLayout);
+      window.removeEventListener("scroll", onScroll);
+      paintFrames.forEach((frame) => cancelAnimationFrame(frame));
       artElement.replaceChildren();
       allocatedObjectUrls.forEach((url) => URL.revokeObjectURL(url));
     };
@@ -347,6 +449,8 @@ export function StaticCircuitVector({
       ref={artRef}
       className="public-circuit-art"
       data-semantic-source={semanticImageUrl}
+      data-viewport-state="pending"
+      data-current-viewport-state="pending"
       aria-hidden="true"
     />
   );

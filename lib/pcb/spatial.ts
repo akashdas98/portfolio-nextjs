@@ -448,6 +448,55 @@ export function selectPcbPaths(index: PcbSpatialIndex, region: PcbRegion) {
   );
 }
 
+export const MAX_PCB_BATCH_REGIONS = 8;
+export const MAX_PCB_BATCH_QUERY_BYTES = 4096;
+
+export function parsePcbBatchRegions(searchParams: URLSearchParams): PcbRegion[] {
+  if (searchParams.getAll("regions").length !== 1 ||
+    ["x", "y", "width", "height"].some((name) => searchParams.has(name))) {
+    throw new PcbInputError("Expected one regions value without single-region fields.");
+  }
+  const raw = searchParams.get("regions")!;
+  if (new TextEncoder().encode(encodeURIComponent(raw)).byteLength > MAX_PCB_BATCH_QUERY_BYTES) {
+    throw new PcbInputError("The PCB region batch query is too large.");
+  }
+  let parsed: unknown;
+  try { parsed = JSON.parse(raw); }
+  catch { throw new PcbInputError("The PCB region batch is invalid JSON."); }
+  if (!Array.isArray(parsed) || parsed.length < 1 || parsed.length > MAX_PCB_BATCH_REGIONS) {
+    throw new PcbInputError("PCB batches require between 1 and 8 regions.");
+  }
+  return parsed.map((region: unknown) => {
+    if (!region || typeof region !== "object" || Array.isArray(region) ||
+      Object.keys(region).length !== 4 ||
+      ["x", "y", "width", "height"].some((name) =>
+        typeof (region as Record<string, unknown>)[name] !== "number")) {
+      throw new PcbInputError("Every PCB batch region requires four numeric fields.");
+    }
+    return parsePcbRegion(new URLSearchParams(
+      Object.entries(region).map(([name, value]) => [name, String(value)]),
+    ));
+  });
+}
+
+/** Each unchanged path is serialized once, with ordered selections per region. */
+export function selectPcbPathBatch(index: PcbSpatialIndex, regions: PcbRegion[]) {
+  const paths: PcbPath[] = [];
+  const selections: number[][] = regions.map(() => []);
+  for (const path of index.paths) {
+    const selected = regions.map((region) => path.right >= region.x &&
+      path.left <= region.x + region.width && path.bottom >= region.y &&
+      path.top <= region.y + region.height);
+    if (!selected.some(Boolean)) continue;
+    const pathIndex = paths.length;
+    paths.push(path);
+    selected.forEach((included, regionIndex) => {
+      if (included) selections[regionIndex].push(pathIndex);
+    });
+  }
+  return { paths, regions: selections };
+}
+
 function parseQueryNumber(value: string | null, name: string) {
   if (value === null || !NUMBER_PATTERN.test(value)) throw new PcbInputError(`Missing or invalid ${name}.`);
   const parsed = Number(value);

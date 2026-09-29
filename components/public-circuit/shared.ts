@@ -1,3 +1,5 @@
+import { createGeometryDeliveryBroker } from "@/lib/pcb/geometry-delivery";
+
 export type PublicCircuitBackgroundProps = {
   imageUrl: string;
   lensImageUrl?: string;
@@ -69,7 +71,7 @@ const FLAME_MIN_RADIUS = 24 * FLAME_RADIUS_SCALE;
 const FLAME_RADIUS_RANGE = 42 * FLAME_RADIUS_SCALE;
 const FLAME_LOWER_SIZE_BAND = 0.3;
 const FLAME_LOWER_SIZE_PROBABILITY = 0.09;
-const lensGeometryCache = new Map<string, Promise<LensPath[]>>();
+const geometryDelivery = createGeometryDeliveryBroker();
 
 export function sampleFlameRadius() {
   const isLowerSize = Math.random() < FLAME_LOWER_SIZE_PROBABILITY;
@@ -81,29 +83,12 @@ export function sampleFlameRadius() {
   return FLAME_MIN_RADIUS + normalizedSize * FLAME_RADIUS_RANGE;
 }
 
-export function loadLensGeometry(url: string, region: SourceRegion) {
-  const params = new URLSearchParams({ source: url });
-  for (const [name, value] of Object.entries(region)) params.set(name, String(value));
-  const key = params.toString();
-  const cached = lensGeometryCache.get(key);
-  if (cached) return cached;
-  // The server indexes the immutable source once. A device receives only the
-  // exact paths needed for its current tile or interaction, with measured-space
-  // conservative bounds; it never parses a hidden full-page SVG for getBBox.
-  const request = fetch(`/api/pcb?${key}`).then(async (response) => {
-    if (!response.ok) throw new Error(`PCB projection failed: ${response.status}`);
-    const result = await response.json() as { paths: LensPath[] };
-    return result.paths;
-  }).catch((error) => {
-    lensGeometryCache.delete(key);
-    throw error;
-  });
-  if (lensGeometryCache.size >= 128) {
-    const oldest = lensGeometryCache.keys().next().value;
-    if (oldest !== undefined) lensGeometryCache.delete(oldest);
-  }
-  lensGeometryCache.set(key, request);
-  return request;
+export function loadLensGeometry(url: string, region: SourceRegion): Promise<LensPath[]> {
+  return geometryDelivery.load(url, region);
+}
+
+export function loadLensGeometryBatch(url: string, regions: SourceRegion[]): Promise<LensPath[][]> {
+  return geometryDelivery.loadBatch(url, regions);
 }
 
 export function sectionRanges(

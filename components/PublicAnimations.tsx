@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const revealSelector = ".reveal, .reveal-item";
 const revealTriggerRatio = 0.94;
+const pcbRevealFallbackMs = 8_000;
 const countSelector = [
   "dt",
   ".case-outcome-table td",
@@ -141,18 +142,92 @@ export function PublicAnimations() {
       "main[data-public-animations]",
     );
     if (!publicMain) return;
+    const art = publicMain.querySelector<HTMLElement>(".public-circuit-art");
 
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
 
     if (prefersReducedMotion) {
-      return;
+      function releaseReducedMotionContent() {
+        if (art?.getAttribute("data-viewport-state") === "pending") return;
+        publicMain?.querySelectorAll(revealSelector).forEach((element) => {
+          element.setAttribute("data-revealed", "true");
+        });
+        document.querySelectorAll(".site-header, .site-footer").forEach((element) => {
+          element.setAttribute("data-pcb-entrance", "done");
+        });
+      }
+      const observer = new MutationObserver(releaseReducedMotionContent);
+      if (art) observer.observe(art, {
+        attributes: true,
+        attributeFilter: ["data-viewport-state"],
+      });
+      publicMain.addEventListener("pcb:viewport-ready", releaseReducedMotionContent);
+      releaseReducedMotionContent();
+      return () => {
+        observer.disconnect();
+        publicMain.removeEventListener("pcb:viewport-ready", releaseReducedMotionContent);
+      };
     }
 
     const revealAnimations = new Set<Animation>();
     const preparedAnimations = new WeakMap<Element, Animation>();
     const revealFallbacks = new Map<Animation, number>();
+    const initialRevealTargets = new Map<Element, number>();
+    const queuedRevealTargets = new Set<Element>();
+    const queuedCountTargets = new Set<Element>();
+    let viewportFallback: number | undefined;
+    const startupGateSupported = window.matchMedia("(scripting: enabled)").matches &&
+      CSS.supports("selector(:has(*))");
+
+    function viewportPending() {
+      return art?.getAttribute("data-viewport-state") !== "failed" &&
+        (art?.getAttribute("data-viewport-state") === "pending" ||
+          art?.getAttribute("data-current-viewport-state") === "pending");
+    }
+
+    function releaseInitialTargets() {
+      if (art?.getAttribute("data-viewport-state") === "pending") return;
+      initialRevealTargets.forEach((deadline, element) => {
+        if (element.getAttribute("data-reveal-initial") !== "pending") return;
+        // A delayed CSS entrance may already have failed open. Never hide it
+        // again if artwork finishes after that autonomous deadline.
+        const stillWaiting = performance.now() < deadline;
+        element.setAttribute("data-reveal-initial", stillWaiting ? "ready" : "done");
+      });
+      document.querySelectorAll(".site-header, .site-footer").forEach((element) => {
+        element.setAttribute("data-pcb-entrance", "done");
+      });
+    }
+
+    function flushViewportTargets(force = false) {
+      if (!force && viewportPending()) return;
+      if (viewportFallback !== undefined) window.clearTimeout(viewportFallback);
+      viewportFallback = undefined;
+      [...queuedRevealTargets].sort((first, second) =>
+        first.getBoundingClientRect().top - second.getBoundingClientRect().top,
+      ).forEach((element, index) => {
+        playRevealTarget(element, index * 70);
+        revealObserver.unobserve(element);
+      });
+      queuedRevealTargets.clear();
+      queuedCountTargets.forEach((element) => {
+        animateNumber(element);
+        countObserver.unobserve(element);
+      });
+      queuedCountTargets.clear();
+    }
+
+    function awaitViewport() {
+      if (viewportFallback !== undefined) return;
+      viewportFallback = window.setTimeout(() => flushViewportTargets(true), pcbRevealFallbackMs);
+    }
+
+    function onViewportReady() {
+      releaseInitialTargets();
+      flushViewportTargets();
+    }
 
     function finishReveal(element: Element, animation: Animation) {
       if (preparedAnimations.get(element) !== animation) return;
@@ -218,7 +293,15 @@ export function PublicAnimations() {
               second.target.getBoundingClientRect().top,
           );
 
+        entries.filter((entry) => !entry.isIntersecting).forEach((entry) => {
+          queuedRevealTargets.delete(entry.target);
+        });
         entering.forEach((entry, index) => {
+          if (viewportPending()) {
+            queuedRevealTargets.add(entry.target);
+            awaitViewport();
+            return;
+          }
           playRevealTarget(entry.target, index * 70);
           revealObserver.unobserve(entry.target);
         });
@@ -230,8 +313,15 @@ export function PublicAnimations() {
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
+            if (viewportPending()) {
+              queuedCountTargets.add(entry.target);
+              awaitViewport();
+              return;
+            }
             animateNumber(entry.target);
             countObserver.unobserve(entry.target);
+          } else {
+            queuedCountTargets.delete(entry.target);
           }
         });
       },
@@ -242,11 +332,27 @@ export function PublicAnimations() {
     const observedCountTargets = new WeakSet<Element>();
 
     function registerRevealTarget(element: Element, startsBeyondRevealLine: boolean) {
+      if (element.getAttribute("data-revealed") === "true" &&
+        element.getAttribute("data-reveal-initial") !== "pending") return;
       if (!startsBeyondRevealLine) {
+        if (startupGateSupported && art?.getAttribute("data-viewport-state") === "pending") {
+          const waitingAnimation = element.getAnimations().find((animation) =>
+            Number(animation.effect?.getTiming().delay ?? 0) >= pcbRevealFallbackMs,
+          );
+          const remaining = waitingAnimation
+            ? Number(waitingAnimation.effect?.getTiming().delay ?? 0) -
+              Number(waitingAnimation.currentTime ?? 0)
+            : 0;
+          if (remaining > 0) {
+            element.setAttribute("data-reveal-initial", "pending");
+            initialRevealTargets.set(element, performance.now() + remaining);
+          }
+        }
         element.setAttribute("data-revealed", "true");
         return;
       }
 
+      element.setAttribute("data-reveal-scroll", "true");
       prepareRevealTarget(element);
       revealObserver.observe(element);
     }
@@ -312,6 +418,12 @@ export function PublicAnimations() {
     }
 
     registerTrees([publicMain]);
+    publicMain.addEventListener("pcb:viewport-ready", onViewportReady);
+    const readinessObserver = new MutationObserver(onViewportReady);
+    if (art) readinessObserver.observe(art, {
+      attributes: true,
+      attributeFilter: ["data-viewport-state", "data-current-viewport-state"],
+    });
 
     const mutationObserver = new MutationObserver((records) => {
       registerTrees(records.flatMap((record) => Array.from(record.addedNodes)));
@@ -320,6 +432,9 @@ export function PublicAnimations() {
 
     return () => {
       mutationObserver.disconnect();
+      readinessObserver.disconnect();
+      publicMain.removeEventListener("pcb:viewport-ready", onViewportReady);
+      if (viewportFallback !== undefined) window.clearTimeout(viewportFallback);
       revealObserver.disconnect();
       countObserver.disconnect();
       revealFallbacks.forEach((fallback) => window.clearTimeout(fallback));

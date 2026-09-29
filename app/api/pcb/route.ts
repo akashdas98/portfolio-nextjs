@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { gzip } from "node:zlib";
 import { promisify } from "node:util";
 
-import { loadPcbRegion, PcbSourceError } from "@/lib/pcb/source";
-import { parsePcbRegion, PcbInputError, resolvePcbSource } from "@/lib/pcb/spatial";
+import { loadPcbRegion, loadPcbRegions, PcbSourceError } from "@/lib/pcb/source";
+import { parsePcbRegion, parsePcbBatchRegions, PcbInputError, resolvePcbSource } from "@/lib/pcb/spatial";
 import { supabaseUrl } from "@/lib/supabase/config";
 
 export const runtime = "nodejs";
@@ -34,8 +34,9 @@ export async function GET(request: Request) {
     }
     const source = searchParams.get("source") ?? "";
     const target = resolvePcbSource(source, supabaseUrl);
-    const region = parsePcbRegion(searchParams);
-    const paths = await loadPcbRegion(source, region);
+    const result = searchParams.has("regions")
+      ? await loadPcbRegions(source, parsePcbBatchRegions(searchParams))
+      : { paths: await loadPcbRegion(source, parsePcbRegion(searchParams)) };
     const headers = { ...successHeaders(target.kind, source), Vary: "Accept-Encoding" };
     // Route-handler streams are not compressed by the local Next server. Keep
     // exact SVG strings compact in transit without blocking the server thread.
@@ -44,12 +45,12 @@ export async function GET(request: Request) {
       return encoding === "gzip" && !parameters.some((parameter) => /^\s*q=0(?:\.0*)?\s*$/.test(parameter));
     });
     if (acceptsGzip) {
-      const body = await compress(JSON.stringify({ paths }));
+      const body = await compress(JSON.stringify(result));
       return new Response(new Uint8Array(body), { headers: {
         ...headers, "Content-Type": "application/json", "Content-Encoding": "gzip",
       } });
     }
-    return NextResponse.json({ paths }, { headers });
+    return NextResponse.json(result, { headers });
   } catch (error) {
     if (error instanceof PcbInputError) {
       return NextResponse.json({ error: error.message }, { status: 400, headers: ERROR_HEADERS });
