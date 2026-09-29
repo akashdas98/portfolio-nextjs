@@ -6,12 +6,12 @@ Updated: 2026-09-30. Read `AGENTS.md`.
 
 - Objective: publish visible PCB artwork atomically before UI entrance, preserve belowfold preparation, and improve residual homepage loading on live v2.
 - Scope/approval: user reported live slowdown on 2026-09-30 and clarified hover already shows geometry immediately. Continue the authorized release correction through verified commit/push/deployment. No source geometry, project content, Storage or palette changes; CMS promotions remain verified complete.
-- Status: Parent PCB delivery feature active; atomic viewport publication and UI coordination implemented, local/production checks passed; commit/push/deployment and fresh live verification in progress.
-- Completed: v2.0.0 main/tag at b0bc73b deployed; all three case studies remotely promoted and hash/schema verified (docs/releases/v2-promotion.md). New live trace stalls at nine static tiles for over110s, while completed SVG decode totals30.7ms. Desktop typed whole-page geometry arrives in3.5s, but static exact-region requests do not reuse it. CDN repeated requests can HIT; middleware excludes public routes. Prior75s/180s observations were too slow to treat as loading acceptance; user report reopens this boundary.
-- Verification: user clarified that restored internet resolved most slowdown; project pages work, homepage remains slower. Do not infer a universal live stall from the earlier trace. Local Chromium desktop/laptop/mobile/reduced/noJS sequence checks passed with deliberately delayed geometry: visible tiles together, then UI; screenshots inspected. WebKit passed the same five variants; production build and delayed-network checks passed. All four routes passed hover/touch/scroll/resize; publication-time resize, late-art fallback and exact batch API checks passed. Clean LAN restart verified HTML and17 assets/cache policies. Live checks remain.
+- Status: Parent feature complete; v2 PCB first-paint correction deployed and live verified.
+- Completed: v2.0.0 at b0bc73b remains the tagged baseline; all three CMS promotions verified. First-paint correction 2ffdfaa pushed/deployed successfully (Production6747830726). Visible-cohort publication, PCB-before-UI readiness, bounded batch/coverage delivery and failure-safe progressive enhancement verified; see docs/releases/v2-pcb-first-paint.md.
+- Verification: user clarified that restored internet resolved most slowdown; project pages work, homepage remains slower. Do not infer a universal live stall from the earlier trace. Local Chromium desktop/laptop/mobile/reduced/noJS sequence checks passed with deliberately delayed geometry: visible tiles together, then UI; screenshots inspected. WebKit passed the same five variants; production build and delayed-network checks passed. All four routes passed hover/touch/scroll/resize; publication-time resize, late-art fallback and exact batch API checks passed. Clean LAN restart verified HTML and17 assets/cache policies. Live Chromium/WebKit each passed five first-paint variants; all four live desktop routes and mobile home/Leads reached complete preparation with hover/touch. Fresh desktop home first viewport2.913s, warm revisit0.193s; timings are observations, not controlled speedup evidence.
 - Allocation: parent retains StaticCircuitVector scheduling and live/runtime verification. Reuse Sol-high for shared geometry broker and bounded API batching: model demand is interacting transport/cache/consumer ownership; effort demand is hypothesis tracing plus meaningful deferred/failure tests. New live timings justify this correction; no model/effort change or savings claim.
 - Acceptance: all currently visible tiles decode before one DOM publication, then two paint frames precede UI entrance. Preserve belowfold preparation, atomic resize, noJS canonical content and bounded failure release; original bounds/path strings/paint order, 512px projection/two decoders, hover/touch/trails/hold and anonymous cached delivery remain intact.
-- Remaining: follow the ordered task table below. Commit/push/deploy and verify live cold/warm homepage plus project variants; record evidence in docs/releases/v2-pcb-first-paint.md. Broker bounded batches/coverage reuse retained for visible-cohort delivery; Sol-medium completed scoped UI gating. Neither parent capability nor verification effort changes after narrowing.
+- Remaining: follow the ordered task table below. No PCB release implementation remains. Existing production sender/admin browser follow-ups stay open; Work/products and Gmail remain deferred. Record any renewed live loading or physical-device regression before changing the accepted renderer.
 
 | Order | PCB feature task | State | Exit condition |
 | ---: | --- | --- | --- |
@@ -22,7 +22,7 @@ Updated: 2026-09-30. Read `AGENTS.md`.
 | 5 | Inverse artwork underlay | done | Slow trial removed; same-color CSS slight darkening accepted. |
 | 6 | EDD color and PCB regeneration review | done | User approved all; three paired artwork/document promotions remotely verified. |
 | 7 | v2 checks, commit, push and deploy | done | v2.0.0 at b0bc73b pushed, tagged and deployed; live loading defect reopened below. |
-| 8 | Correct live PCB first paint | active | Visible PCB appears together before UI, belowfold preparation/interaction preserved; production/live verified. |
+| 8 | Correct live PCB first paint | done | Visible PCB appears together before UI, belowfold preparation/interaction preserved; production/live verified. |
 
 ### Routing task outcome (preserve)
 
@@ -45,10 +45,10 @@ Accepted PCB redesign separates static snapshots, native desktop SVG and bounded
 | PCB artwork/rendering | Four new approved compositions; home repository-owned, studies Storage-owned | Preserve geometry/lens pairs, opaque diagrams and one responsive composition. |
 | Reveal motion | CSS first entrance; JS owns initially below-fold targets at 94% line | Preserve progressive enhancement, route rebinding and reduced motion. |
 | Admin/auth/contact | Implemented; full authenticated browser edit review pending | Local Resend key rejected; verify production sender/env. Gmail unbuilt. |
-| Identity/deployment | Metadata/source origin `https://freebirdakash.vercel.app`; existing host returned 200 | Application/config 5e987e7 Vercel Production success; all four routes and metadata assets return 200. |
+| Identity/deployment | Metadata/source origin `https://freebirdakash.vercel.app`; existing host returned 200 | First-paint application2ffdfaa Vercel Production success; all four live routes and atomic/UI sequence verified. |
 | Dependencies | Next 16.3.7 pinned; Node 24.18.0; zero production audit vulnerabilities | Build/TypeScript pass; obsolete baseUrl removed, relative aliases retained. |
 | Runtime/build | Fresh production build and Chromium/WebKit checks pass; one clean LAN dev writer on 3000 | Clean LAN restored at 192.168.0.101:3000; HTML and 17 CSS/JS assets and cache policies passed. Next agentRules:false prevents framework AGENTS mutation; fresh config build passes. |
-| Git/GitHub | Private `akashdas98/portfolio-nextjs`; all v2 application changes pushed to main | Application/config 5e987e7 pushed/deployed; v2.0.0 marks this complete release scope. |
+| Git/GitHub | Private `akashdas98/portfolio-nextjs`; all v2 application changes pushed to main | v2.0.0 baseline b0bc73b; first-paint correction2ffdfaa pushed/deployed with separate release notes. |
 | Main push gate | All three registry entries remotely verified complete; gate installed | Validate pushed commit; downgrade before any future local CMS iteration. |
 | Future Work/products | Direction approved in principle, implementation deferred | `docs/work-and-products-overhaul.md`; start only when requested. |
 
@@ -63,13 +63,14 @@ Accepted PCB redesign separates static snapshots, native desktop SVG and bounded
 ## Next Recommended Steps
 
 1. Retain production contact sender verification and full authenticated admin login/edit review as follow-up work; direct email fallback remains available.
-2. Monitor renewed PCB crashes, blanking, drag lag or unacceptable zoom softness. Deployed full-page tile delivery was variable, but fresh Leads preparation completed without geometry API errors; no renderer change or speedup claim.
+2. Monitor renewed PCB crashes, blanking, drag lag or unacceptable zoom softness. First-paint correction is live verified; preserve atomic viewport publication before UI and belowfold preparation. See docs/releases/v2-pcb-first-paint.md.
 3. Keep Work/products and Gmail implementation deferred until explicitly requested.
 
 ## Recent Changes
 
+- 2026-09-30: First-paint correction2ffdfaa deployed/live verified: visible PCB together before UI, belowfold preparation preserved. Build,57 affected tests, Chromium/WebKit five-variant sequence checks, four-route interaction/scroll/resize and bounded API/failure checks pass. See docs/releases/v2-pcb-first-paint.md.
+
 - 2026-09-30: User approved all promotion and v2 commit/push/deploy. Three documents/six SVGs remotely verified, seed/migration aligned and local project overrides removed. See promotion evidence.
 - 2026-09-30: v2 application/config deployed at 5e987e7; four live public routes/artwork and touch verified. Build/TypeScript, 81 affected tests plus browser pixel test, 20 local Chromium/WebKit render checks, zero production audit vulnerabilities and clean LAN/cache checks pass. v2 notes/tag publication follows. Sender verification remains unresolved (local HTTP401).
-- 2026-09-30: Footer trail clipping and section-band palette corrected, Contact pink overlap preserved; header shared 18px blur/0.88 opacity. Prior TypeScript, interaction and LAN delivery checks passed; fresh release checks pending.
 - 2026-09-30: Four seedless PCB pairs regenerated with requested scale/density/run controls. Home installed and project pairs now promoted; generation measurements/seeds and raw source remain ignored audit evidence.
 - 2026-09-30: Sol/Luna routing and compact session-only policy completed; 26 guard/lifecycle plus two memory tests passed, live metadata/trust verified with interception evidence gap retained.
