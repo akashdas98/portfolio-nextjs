@@ -8,9 +8,9 @@ Verified at 2026-09-29T22:18:19.481Z (2026-09-30 IST). Each project remains publ
 
 | Project | Dimensions | Semantic object | Lens object |
 | --- | --- | --- | --- |
-| delivery-intelligence-the-sleep-company | 2400 ? 15183.5 | `delivery-intelligence-the-sleep-company/background.fff5c7fbe538eabf7bff.svg` | `delivery-intelligence-the-sleep-company/background-lens.ed3d7b911febb7a95ba3.svg` |
-| leads-management-the-sleep-company | 2400 ? 14173.8 | `leads-management-the-sleep-company/background.0de4c8bc000082604a62.svg` | `leads-management-the-sleep-company/background-lens.85f40a3149ed04d5f1c7.svg` |
-| horecah | 2400 ? 11019.3 | `horecah/background.8812277dcb9def6845a9.svg` | `horecah/background-lens.63804fd846af2ecceab8.svg` |
+| delivery-intelligence-the-sleep-company | 2400 x 15183.5 | `delivery-intelligence-the-sleep-company/background.fff5c7fbe538eabf7bff.svg` | `delivery-intelligence-the-sleep-company/background-lens.ed3d7b911febb7a95ba3.svg` |
+| leads-management-the-sleep-company | 2400 x 14173.8 | `leads-management-the-sleep-company/background.0de4c8bc000082604a62.svg` | `leads-management-the-sleep-company/background-lens.85f40a3149ed04d5f1c7.svg` |
+| horecah | 2400 x 11019.3 | `horecah/background.8812277dcb9def6845a9.svg` | `horecah/background-lens.63804fd846af2ecceab8.svg` |
 
 ## SHA-256 verification
 

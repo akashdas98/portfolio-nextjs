@@ -10,6 +10,7 @@ const developmentNoStoreHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  agentRules: false,
   allowedDevOrigins: ["127.0.0.1", "192.168.0.*"],
   experimental: {
     serverActions: {

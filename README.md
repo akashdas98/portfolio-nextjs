@@ -128,7 +128,7 @@ The optional final argument to `prepare:pcb-background` overrides the default `4
 2. Add a custom Open Graph image if desired.
 3. Verify the sender domain in Resend.
 4. Configure Supabase environment variables if the admin panel or lead capture should be active.
-5. Deploy to Netlify or any Node-compatible host.
+5. The connected Vercel project deploys pushes to `main` at `https://freebirdakash.vercel.app`. Verify the exact Git SHA through the Vercel GitHub deployment status and check the public routes/assets after completion. Other Node-compatible hosts require their own configuration.
 
 ## Design direction
 
