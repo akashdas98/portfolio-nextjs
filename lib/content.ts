@@ -40,7 +40,7 @@ export const projects = [
   {
     index: "03",
     name: "Horecah",
-    url: "https://horecah.com",
+    url: "",
     category: "Freelance · Cross-Platform · Payments and Notifications",
     title: "Payments and notification journeys across web, Android, and iOS",
     challenge:

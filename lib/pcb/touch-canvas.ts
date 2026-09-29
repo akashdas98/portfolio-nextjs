@@ -6,7 +6,7 @@ export const TOUCH_MASK_MAX_PIXELS = 1_200_000;
 export const TOUCH_VIEWPORT_MAX_PIXELS = 2_400_000;
 export const TOUCH_MAX_PIXEL_RATIO = 2;
 
-export type TouchTone = "blue" | "pink";
+export type TouchTone = "blue" | "pink" | "impact";
 
 export type TouchToneRange = {
   bottom: number;
@@ -122,7 +122,7 @@ export function touchEnvelopeStops<T>(
   tone: TouchTone,
   profiles: { blue: T; pink: T },
 ) {
-  return profiles[tone];
+  return tone === "pink" ? profiles.pink : profiles.blue;
 }
 
 export type TouchCanvasPath = {
@@ -195,6 +195,7 @@ export function touchToneIntervals(
   bottom: number,
   muted: TouchToneRange[],
   impact: TouchToneRange[],
+  specialImpact: TouchToneRange[] = [],
 ) {
   const boundaries = Array.from(new Set([
     top,
@@ -207,6 +208,10 @@ export function touchToneIntervals(
       Math.max(top, Math.min(bottom, range.top)),
       Math.max(top, Math.min(bottom, range.bottom)),
     ]),
+    ...specialImpact.flatMap((range) => [
+      Math.max(top, Math.min(bottom, range.top)),
+      Math.max(top, Math.min(bottom, range.bottom)),
+    ]),
   ])).sort((first, second) => first - second);
 
   return boundaries.slice(0, -1).flatMap<TouchToneInterval>((intervalTop, index) => {
@@ -216,11 +221,12 @@ export function touchToneIntervals(
     return [{
       top: intervalTop,
       bottom: intervalBottom,
-      // Impact intentionally shares the saturated blue palette with base and
-      // overrides a muted ancestor at the exact pixels it occupies.
-      tone: contains(impact, midpoint)
-        ? "blue"
-        : contains(muted, midpoint) ? "pink" : "blue",
+      // A marked impact band overrides the normal impact and muted palettes.
+      tone: contains(specialImpact, midpoint)
+        ? "impact"
+        : contains(impact, midpoint)
+          ? "blue"
+          : contains(muted, midpoint) ? "pink" : "blue",
     }];
   });
 }
@@ -231,12 +237,14 @@ export function touchRequiredTones(
   lensDiameter: number,
   muted: TouchToneRange[],
   impact: TouchToneRange[],
+  specialImpact: TouchToneRange[] = [],
 ) {
   return Array.from(new Set(touchToneIntervals(
     pointY - lensDiameter / 2,
     pointY + lensDiameter / 2,
     muted,
     impact,
+    specialImpact,
   ).map((interval) => interval.tone)));
 }
 

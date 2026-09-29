@@ -62,13 +62,15 @@ if (event !== undefined) {
   if (!event || typeof event !== "object" || Array.isArray(event) || typeof event.hook_event_name !== "string") {
     deny("Routing handler denied an invalid hook event.");
   } else
-  if (event.hook_event_name === "SessionStart" || event.hook_event_name === "UserPromptSubmit") {
+  if (event.hook_event_name === "SessionStart") {
     process.stdout.write(`${JSON.stringify({
       hookSpecificOutput: {
         hookEventName: event.hook_event_name,
         additionalContext: PARENT_POLICY,
       },
     })}\n`);
+  } else if (event.hook_event_name === "UserPromptSubmit") {
+    // Keep the trusted hook definition compatible without repeating session policy.
   } else if (event.hook_event_name === "PreToolUse") {
     const decision = evaluatePreToolUse(event);
     if (decision.targeted) {

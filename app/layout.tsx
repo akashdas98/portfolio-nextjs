@@ -61,6 +61,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" suppressHydrationWarning>
       <body>
         {children}
+        <footer className="site-footer">
+          <div className="shell footer-inner">
+            <p>Akash Das · Senior Software Engineer</p>
+            <p>Built with Next.js. Designed with restraint.</p>
+          </div>
+        </footer>
         <PublicAnimations />
         {process.env.NODE_ENV === "development" ? (
           <script

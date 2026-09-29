@@ -16,7 +16,7 @@ Every covered `spawn_agent` / `Agent` call must explicitly set `model`,
 `reasoning_effort`, and `fork_turns`. Its message must contain exactly one block:
 
 ```text
-<routing>{"schema_version":2,"scope":"...","work_class":"implementation","uncertainty":"...","consequences":"...","acceptance":["..."],"model_demand":{"requirements":["..."],"rationale":"...","evidence":["..."]},"effort_demand":{"reasoning_shape":"...","rationale":"...","evidence":[]},"allocation":{"phase":"initial","previous":null},"capabilities":["node:test"],"model":"gpt-6-astra","reasoning_effort":"low"}</routing>
+<routing>{"schema_version":2,"scope":"...","work_class":"implementation","uncertainty":"...","consequences":"...","acceptance":["..."],"model_demand":{"requirements":["..."],"rationale":"...","evidence":["..."]},"effort_demand":{"reasoning_shape":"...","rationale":"...","evidence":[]},"allocation":{"phase":"initial","previous":null},"capabilities":["node:test"],"model":"gpt-6.1-sol","reasoning_effort":"medium"}</routing>
 ```
 
 Schema version 2 treats the axes independently. `model_demand` describes required
@@ -27,19 +27,20 @@ hypothesis search, dependency tracing or verification—and justifies effort.
 `work_class` remains `routine`, `implementation`, or `complex`, but is descriptive
 metadata and never selects either axis.
 
-All runtime-supported model/effort combinations are valid with sufficient axis-
-specific declarations: a narrow subtle judgment may use Astra-low, a long tractable
-investigation may use Sol-high, and bounded multi-step work may use Luna-medium.
+All project-allowed model/effort combinations are valid with sufficient axis-
+specific declarations: a long tractable investigation may use Sol-high,
+and bounded multi-step work may use Luna-medium.
 Non-Luna models require model-specific evidence; high, xhigh, max and ultra require
 effort-specific evidence. Evidence for one axis cannot satisfy the other. Luna
-supports effort through max; Sol and Astra support through ultra. No cheap-model
+supports effort through max; Sol supports through ultra. No cheap-model
 failure is required before a justified stronger initial allocation.
 
-The supported model list is explicit: GPT-6 Luna, Sol and Astra. GPT-5.6
-models, including Terra, are no longer eligible for new routes.
-Use capability and effort demands together: a Sol medium route can match or beat
-Astra low for some coding work at lower measured benchmark task cost, while
-Astra low leads Sol medium on longer engineering and computer-use evaluations.
+The supported model list is explicit: GPT-6 Luna and GPT-6.1 Sol only.
+Sol in current guidance means `gpt-6.1-sol`. `gpt-6-astra`, `gpt-6-sol` and GPT-5.6 models,
+including Terra, are prohibited for new routes and fallbacks.
+Use capability and effort demands together; choose Sol initially when warranted.
+Luna's model and effort range are unchanged. Astra benchmark points are reference
+comparators only. Report a capability limit if neither allowed model suffices.
 See `docs/agent/gpt-6-routing-evidence.md` for the SVG point values and limits.
 Validation and audit logging share the evaluator's model list. Runtime inventory
 changes still require reviewing this list; it is not discovered automatically.
@@ -54,6 +55,10 @@ Use `fork_turns: "none"` by default. A positive numeric string is allowed only w
 the routing JSON includes `context_reason`; `all` is denied. No arbitrary token or
 spending cap is imposed.
 
+Reuse suitably allocated workers for related follow-ups. The follow-up tool
+cannot update model/effort; changed pairs need a new explicit spawn with a
+reassessment declaration. Keep route reasons concise and task-specific.
+
 ## Hook configuration
 
 From the source repository, install or merge the project-local hook definition with
@@ -66,6 +71,9 @@ node scripts/install-agent-routing.mjs "<repository>"
 The adjacent installer writes `<repository>/.codex/hooks.json` with absolute hook
 commands for that checkout and does not change hook trust. Inspect and trust the
 resulting exact definition with `/hooks`. That installed JSON is the review artifact.
+SessionStart injects a compact fixed policy for startup/resume/clear/compact.
+The registered UserPromptSubmit handler is silent: no repeated policy injection.
+Keeping that compatibility handler preserves the installed definition's identity.
 The hook accepts paths only through Node's `process.argv`, including an optional
 `--audit <absolute-path>`; its default append-only JSONL audit is under the OS temp
 directory. Records contain only sanitized session/tool IDs, model, effort, and

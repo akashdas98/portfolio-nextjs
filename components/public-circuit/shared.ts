@@ -40,6 +40,7 @@ export const LENS_DIAMETER = 615;
 export const LENS_RADIUS = LENS_DIAMETER / 2;
 export const MUTED_SECTION_SELECTOR = ".case-section-muted, .selected-work-section, .about-section, .contact-section";
 export const IMPACT_SECTION_SELECTOR = ".case-impact-section";
+export const SPECIAL_IMPACT_SECTION_SELECTOR = '[data-circuit-impact-palette="dark-blue-pink"]';
 export const POINTER_TRAIL_DURATION = 560;
 export const BLUE_ENVELOPE_STOPS: EnvelopeStop[] = [
   { offset: 0, opacity: 0.96 },

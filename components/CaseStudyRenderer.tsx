@@ -70,6 +70,7 @@ function CaseStudySection({
   section: CaseStudySectionDocument;
   project: AdminProject;
 }) {
+  const websiteUrl = project.url;
   switch (section.type) {
     case "outcome-table":
       return (
@@ -200,7 +201,10 @@ function CaseStudySection({
 
     case "impact-highlight":
       return (
-        <section className={`${caseSectionClass(section)} impact case-impact-section`}>
+        <section
+          className={`${caseSectionClass(section)} impact case-impact-section`}
+          data-circuit-impact-palette={section.circuitImpactPalette}
+        >
           <div className="shell impact-grid reveal">
             <div>
               <p className="eyebrow"><CircuitUnderlay size="compact">{section.eyebrow}</CircuitUnderlay></p>
@@ -240,8 +244,8 @@ function CaseStudySection({
                 <a className="button button-primary" href="/#contact">
                   {section.primaryActionLabel}
                 </a>
-                {project.url ? (
-                  <a className="button button-secondary" href={project.url} target="_blank" rel="noreferrer">
+                {websiteUrl ? (
+                  <a className="button button-secondary" href={websiteUrl} target="_blank" rel="noreferrer">
                     {section.secondaryActionLabel}
                   </a>
                 ) : null}

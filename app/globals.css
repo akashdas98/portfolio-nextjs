@@ -1,7 +1,7 @@
 :root {
   --bg: #0a0d10;
   --bg-soft: #0f1317;
-  --surface: #12171c;
+  --surface: #13181d;
   --surface-2: #171d23;
   --text: #eef3f6;
   --muted: #9aa8b2;
@@ -240,14 +240,8 @@ p {
   background-color: rgba(10, 13, 16, 0.88);
   border-color: var(--line);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.286);
+  -webkit-backdrop-filter: blur(18px);
   backdrop-filter: blur(18px);
-}
-@media (hover: none) and (pointer: coarse) {
-  .site-header.is-scrolled {
-    background-color: rgba(10, 13, 16, 0.96);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
 }
 .header-inner {
   height: 76px;
@@ -1143,9 +1137,13 @@ p {
   pointer-events: none;
   will-change: transform;
 }
-.public-circuit-pointer-trail[data-tone="muted"] {
+.public-circuit-pointer-trail [data-tone="muted"] {
   --circuit-pointer-trail-color: 223 58 148;
   --circuit-pointer-trail-core: #fff0f8;
+}
+.public-circuit-pointer-trail [data-tone="impact"] {
+  --circuit-pointer-trail-color: 223 58 148;
+  --circuit-pointer-trail-core: #4aa8ff;
 }
 .public-circuit-pointer-trail-paint {
   display: block;

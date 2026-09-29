@@ -44,7 +44,7 @@ export default async function Home() {
           imageUrl="/pcb-backgrounds/home.svg"
           lensImageUrl="/pcb-backgrounds/home-lens.svg"
           sourceWidth={2400}
-          sourceHeight={12082.5}
+            sourceHeight={11789}
         />
         <section className="hero shell circuit-exposed-section">
           <p className="eyebrow reveal">
@@ -247,13 +247,6 @@ export default async function Home() {
           </div>
         </section>
       </main>
-
-      <footer className="site-footer">
-        <div className="shell footer-inner">
-          <p>Akash Das · Senior Software Engineer</p>
-          <p>Built with Next.js. Designed with restraint.</p>
-        </div>
-      </footer>
     </>
   );
 }

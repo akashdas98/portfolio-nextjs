@@ -9,6 +9,8 @@ out
 .npm-cache
 .playwright-mcp/
 supabase/.temp/
+artifacts/pcb-regeneration-*/
+public/pcb-previews/
 /*-desktop.png
 /*-ipad.png
 /*-iphone.png

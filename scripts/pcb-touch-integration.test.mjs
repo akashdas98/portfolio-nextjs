@@ -220,6 +220,7 @@ test("touch tone selects the matching independent envelope profile", () => {
   const profiles = { blue: { id: "blue" }, pink: { id: "pink" } };
   assert.strictEqual(touchEnvelopeStops("blue", profiles), profiles.blue);
   assert.strictEqual(touchEnvelopeStops("pink", profiles), profiles.pink);
+  assert.strictEqual(touchEnvelopeStops("impact", profiles), profiles.blue);
 });
 
 test("approved touch integration is enabled in public builds and excluded from tests", () => {
@@ -387,6 +388,16 @@ test("tone is selected for every rendered interval rather than sampled at the le
     ],
     "impact pixels must remain blue even inside a muted ancestor",
   );
+  assert.deepEqual(
+    touchToneIntervals(80, 240, [{ top: 100, bottom: 220 }], [{ top: 170, bottom: 190 }], [{ top: 170, bottom: 190 }]),
+    [
+      { top: 80, bottom: 100, tone: "blue" },
+      { top: 100, bottom: 170, tone: "pink" },
+      { top: 170, bottom: 190, tone: "impact" },
+      { top: 190, bottom: 220, tone: "pink" },
+      { top: 220, bottom: 240, tone: "blue" },
+    ],
+  );
 });
 
 test("tablet short tone band does not decorate off-lens colors", () => {
@@ -496,10 +507,10 @@ test("integration uses one owned bounded Canvas backend without SVG trail clonin
     new URL("../components/PublicCircuitBackground.tsx", import.meta.url),
     "utf8",
   );
-  const touchComponent = await readFile(
+  const touchComponent = (await readFile(
     new URL("../components/public-circuit/TouchCanvasInteraction.tsx", import.meta.url),
     "utf8",
-  );
+  )).replace(/\r\n/g, "\n");
   assert.doesNotMatch(orchestrator, /async function commitFrame/);
   assert.doesNotMatch(orchestrator, /await loadTouchGeometry/);
   assert.match(touchComponent, /className = "public-circuit-touch-canvas"/);

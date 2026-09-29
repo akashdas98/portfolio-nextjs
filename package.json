@@ -1,6 +1,6 @@
 {
   "name": "akash-portfolio",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "check:main-cms-push": "node scripts/check-main-cms-push.mjs",
@@ -21,7 +21,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
-    "next": "latest",
+    "next": "16.3.7",
     "react": "latest",
     "react-dom": "latest",
     "resend": "latest",

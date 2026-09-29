@@ -1,4 +1,84 @@
-# GPT-6 delegation evidence (2026-09-23)
+# GPT-6 delegation evidence (updated 2026-09-30)
+
+## Current GPT-6.1 Sol evidence
+
+Source: [Introducing GPT-6.1 Sol](https://openai.com/index/introducing-gpt-6-1-sol/).
+Active choices are GPT-6.1 Sol and GPT-6 Luna only. GPT-6 Astra and GPT-6 Sol
+are disallowed; Astra chart values are reference comparators only. The September 23 matrix contains historical
+comparators, never eligible routes.
+
+The table transcribes exact rendered SVG point `aria-label` values inspected
+2026-09-30 with Playwright. Use the full labels' precision, not the rounded
+coordinate prefixes. Cells are **score / API cost per task**. All six new cost
+axes are linear; factual error is lower-is-better, other outcomes higher-is-better.
+The new charts have no Luna series and no ultra points. The current spawn
+interface permits Sol low through ultra and Luna low through max for this project.
+
+| Evaluation | Effort | GPT-6 Astra | GPT-6.1 Sol |
+| --- | --- | --- | --- |
+| DeepSWE 1.1 | low | 67.0% / $1.60 | 64.4% / $0.17 |
+|  | medium | 72.8% / $3.08 | 73.0% / $0.42 |
+|  | high | 73.2% / $3.92 | 75.2% / $0.65 |
+|  | xhigh | 74.1% / $4.43 | 71.9% / $0.79 |
+|  | max | 73.2% / $7.50 | 71.9% / $1.57 |
+| GDP.pdf | low | 30.4% / $1.70 | 27.0% / $0.33 |
+|  | medium | 30.4% / $1.72 | 30.0% / $0.34 |
+|  | high | 31.0% / $1.79 | 32.0% / $0.35 |
+|  | xhigh | 32.2% / $1.91 | 31.8% / $0.37 |
+|  | max | 31.0% / $2.08 | 31.0% / $0.42 |
+| AutomationBench 1.0.6 | low | 30.3% / $1.08 | 24.7% / $0.16 |
+|  | medium | 34.1% / $1.27 | 31.7% / $0.19 |
+|  | high | 37.1% / $1.44 | 33.2% / $0.23 |
+|  | xhigh | 39.0% / $1.50 | 35.5% / $0.25 |
+|  | max | 41.4% / $1.73 | 36.1% / $0.30 |
+| OSWorld 2.0 offline | low | 62.2% / $2.72 | 59.0% / $0.42 |
+|  | medium | 69.3% / $5.36 | 66.8% / $0.77 |
+|  | high | 70.0% / $6.91 | 69.6% / $0.96 |
+|  | xhigh | 71.3% / $7.49 | 69.4% / $1.05 |
+|  | max | 73.5% / $9.44 | 71.4% / $1.27 |
+| Terminal-Bench Science 0.1 | low | 55.4% / $11.41 | 43.7% / $1.79 |
+|  | medium | 57.4% / $12.34 | 47.6% / $2.34 |
+|  | high | 62.0% / $14.95 | 51.1% / $2.76 |
+|  | xhigh | 60.9% / $15.76 | 53.7% / $2.89 |
+|  | max | 68.1% / $23.80 | 57.0% / $5.47 |
+| Factual error | low | 6.3% / $0.24 | 7.7% / $0.05 |
+|  | medium | 4.4% / $0.31 | 6.3% / $0.06 |
+|  | high | 3.9% / $0.48 | 4.5% / $0.08 |
+|  | xhigh | 4.0% / $0.60 | 4.1% / $0.10 |
+|  | max | 3.9% / $0.79 | 4.6% / $0.13 |
+
+## Implications and limits
+
+These are comparisons among task-appropriate candidates, not a difficulty scale.
+GPT-6.1 Sol medium now exceeds Astra low in DeepSWE and OSWorld, so the old
+recommendation based on GPT-6 Sol medium being weaker is superseded. Astra is
+excluded by project policy, regardless of its benchmark score. In science,
+Sol max remains below the Astra comparator at high and max; the price advantage
+does not eliminate that capability gap. Higher effort is not uniformly better:
+Sol high exceeds its xhigh/max DeepSWE points, and its factual-error rate worsens
+from xhigh to max. Select reasoning depth from the actual remaining work.
+
+No GPT-6.1 Sol FrontierCode or Agents' Last Exam points are published here.
+Do not relabel the old Sol values or infer a Luna crossover from this update.
+OSWorld costs for the same Astra scores differ from September 23; use the new
+within-chart comparisons without pooling costs. The science Astra max score also
+differs from the earlier Astra launch article. These are source-version differences,
+not evidence of local speed or cost changes. Research/API harnesses and production
+behavior can differ; factuality uses deliberately error-inducing conversations.
+Unreported uncertainty prevents treating small score gaps as established superiority.
+
+Standard GPT-6.1 Sol API rates are $2 input, $0.10 cached input and $10 output per
+million tokens. Those rates and benchmark task costs do not establish Codex quota
+savings, local acceptance, retries or review burden. This repository has no
+completed-task comparison measuring those outcomes for the replacement model.
+
+## Historical September 23 baseline (superseded Sol guidance)
+
+The original matrix and interpretation below are retained as dated evidence.
+Every Sol value below means GPT-6 Sol, never GPT-6.1 Sol. Its route suggestions
+are historical; use the current decision procedure and evidence above. Older
+Astra/Luna values can inform workload context only with their original harness
+and date, not a synthesized current comparison.
 
 Source: https://openai.com/index/introducing-gpt-6-sol-and-luna/
 

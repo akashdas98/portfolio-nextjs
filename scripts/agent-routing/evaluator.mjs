@@ -1,7 +1,6 @@
 const MODEL_CLASS = Object.freeze({
   "gpt-6-luna": "luna",
-  "gpt-6-sol": "sol",
-  "gpt-6-astra": "astra",
+  "gpt-6.1-sol": "sol",
 });
 
 export const SUPPORTED_MODELS = Object.freeze(Object.keys(MODEL_CLASS));
@@ -268,15 +267,12 @@ export function evaluatePreToolUse(event) {
 }
 
 export const PARENT_POLICY = [
-  "Use adaptive routing for each meaningful handoff: choose installed skills, tools, integrations, and reusable scripts before adding capability.",
-  "For this repository, use docs/agent/delegation-system.md as the decision and future-upgrade entrypoint. First assess the task's capability, reasoning work, consequences, and reviewability; then compare viable GPT-6 model-effort pairs using relevant benchmarks and completed-task evidence. Benchmarks do not classify task difficulty.",
-  "Select model and reasoning effort independently for the initial route and every reassessment. At reassessment, evaluate the remaining work from new task evidence before comparing viable pairs; a benchmark crossing alone is not a trigger. Model choice addresses capability profile and ceiling; effort addresses inference depth, search, branching, and verification within that model. Work class is descriptive, not an allocation ladder; stronger models do not imply higher effort, and higher effort cannot substitute for a capability mismatch.",
-  "Use routing schema version 2 with separate model_demand and effort_demand reasons and evidence. Reassess model-only, effort-only, both, or neither as evidence changes, including independent downgrades after diagnosis.",
-  "Do not force a cheap-model failure before an appropriate stronger initial allocation, and do not claim token or cost savings without measured completed-task evidence.",
-  "Discover a missing capability only when task-relevant. Auto-install only from a trusted reviewed source when the task justifies it and no credentials, account consent, protected configuration, or external-write permission is required.",
-  "Preserve user scope, project requirements, permissions, and acceptance checks. If a capability is unavailable, report the limit and use the best in-scope fallback.",
-  "Checkpoint durable state after meaningful changes. At a completed or safely handed-off boundary, recommend /clear only when prior context is disposable and lifecycle readiness confirms a fresh checkpoint with no unresolved items or active operations; only the user invokes /clear.",
-  "Before spawn_agent, include exactly one <routing>{JSON}</routing> block in its message and explicitly set model, reasoning_effort, and fork_turns per the routing guard contract.",
+  "Autonomous economical delegation is authorized at any effort. Only gpt-6.1-sol and gpt-6-luna are eligible; gpt-6-astra, gpt-6-sol, and obsolete models are forbidden.",
+  "Follow docs/agent/delegation-system.md and scripts/agent-routing/README.md. Assess task capability, reasoning work, consequences, and reviewability first; compare viable pairs using relevant benchmarks and completed-task evidence. Benchmarks do not classify task difficulty or alone trigger reassessment.",
+  "Select model and reasoning effort independently: capability profile/ceiling versus inference, search, and verification within it. Work class is descriptive; stronger models need not use higher effort, and effort cannot repair a capability mismatch. Record separate reasons and evidence initially and reassess remaining work from new task evidence: model-only, effort-only, both, or neither, in either direction. Never force cheap-model failure or claim unmeasured savings.",
+  "Use installed capabilities first; discover missing ones only for concrete task benefit. Install only reviewed, pinned trusted sources within existing permissions; credentials, account consent, expanded access, protected configuration, and external writes require actual authorization. Preserve scope, requirements, approvals, and acceptance; report unavailable capabilities and use an in-scope fallback.",
+  "Checkpoint meaningful changes. Recommend /clear only at a safe handoff when the lifecycle checker confirms fresh, complete restart state and no in-flight operations; captured queued work is not a blocker. Only the user invokes /clear.",
+  "Before spawn_agent/Agent, explicitly set model, reasoning_effort, and fork_turns and include exactly one <routing>{JSON}</routing> block using schema_version 2, separate model_demand/effort_demand, and allocation. fork_turns must be none or a positive numeric string with context_reason; all is denied. Full schema and axis evidence rules: scripts/agent-routing/README.md.",
 ].join(" ");
 
 const CAPABILITY_FIELDS = new Set([

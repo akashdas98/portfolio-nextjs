@@ -26,24 +26,36 @@ history, duplicate work and empty polling.
 
 ## Adaptive routing implementation
 
-2026-09-23 GPT-6 migration: the active routing evaluator and launch guard accept
-only `gpt-6-astra`, `gpt-6-sol`, and `gpt-6-luna`. Existing effort limits stay the
-same in this Codex spawn tool: Astra and Sol support low through ultra; Luna
+2026-09-30 GPT-6.1 Sol upgrade: the active routing evaluator and launch guard accept
+only `gpt-6.1-sol` and `gpt-6-luna`. Astra and `gpt-6-sol` are prohibited,
+including fallbacks; Sol in current guidance means GPT-6.1 Sol. Existing effort limits stay the
+same in this Codex spawn tool: Sol supports low through ultra; Luna
 supports low through max. The current API model pages separately document
 effort only through max; this guard models the Codex tool contract.
 Model and effort evidence gates, reassessment rules, and work-class independence
 are unchanged. Historical GPT-5.6 routes below are records, not current options.
 
-OpenAI's September 2026 article and its SVG chart labels show meaningful
-cross-effort tradeoffs. On FrontierCode, Sol medium slightly beats Astra low
-(45.9% versus 45.3%) at $0.80 versus $1.70 per task. On DeepSWE, Astra low
-is substantially better than Sol medium (67.0% versus 56.6%). The complete
-chart matrix, evaluation context and routing implications are in
+OpenAI's GPT-6.1 Sol charts supersede old Sol comparisons. Higher effort
+is not uniformly better. Luna's eligibility, effort range and previous evidence
+are unchanged; it is absent from the new graphs. Astra is a comparator only.
+The current matrix, historical baselines,
+evaluation context and routing implications are in
 `docs/agent/gpt-6-routing-evidence.md`. Select both axes for the actual task;
 these API-priced benchmark results do not establish local Codex savings.
 Sources:
-https://openai.com/index/introducing-gpt-6-sol-and-luna/
+https://openai.com/index/introducing-gpt-6-1-sol/
 https://developers.openai.com/api/docs/guides/latest-model
+
+2026-09-30 delivery streamlining: SessionStart restores the compact routing
+policy at startup/resume/clear/compact; UserPromptSubmit is a silent compatibility
+handler. The hook definition and PreToolUse enforcement are unchanged. Preserve
+autonomous delegation, schema v2 and reassessment. Reuse an appropriately allocated
+worker for related follow-ups; changed model/effort requires a new explicit spawn.
+Keep briefs short and load requirements progressively. Detailed decisions and
+cache limitations live in `docs/agent/delegation-system.md`, not repeated hook text.
+The /clear rule remains unchanged; no measured cache or total-cost improvement
+is claimed. User-level configuration remains untouched; project rules narrow its
+generic global Astra guidance for this repository.
 
 2026-09-14 Terra inclusion: Portfolio's evaluator now accepts `gpt-5.6-terra`
 at low through ultra, matching the live spawn tool's supported combinations.
@@ -84,7 +96,7 @@ preserve requirements, verification quality and access to stronger reasoning.
   capability requirements, rationale and evidence; effort demand states reasoning
   shape, rationale and evidence. `work_class` is descriptive only. Consider total
   parent/worker cost and handoff overhead; allow trivial work directly.
-- Apply the two axes to initial judgment, not only escalation. Astra-low, Sol-high
+- Apply the two axes to initial judgment, not only escalation. Sol-high
   and Luna-medium are legitimate when their different demand profiles warrant them.
   A stronger initial model needs no prior cheap failure.
 - At meaningful handoffs, compare the previous and requested pair and classify the

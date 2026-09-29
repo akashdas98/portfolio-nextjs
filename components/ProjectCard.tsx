@@ -38,10 +38,11 @@ export function ProjectCard({ project }: { project: Project }) {
   const challengePlacement = hasHeadlineWhitespace(project.title)
     ? "challenge-left"
     : "challenge-right";
+  const websiteUrl = project.url;
   const action = project.hasCaseStudy
     ? { href: `/work/${project.slug}`, label: "View Case Study", external: false }
-    : project.url
-      ? { href: project.url, label: "Visit Website", external: true }
+    : websiteUrl
+      ? { href: websiteUrl, label: "Visit Website", external: true }
       : null;
 
   return (

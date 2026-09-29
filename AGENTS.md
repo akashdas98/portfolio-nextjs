@@ -13,8 +13,8 @@ subtask acceptance does not close the feature.
 
 ## Required task routing
 
-Paths are repository-relative. These files carry mandatory rules, not optional background reading. Load only applicable sections not already known, then follow references only
-when needed. Use architecture routing when location/ownership is unclear or a
+Paths are repository-relative; routed rules are mandatory. Load applicable,
+unloaded sections and follow references on demand. Use architecture routing when location/ownership is unclear or a
 contract changes, not for every edit in a known component. Copy/visual tuning
 does not require rereading product positioning unless it changes that contract.
 
@@ -24,6 +24,7 @@ does not require rereading product positioning unless it changes that contract.
 | Application code, API, admin/auth, database, project content, schemas, asset ownership, dependencies | `docs/agent/engineering.md` |
 | Copy, page structure, positioning, visual direction | `docs/agent/product.md`, `portfolio-structure.md`, `positioning.md` |
 | Public CSS, layout, typography, motion, diagrams, PCB artwork, SVG preparation | `docs/agent/visual.md` |
+| PCB generation/regeneration | `docs/agent/pcb-generation.md` plus visual/engineering rules |
 | Install/build/dev processes, LAN, browser verification, tooling | `docs/agent/runtime.md` |
 | Agent instructions, memory, skills, workflow architecture | `docs/agent/workflow.md` |
 | Model, reasoning, delegation, or agent-system upgrades | `docs/agent/delegation-system.md` plus workflow rules |
@@ -31,7 +32,9 @@ does not require rereading product positioning unless it changes that contract.
 | Independent products or Work catalogue | `docs/work-and-products-overhaul.md` plus product/engineering/visual rules; implementation remains deferred until requested |
 | Future Gmail/admin planning | `docs/admin-projects-and-leads-plan.md` plus engineering rules; older plan schema is historical, not current implementation |
 
-Use `.codex/skills/visual-design/SKILL.md` for appearance-led frontend work. Concrete project rules and the user's task override generic skill suggestions. Other skills are loaded only when applicable or explicitly requested; do not load the entire skill catalog.
+Use `.codex/skills/visual-design/SKILL.md` for appearance-led frontend work.
+Project rules and user instructions override generic suggestions. Load other
+skills only when applicable or requested, never the entire catalog.
 
 ## Always-active boundaries
 
@@ -49,18 +52,20 @@ Use `.codex/skills/visual-design/SKILL.md` for appearance-led frontend work. Con
 ## Execution and verification
 
 Intelligent delegation and explicit cheaper worker model selection are authorized.
+Allowed workers: `gpt-6.1-sol`, `gpt-6-luna` only. Sol means GPT-6.1 Sol;
+`gpt-6-astra` and `gpt-6-sol` are prohibited, including fallbacks.
 Select model capability and reasoning effort as independent axes for the initial
 route and every reassessment. Model choice answers which capability profile/ceiling
 the work needs; effort answers how much inference, search and verification that
 model should perform. Work class is descriptive, not an allocation ladder. A
 stronger model need not use higher effort, and higher effort does not substitute
 for a capability mismatch. Consider total handoff/review cost, preserve
-requirements, and use focused briefs rather than full-history forks.
+requirements, and use focused briefs rather than full-history forks. Reuse
+suitably allocated workers for related work; include context/cache overhead.
 
-Before substantial work, record separate model/effort rationales and acceptance
-checks; reassess either axis independently at meaningful handoffs.
-Before spawning, use the structured routing contract in
-`scripts/agent-routing/README.md`. Automatically select useful
+Before substantial work, record model/effort reasons and acceptance checks;
+reassess each axis at meaningful handoffs. Before spawning, follow
+`scripts/agent-routing/README.md`. Select useful
 installed skills/tools; discover missing capabilities only for a concrete need.
 Task-justified installation from a reviewed, pinned trusted source is authorized
 within existing permissions; account consent and expanded access still require

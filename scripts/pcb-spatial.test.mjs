@@ -122,7 +122,7 @@ test("lens validation rejects executable, nested, transformed, and unclassified 
   );
 });
 
-test("source allowlist accepts only the exact local asset or configured public Storage bucket", () => {
+test("source allowlist accepts the homepage asset and configured public Storage bucket", () => {
   const configured = "https://portfolio.supabase.co";
   assert.deepEqual(resolvePcbSource("/pcb-backgrounds/home-lens.svg", ""), {
     kind: "local",

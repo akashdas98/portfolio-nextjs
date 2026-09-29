@@ -84,7 +84,7 @@ async function loadIndex(source: string) {
   let cacheKey = source;
   let load: () => Promise<string>;
   if (target.kind === "local") {
-    const filename = path.join(process.cwd(), "public", "pcb-backgrounds", "home-lens.svg");
+    const filename = path.join(process.cwd(), "public", target.pathname.slice(1));
     const metadata = await stat(filename);
     if (metadata.size <= 0 || metadata.size > MAX_PCB_SOURCE_BYTES) {
       throw new PcbSourceError(413, "The PCB source exceeds the 5 MB limit.");

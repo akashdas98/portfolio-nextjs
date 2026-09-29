@@ -13,6 +13,7 @@ import {
   evaluatePreToolUse,
   isSpawnAgentTool,
   SUPPORTED_MODELS,
+  PARENT_POLICY,
 } from "./evaluator.mjs";
 
 const hookPath = fileURLToPath(new URL("./hook.mjs", import.meta.url));
@@ -39,7 +40,7 @@ function routing(overrides = {}) {
     },
     allocation: { phase: "initial", previous: null },
     capabilities: ["node:test"],
-    model: "gpt-6-sol",
+    model: "gpt-6.1-sol",
     reasoning_effort: "medium",
     ...overrides,
   };
@@ -70,7 +71,7 @@ function runHook(input, args = []) {
 }
 
 test("malformed and unknown routing decisions are denied", () => {
-  assert.deepEqual([...SUPPORTED_MODELS], ["gpt-6-luna", "gpt-6-sol", "gpt-6-astra"]);
+  assert.deepEqual([...SUPPORTED_MODELS], ["gpt-6-luna", "gpt-6.1-sol"]);
   assert.equal(evaluateDecision(null).allowed, false);
   assert.equal(evaluateDecision(routing({ surprise: true })).allowed, false);
   assert.equal(evaluateDecision(routing({ model: "unknown-model" })).allowed, false);
@@ -78,6 +79,37 @@ test("malformed and unknown routing decisions are denied", () => {
   for (const model of ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]) {
     assert.equal(evaluateDecision(routing({ model })).allowed, false, model);
     assert.equal(evaluatePreToolUse(event(routing({ model }))).allowed, false, model);
+  }
+});
+
+test("forbidden models are denied in initial routes, hooks, audits, and declared previous allocations", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "routing-forbidden-test-"));
+  try {
+    for (const model of ["gpt-6-astra", "gpt-6-sol", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]) {
+      const forbidden = routing({ model });
+      const initial = evaluateDecision(forbidden);
+      assert.equal(initial.allowed, false, model);
+      assert.match(initial.reasons.join(" "), /unknown or missing model/);
+      assert.equal(evaluatePreToolUse(event(forbidden)).allowed, false, model);
+      const auditPath = join(dir, `${model}.jsonl`);
+      const hook = runHook(event(forbidden), ["--audit", auditPath]);
+      assert.equal(JSON.parse(hook.stdout).hookSpecificOutput.permissionDecision, "deny");
+      assert.equal(JSON.parse(await readFile(auditPath, "utf8")).model, "unknown");
+
+      const reassessment = routing({ allocation: {
+        phase: "reassessment",
+        previous: { model, reasoning_effort: "medium" },
+        trigger: "The project worker policy changed.",
+      } });
+      const previous = evaluateDecision(reassessment);
+      assert.equal(previous.allowed, false, model);
+      assert.match(previous.reasons.join(" "), /allocation.previous has unknown or missing model/);
+      assert.equal(evaluatePreToolUse(event(reassessment)).allowed, false, model);
+      const previousHook = runHook(event(reassessment), ["--audit", auditPath]);
+      assert.equal(JSON.parse(previousHook.stdout).hookSpecificOutput.permissionDecision, "deny");
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
 });
 
@@ -109,8 +141,9 @@ test("legacy, unsupported, and insufficient axis declarations are denied clearly
 });
 
 test("work_class is descriptive and all supported model-effort pairs pass with axis evidence", () => {
+  const supportedPairs = new Set();
   for (const work_class of ["routine", "implementation", "complex"]) {
-    for (const model of ["gpt-6-luna", "gpt-6-sol", "gpt-6-astra"]) {
+    for (const model of ["gpt-6-luna", "gpt-6.1-sol"]) {
       for (const reasoning_effort of ["low", "medium", "high", "xhigh", "max", "ultra"]) {
         if (model === "gpt-6-luna" && reasoning_effort === "ultra") continue;
         const decision = routing({
@@ -125,16 +158,18 @@ test("work_class is descriptive and all supported model-effort pairs pass with a
         const evaluated = evaluateDecision(decision);
         assert.equal(evaluated.allowed, true, `${work_class} ${model} ${reasoning_effort}: ${evaluated.reasons.join("; ")}`);
         assert.equal(evaluated.transition, "initial");
+        supportedPairs.add(`${model}/${reasoning_effort}`);
       }
     }
   }
+  assert.equal(supportedPairs.size, 11);
 });
 
 test("GPT-6 tiers preserve independent evidence and support reassessment in both directions", () => {
-  const sol = routing({ model: "gpt-6-sol" });
+  const sol = routing({ model: "gpt-6.1-sol" });
   assert.equal(evaluateDecision({ ...sol, model_demand: { ...sol.model_demand, evidence: [] } }).allowed, false);
   assert.equal(evaluateDecision({ ...sol, reasoning_effort: "high" }).allowed, false);
-  for (const [model, previousModel] of [["gpt-6-astra", "gpt-6-sol"], ["gpt-6-sol", "gpt-6-astra"]]) {
+  for (const [model, previousModel] of [["gpt-6.1-sol", "gpt-6-luna"], ["gpt-6-luna", "gpt-6.1-sol"]]) {
     const decision = routing({ model, allocation: {
       phase: "reassessment",
       previous: { model: previousModel, reasoning_effort: "medium" },
@@ -149,19 +184,22 @@ test("GPT-6 tiers preserve independent evidence and support reassessment in both
 
 test("initial and all four reassessment transitions validate independently", () => {
   const cases = [
-    ["model-only", "gpt-6-luna", "medium"],
-    ["effort-only", "gpt-6-sol", "low"],
-    ["both", "gpt-6-luna", "low"],
-    ["neither", "gpt-6-sol", "medium"],
+    ["model-only", "gpt-6-luna", "medium", "gpt-6.1-sol", "medium"],
+    ["model-only", "gpt-6.1-sol", "medium", "gpt-6-luna", "medium"],
+    ["effort-only", "gpt-6.1-sol", "low", "gpt-6.1-sol", "medium"],
+    ["effort-only", "gpt-6.1-sol", "high", "gpt-6.1-sol", "medium"],
+    ["both", "gpt-6-luna", "low", "gpt-6.1-sol", "medium"],
+    ["both", "gpt-6.1-sol", "high", "gpt-6-luna", "low"],
+    ["neither", "gpt-6.1-sol", "medium", "gpt-6.1-sol", "medium"],
   ];
   assert.equal(evaluateDecision(routing()).transition, "initial");
-  for (const [transition, model, reasoning_effort] of cases) {
+  for (const [transition, model, reasoning_effort, previousModel, previousEffort] of cases) {
     const evaluated = evaluateDecision(routing({
       model,
       reasoning_effort,
       allocation: {
         phase: "reassessment",
-        previous: { model: "gpt-6-sol", reasoning_effort: "medium" },
+        previous: { model: previousModel, reasoning_effort: previousEffort },
         trigger: "New evidence changed the allocation assessment.",
       },
       effort_demand: {
@@ -175,7 +213,7 @@ test("initial and all four reassessment transitions validate independently", () 
 });
 
 test("each changed reassessment axis requires its own evidence, including downgrades", () => {
-  const previous = { model: "gpt-6-astra", reasoning_effort: "high" };
+  const previous = { model: "gpt-6.1-sol", reasoning_effort: "high" };
   const allocation = { phase: "reassessment", previous, trigger: "Diagnosis is complete." };
   const modelDowngrade = evaluateDecision(routing({
     model: "gpt-6-luna",
@@ -189,7 +227,7 @@ test("each changed reassessment axis requires its own evidence, including downgr
   assert.match(modelDowngrade.reasons.join(" "), /model reassessment/);
 
   const effortDowngrade = evaluateDecision(routing({
-    model: "gpt-6-astra",
+    model: "gpt-6.1-sol",
     reasoning_effort: "medium",
     allocation,
     effort_demand: { ...routing().effort_demand, evidence: [] },
@@ -220,6 +258,34 @@ test("spawn aliases, one routing block, explicit allocation, and context rules a
   assert.equal(evaluatePreToolUse(missing).allowed, false);
 });
 
+test("malformed routing, allocation mismatches, and unsupported history are denied", () => {
+  const malformed = event();
+  malformed.tool_input.message = "<routing>{</routing>";
+  assert.equal(evaluatePreToolUse(malformed).allowed, false);
+  for (const overrides of [
+    { model: "gpt-6-luna" },
+    { reasoning_effort: "low" },
+    { model: undefined },
+    { reasoning_effort: undefined },
+    { fork_turns: undefined },
+    { fork_turns: "0" },
+    { fork_turns: "2" },
+    { fork_turns: "-1" },
+  ]) {
+    assert.equal(evaluatePreToolUse(event(routing(), {
+      tool_input: { ...event().tool_input, ...overrides },
+    })).allowed, false, JSON.stringify(overrides));
+  }
+  for (const allocation of [
+    { phase: "initial", previous: { model: "gpt-6-luna", reasoning_effort: "low" } },
+    { phase: "initial", previous: null, trigger: "Unexpected trigger." },
+    { phase: "reassessment", previous: null, trigger: "Missing history." },
+    { phase: "reassessment", previous: { model: "gpt-6-luna", reasoning_effort: "medium" } },
+    { phase: "reassessment", previous: { model: "gpt-6-luna", reasoning_effort: "unknown" }, trigger: "Unknown effort." },
+    { phase: "reassessment", previous: { model: "gpt-6-luna", reasoning_effort: "low", surprise: true }, trigger: "Unknown history field." },
+  ]) assert.equal(evaluateDecision(routing({ allocation })).allowed, false, JSON.stringify(allocation));
+});
+
 test("unrelated calls pass and malformed hook JSON is denied", () => {
   const unrelated = runHook({ hook_event_name: "PreToolUse", tool_name: "Bash", tool_input: {} });
   assert.equal(unrelated.status, 0);
@@ -228,25 +294,45 @@ test("unrelated calls pass and malformed hook JSON is denied", () => {
   assert.equal(JSON.parse(malformed.stdout).hookSpecificOutput.permissionDecision, "deny");
 });
 
-test("resume gets parent context", () => {
-  const response = runHook({ hook_event_name: "SessionStart", source: "resume", session_id: "s", cwd: "." });
-  const output = JSON.parse(response.stdout);
-  assert.equal(output.hookSpecificOutput.hookEventName, "SessionStart");
-  assert.match(output.hookSpecificOutput.additionalContext, /adaptive routing/);
-  assert.match(output.hookSpecificOutput.additionalContext, /trusted reviewed source/);
-  assert.match(output.hookSpecificOutput.additionalContext, /recommend \/clear/);
-  assert.match(output.hookSpecificOutput.additionalContext, /model and reasoning effort independently/);
-  assert.match(output.hookSpecificOutput.additionalContext, /schema version 2/);
-  assert.match(output.hookSpecificOutput.additionalContext, /delegation-system\.md/);
-  assert.match(output.hookSpecificOutput.additionalContext, /Benchmarks do not classify task difficulty/);
-  assert.match(output.hookSpecificOutput.additionalContext, /remaining work from new task evidence/);
-  const promptResponse = runHook({
+test("all session restoration sources inject the same concise parent policy", () => {
+  for (const source of ["startup", "resume", "clear", "compact"]) {
+    const response = runHook({ hook_event_name: "SessionStart", source, session_id: "s", cwd: "." });
+    assert.equal(response.status, 0);
+    const output = JSON.parse(response.stdout);
+    assert.equal(output.hookSpecificOutput.hookEventName, "SessionStart");
+    assert.equal(output.hookSpecificOutput.additionalContext, PARENT_POLICY);
+  }
+  for (const boundary of [
+    /delegation is authorized at any effort/,
+    /Only gpt-6\.1-sol and gpt-6-luna are eligible/,
+    /gpt-6-astra, gpt-6-sol, and obsolete models are forbidden/,
+    /Select model and reasoning effort independently/,
+    /model-only, effort-only, both, or neither, in either direction/,
+    /new task evidence/,
+    /Never force cheap-model failure or claim unmeasured savings/,
+    /installed capabilities first/,
+    /reviewed, pinned trusted sources within existing permissions/,
+    /Preserve scope, requirements, approvals, and acceptance/,
+    /Recommend \/clear only at a safe handoff/,
+    /Only the user invokes \/clear/,
+    /exactly one <routing>\{JSON\}<\/routing> block using schema_version 2/,
+    /positive numeric string with context_reason; all is denied/,
+    /docs\/agent\/delegation-system\.md/,
+    /scripts\/agent-routing\/README\.md/,
+  ]) assert.match(PARENT_POLICY, boundary);
+  assert.ok(PARENT_POLICY.length < 2300, "Keep stable session policy concise; detailed rules belong in routing docs.");
+});
+
+test("prompt submission is a supported silent no-op with no audit write", () => {
+  const response = runHook({
     hook_event_name: "UserPromptSubmit",
-    prompt: "Implement the task.",
+    prompt: "Private task text.",
     session_id: "s",
     cwd: ".",
-  });
-  assert.equal(JSON.parse(promptResponse.stdout).hookSpecificOutput.hookEventName, "UserPromptSubmit");
+  }, ["--audit", "."]);
+  assert.equal(response.status, 0);
+  assert.equal(response.stdout, "");
+  assert.equal(response.stderr, "");
 });
 
 test("targeted logging failure denies; successful audit contains no prompt", async () => {
@@ -257,10 +343,10 @@ test("targeted logging failure denies; successful audit contains no prompt", asy
     assert.match(failed.stdout, /audit write failed/);
 
     const auditPath = join(dir, "audit.jsonl");
-    const passed = runHook(event(routing({ model: "gpt-6-sol" })), ["--audit", auditPath]);
+    const passed = runHook(event(routing({ model: "gpt-6.1-sol" })), ["--audit", auditPath]);
     assert.equal(passed.stdout, "");
     const record = JSON.parse(await readFile(auditPath, "utf8"));
-    assert.equal(record.model, "gpt-6-sol");
+    assert.equal(record.model, "gpt-6.1-sol");
     assert.deepEqual(Object.keys(record), ["session_id", "tool_use_id", "model", "reasoning_effort", "reasons"]);
     assert.doesNotMatch(JSON.stringify(record), /Do the task/);
   } finally {
@@ -491,7 +577,7 @@ test("parent launcher validates then passes fixed model, effort, JSON mode, and 
     assert.equal(launched.status, 0, launched.stderr);
     const capture = JSON.parse(await readFile(capturePath, "utf8"));
     assert.deepEqual(capture.args, [
-      "exec", "--model", "gpt-6-sol", "--config", 'model_reasoning_effort="medium"', "--json", "-",
+      "exec", "--model", "gpt-6.1-sol", "--config", 'model_reasoning_effort="medium"', "--json", "-",
     ]);
     assert.equal(capture.input, "Stubbed parent task.");
   } finally {
@@ -518,6 +604,26 @@ test("parent launcher rejects bad routes and alternate launch options before spa
     });
     assert.equal(denied.status, 2);
     await assert.rejects(readFile(capturePath));
+
+    for (const model of ["gpt-6-astra", "gpt-6-sol", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]) {
+      for (const forbidden of [
+        routing({ model }),
+        routing({ allocation: {
+          phase: "reassessment",
+          previous: { model, reasoning_effort: "medium" },
+          trigger: "The project worker policy changed.",
+        } }),
+      ]) {
+        await writeFile(decisionPath, JSON.stringify(forbidden), "utf8");
+        const forbiddenLaunch = spawnSync(process.execPath, [launchPath, ...common], {
+          encoding: "utf8",
+          env: { ...process.env, ROUTING_STUB_CAPTURE: capturePath },
+        });
+        assert.equal(forbiddenLaunch.status, 2, model);
+        assert.match(forbiddenLaunch.stderr, /unknown or missing model/);
+        await assert.rejects(readFile(capturePath));
+      }
+    }
 
     const alternate = spawnSync(process.execPath, [launchPath, ...common, "--resume", "last"], {
       encoding: "utf8",

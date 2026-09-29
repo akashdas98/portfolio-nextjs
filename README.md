@@ -107,7 +107,7 @@ Notes:
 - A schema-v3 case-study document owns paired Storage-backed PCB references: an individually classified semantic background plus an exact-geometry spatial lens projection. It can also select a validated hero visual. The promoted Delivery Intelligence document owns the EDD copy, integration nodes, responsive geometry, connections, SVG paths, and compact/mobile/tablet breakpoints; the frontend retains only validated generic renderers, upload validation, and shared visual primitives.
 - Admin project forms accept the depth-defined semantic/lens pair. The server rejects executable or external SVG content, requires one hidden internal depth reference to the unchanged semantic source, verifies every semantic primitive retains its renderer ID/class/ownership fields, verifies matching viewBoxes and bounded lens paths, uploads both objects under content-versioned paths with a one-year cache lifetime, and writes both references into the validated document. The Server Action upload limit is 32 MB and the Storage bucket permits 25 MB per SVG.
 
-Prepare a PCB Art Generator render before uploading it through admin:
+For every PCB generation request, follow the [PCB generation procedure](docs/agent/pcb-generation.md) to measure each current full page, run the external renderer without a seed unless one is supplied, and respect site versus project asset ownership. Prepare a render before uploading it through admin:
 
 ```bash
 npm run prepare:pcb-background -- path/to/generated.svg path/to/background.svg path/to/background-lens.svg

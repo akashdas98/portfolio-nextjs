@@ -17,8 +17,10 @@ import {
   MUTED_SECTION_SELECTOR,
   PINK_ENVELOPE_STOPS,
   POINTER_TRAIL_DURATION,
+  SPECIAL_IMPACT_SECTION_SELECTOR,
   loadLensGeometry,
   sampleFlameRadius,
+  sectionRanges,
   type EnvelopeStop,
   type InitialPointerInput,
   type LensPath,
@@ -135,6 +137,36 @@ function rectPath(top: number, bottom: number, width = LENS_DIAMETER) {
   return `M0 ${top}H${width}V${bottom}H0Z`;
 }
 
+const TRAIL_TONES = ["base", "muted", "impact"] as const;
+
+function toneClipPaths(sampleTop: number, diameter: number, muted: ToneRange[], impact: ToneRange[]) {
+  const visibleRanges = (ranges: ToneRange[]) => ranges
+    .map((range) => ({
+      top: Math.max(0, range.top - sampleTop),
+      bottom: Math.min(diameter, range.bottom - sampleTop),
+    }))
+    .filter((range) => range.bottom > range.top);
+  const mutedOverlaps = visibleRanges(muted);
+  const impactOverlaps = visibleRanges(impact);
+  const boundaries = Array.from(new Set([
+    0, diameter,
+    ...mutedOverlaps.flatMap((range) => [range.top, range.bottom]),
+    ...impactOverlaps.flatMap((range) => [range.top, range.bottom]),
+  ])).sort((first, second) => first - second);
+  const paths = { base: "", muted: "", impact: "" };
+  for (let index = 0; index < boundaries.length - 1; index += 1) {
+    const top = boundaries[index];
+    const bottom = boundaries[index + 1];
+    const midpoint = (top + bottom) / 2;
+    const tone = impactOverlaps.some((range) => midpoint >= range.top && midpoint < range.bottom)
+      ? "impact"
+      : mutedOverlaps.some((range) => midpoint >= range.top && midpoint < range.bottom)
+        ? "muted" : "base";
+    paths[tone] += rectPath(top, bottom, diameter);
+  }
+  return paths;
+}
+
 export function DesktopCircuitInteraction({
   imageUrl,
   lensImageUrl = imageUrl,
@@ -152,6 +184,7 @@ export function DesktopCircuitInteraction({
   const geometryRef = useRef<SVGGElement>(null);
   const baseClipRef = useRef<SVGPathElement>(null);
   const mutedClipRef = useRef<SVGPathElement>(null);
+  const specialImpactClipRef = useRef<SVGPathElement>(null);
   const blueEnvelopeMaskId = `${instanceId}-circuit-blue-envelope-mask`;
   const pinkEnvelopeMaskId = `${instanceId}-circuit-pink-envelope-mask`;
   const localFlameMaskId = `${instanceId}-circuit-local-flame-mask`;
@@ -168,6 +201,7 @@ export function DesktopCircuitInteraction({
   const baseClipId = `${instanceId}-circuit-base-tone`;
   const geometryMaskId = `${instanceId}-circuit-geometry`;
   const mutedClipId = `${instanceId}-circuit-muted-tone`;
+  const specialImpactClipId = `${instanceId}-circuit-special-impact-tone`;
 
   useEffect(() => {
     const lens = lensRef.current;
@@ -178,6 +212,7 @@ export function DesktopCircuitInteraction({
     const geometry = geometryRef.current;
     const baseClip = baseClipRef.current;
     const mutedClip = mutedClipRef.current;
+    const specialImpactClip = specialImpactClipRef.current;
     const page = lens?.closest<HTMLElement>("[data-public-circuit]");
     if (
       !lens ||
@@ -188,6 +223,7 @@ export function DesktopCircuitInteraction({
       !geometry ||
       !baseClip ||
       !mutedClip ||
+      !specialImpactClip ||
       !page
     ) {
       return;
@@ -200,12 +236,21 @@ export function DesktopCircuitInteraction({
     const geometryElement = geometry;
     const baseClipElement = baseClip;
     const mutedClipElement = mutedClip;
+    const specialImpactClipElement = specialImpactClip;
     const baseToneElement = lensElement.querySelector<SVGGElement>('[data-circuit-tone="base"]');
     const mutedToneElement = lensElement.querySelector<SVGGElement>('[data-circuit-tone="muted"]');
+    const specialImpactToneElement = lensElement.querySelector<SVGGElement>('[data-circuit-tone="impact"]');
     const pointerTrails = pointerTrailRefs.current.filter(
       (trail): trail is HTMLDivElement => trail !== null,
     );
     const pointerTrailCreatedAt: Array<number | null> = pointerTrails.map(() => null);
+    const pointerTrailPositions: Array<{ x: number; y: number } | null> = pointerTrails.map(() => null);
+    const pointerTrailToneTops: Array<number | null> = pointerTrails.map(() => null);
+    const pointerTrailToneClips = pointerTrails.map((trail) => TRAIL_TONES.map((tone) => ({
+      tone,
+      path: trail.querySelector<SVGPathElement>(`[data-trail-tone-clip="${tone}"]`),
+      group: trail.querySelector<SVGGElement>(`[data-tone="${tone}"]`),
+    })));
     let pointerTrailFrame: number | null = null;
     const flameLobes: FlameLobe[] = Array.from(
       lensElement.querySelectorAll<SVGCircleElement>("[data-flame-lobe]"),
@@ -295,8 +340,10 @@ export function DesktopCircuitInteraction({
     let lastPointerTrailX = -LENS_DIAMETER;
     let lastPointerTrailY = -LENS_DIAMETER;
     let toneRanges: ToneRange[] = [];
+    let specialImpactRanges: ToneRange[] = [];
     let previousBaseClip = "";
     let previousMutedClip = "";
+    let previousSpecialImpactClip = "";
 
     function stopFlame() {
       if (flameTimer !== null) {
@@ -331,6 +378,25 @@ export function DesktopCircuitInteraction({
       }
     }
 
+    function pageClip(clientX: number, clientY: number, diameter: number) {
+      const left = clientX + scrollLeft - pageDocumentLeft - diameter / 2;
+      const top = clientY + scrollTop - pageDocumentTop - diameter / 2;
+      return `inset(${Math.max(0, -top)}px ${Math.max(0, left + diameter - pageLayoutWidth)}px ${Math.max(0, top + diameter - pageLayoutHeight)}px ${Math.max(0, -left)}px)`;
+    }
+
+    function updateTrailToneClips(index: number, clientY: number) {
+      const top = clientY + scrollTop - pageDocumentTop - POINTER_TRAIL_DIAMETER / 2;
+      if (pointerTrailToneTops[index] === top) return;
+      pointerTrailToneTops[index] = top;
+      const paths = toneClipPaths(top, POINTER_TRAIL_DIAMETER, toneRanges, specialImpactRanges);
+      for (const { tone, path, group } of pointerTrailToneClips[index]) {
+        if (path && path.getAttribute("d") !== paths[tone]) {
+          path.setAttribute("d", paths[tone]);
+          if (group) group.style.display = paths[tone] ? "" : "none";
+        }
+      }
+    }
+
     function stopPointerTrail() {
       if (pointerTrailFrame !== null) {
         window.cancelAnimationFrame(pointerTrailFrame);
@@ -338,6 +404,7 @@ export function DesktopCircuitInteraction({
       }
       pointerTrailCreatedAt.forEach((_, index) => {
         pointerTrailCreatedAt[index] = null;
+        pointerTrailPositions[index] = null;
         const paint = pointerTrails[index]?.firstElementChild as HTMLElement | null;
         if (paint) paint.style.opacity = "0";
         pointerTrails[index]?.querySelector("[data-pointer-trail-geometry]")?.replaceChildren();
@@ -356,11 +423,21 @@ export function DesktopCircuitInteraction({
         const paint = pointerTrails[index]?.firstElementChild as HTMLElement | null;
         if (age >= POINTER_TRAIL_DURATION || !paint) {
           pointerTrailCreatedAt[index] = null;
+          pointerTrailPositions[index] = null;
           if (paint) paint.style.opacity = "0";
           pointerTrails[index]?.querySelector("[data-pointer-trail-geometry]")?.replaceChildren();
           return;
         }
         const remaining = 1 - Math.max(0, age / POINTER_TRAIL_DURATION);
+        const position = pointerTrailPositions[index];
+        if (position) {
+          // Fixed snapshots must remain inside the page as it scrolls beneath them.
+          const clip = pageClip(position.x, position.y, POINTER_TRAIL_DIAMETER);
+          if (pointerTrails[index].style.clipPath !== clip) {
+            pointerTrails[index].style.clipPath = clip;
+          }
+          updateTrailToneClips(index, position.y);
+        }
         paint.style.opacity = String(0.48 * remaining * remaining);
         active = true;
       });
@@ -410,17 +487,15 @@ export function DesktopCircuitInteraction({
       lastPointerTrailX = clientX;
       lastPointerTrailY = clientY;
       trail.style.transform = `translate3d(${clientX - POINTER_TRAIL_DIAMETER / 2}px, ${clientY - POINTER_TRAIL_DIAMETER / 2}px, 0)`;
+      trail.style.clipPath = pageClip(clientX, clientY, POINTER_TRAIL_DIAMETER);
+      pointerTrailPositions[index] = { x: clientX, y: clientY };
       const localX = clientX + scrollLeft - pageDocumentLeft;
       geometryTransform.setAttribute(
         "transform",
         `translate(${-(localX - POINTER_TRAIL_DIAMETER / 2)} ${-(localY - POINTER_TRAIL_DIAMETER / 2)})`,
       );
       geometryTransform.replaceChildren(snapshot);
-      trail.dataset.tone = toneRanges.some(
-        (range) => localY >= range.top && localY <= range.bottom,
-      )
-        ? "muted"
-        : "base";
+      updateTrailToneClips(index, clientY);
       pointerTrailCreatedAt[index] = timestamp;
       paint.style.opacity = "0.48";
       if (pointerTrailFrame === null) {
@@ -640,6 +715,8 @@ export function DesktopCircuitInteraction({
           bottom: sectionRect.bottom + window.scrollY - pageDocumentTop,
         };
       });
+      specialImpactRanges = sectionRanges(pageElement, pageDocumentTop, SPECIAL_IMPACT_SECTION_SELECTOR);
+      pointerTrailToneTops.fill(null);
     }
 
     async function rebuildLensGeometry(width: number, height: number, scale: number, offset: number) {
@@ -690,25 +767,8 @@ export function DesktopCircuitInteraction({
     }
 
     function updateToneClips(lensTop: number) {
-      const overlaps = toneRanges
-        .map((range) => ({
-          top: Math.max(0, range.top - lensTop),
-          bottom: Math.min(LENS_DIAMETER, range.bottom - lensTop),
-        }))
-        .filter((range) => range.bottom > range.top)
-        .sort((first, second) => first.top - second.top);
-
-      let cursor = 0;
-      let basePath = "";
-      let mutedPath = "";
-      overlaps.forEach((range) => {
-        if (range.top > cursor) basePath += rectPath(cursor, range.top);
-        mutedPath += rectPath(range.top, range.bottom);
-        cursor = Math.max(cursor, range.bottom);
-      });
-      if (cursor < LENS_DIAMETER) {
-        basePath += rectPath(cursor, LENS_DIAMETER);
-      }
+      const { base: basePath, muted: mutedPath, impact: specialImpactPath } =
+        toneClipPaths(lensTop, LENS_DIAMETER, toneRanges, specialImpactRanges);
 
       if (basePath !== previousBaseClip) {
         baseClipElement.setAttribute("d", basePath);
@@ -719,6 +779,11 @@ export function DesktopCircuitInteraction({
         mutedClipElement.setAttribute("d", mutedPath);
         if (mutedToneElement) mutedToneElement.style.display = mutedPath ? "" : "none";
         previousMutedClip = mutedPath;
+      }
+      if (specialImpactPath !== previousSpecialImpactClip) {
+        specialImpactClipElement.setAttribute("d", specialImpactPath);
+        if (specialImpactToneElement) specialImpactToneElement.style.display = specialImpactPath ? "" : "none";
+        previousSpecialImpactClip = specialImpactPath;
       }
     }
 
@@ -752,7 +817,7 @@ export function DesktopCircuitInteraction({
         lensElement.style.transform = position;
         previousLensPosition = position;
       }
-      const clip = `inset(${Math.max(0, -lensTop)}px ${Math.max(0, lensLeft + LENS_DIAMETER - pageLayoutWidth)}px ${Math.max(0, lensTop + LENS_DIAMETER - pageLayoutHeight)}px ${Math.max(0, -lensLeft)}px)`;
+      const clip = pageClip(renderedClientX, renderedClientY, LENS_DIAMETER);
       if (clip !== previousLensClip) {
         lensElement.style.clipPath = clip;
         previousLensClip = clip;
@@ -885,6 +950,11 @@ export function DesktopCircuitInteraction({
             viewBox={`0 0 ${POINTER_TRAIL_DIAMETER} ${POINTER_TRAIL_DIAMETER}`}
           >
             <defs>
+              {TRAIL_TONES.map((tone) => (
+                <clipPath key={tone} id={`${pointerTrailGeometryMaskIds[index]}-${tone}`}>
+                  <path data-trail-tone-clip={tone} />
+                </clipPath>
+              ))}
               <radialGradient id={pointerTrailEnvelopeMaskIds[index]}>
                 <stop offset="0" stopColor="#fff" stopOpacity="0.92" />
                 <stop offset="0.42" stopColor="#fff" stopOpacity="0.58" />
@@ -917,11 +987,15 @@ export function DesktopCircuitInteraction({
               </mask>
             </defs>
             <g mask={`url(#${pointerTrailEnvelopeMaskIds[index]}-mask)`}>
-              <g className="public-circuit-pointer-trail-glow">
-                <g mask={`url(#${pointerTrailGeometryMaskIds[index]})`}>
-                  <rect className="public-circuit-pointer-trail-core" width={POINTER_TRAIL_DIAMETER} height={POINTER_TRAIL_DIAMETER} />
+              {TRAIL_TONES.map((tone) => (
+                <g key={tone} data-tone={tone} clipPath={`url(#${pointerTrailGeometryMaskIds[index]}-${tone})`}>
+                  <g className="public-circuit-pointer-trail-glow">
+                    <g mask={`url(#${pointerTrailGeometryMaskIds[index]})`}>
+                      <rect className="public-circuit-pointer-trail-core" width={POINTER_TRAIL_DIAMETER} height={POINTER_TRAIL_DIAMETER} />
+                    </g>
+                  </g>
                 </g>
-              </g>
+              ))}
             </g>
           </svg>
         </div>
@@ -1058,6 +1132,9 @@ export function DesktopCircuitInteraction({
           <clipPath id={mutedClipId}>
             <path ref={mutedClipRef} />
           </clipPath>
+          <clipPath id={specialImpactClipId}>
+            <path ref={specialImpactClipRef} />
+          </clipPath>
         </defs>
         <g>
           <g
@@ -1083,6 +1160,20 @@ export function DesktopCircuitInteraction({
               <g data-circuit-halo="pink">
                 <g mask={`url(#${geometryMaskId})`}>
                   <rect width={LENS_DIAMETER} height={LENS_DIAMETER} fill="#fff0f8" />
+                </g>
+              </g>
+            </g>
+          </g>
+          <g
+            data-circuit-tone="impact"
+            style={{ display: "none" }}
+            clipPath={`url(#${specialImpactClipId})`}
+            mask={`url(#${blueEnvelopeMaskId})`}
+          >
+            <g mask={`url(#${localFlameMaskId})`}>
+              <g data-circuit-halo="pink">
+                <g mask={`url(#${geometryMaskId})`}>
+                  <rect width={LENS_DIAMETER} height={LENS_DIAMETER} fill="#4aa8ff" />
                 </g>
               </g>
             </g>

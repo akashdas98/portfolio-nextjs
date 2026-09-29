@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.0.0 — 2026-09-30
+
+All changes since the last push to `main` (`dedf30d4`) are included in v2.
+See [v2 release notes](docs/releases/v2.md) for the portfolio, case studies,
+PCB renderer, artwork, presentation, delivery and workflow changes, and
+[promotion evidence](docs/releases/v2-promotion.md) for verified CMS ownership.
+
 ## 2026-09-24 — PCB renderer redesign (local main)
 
 ### Changed

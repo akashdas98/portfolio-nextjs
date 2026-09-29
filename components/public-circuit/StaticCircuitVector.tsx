@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import {
   IMPACT_SECTION_SELECTOR,
   MUTED_SECTION_SELECTOR,
+  SPECIAL_IMPACT_SECTION_SELECTOR,
   loadLensGeometry,
   sectionRanges,
   type ToneRange,
@@ -12,6 +13,7 @@ import {
 type StaticToneLayout = {
   impact: ToneRange[];
   muted: ToneRange[];
+  specialImpact: ToneRange[];
 };
 
 type StaticPalette = {
@@ -23,6 +25,7 @@ type StaticPalette = {
 const STATIC_DEPTH_OFFSET = 1;
 const STATIC_VECTOR_TILE_SIZE = 512;
 const STATIC_RASTER_MAX_PIXEL_RATIO = 3;
+const STATIC_SPECIAL_IMPACT_MAIN_COLOR = "#0c3264";
 const STATIC_MAIN_COLORS: StaticPalette = {
   base: "#0f1115",
   muted: "#090d11",
@@ -30,7 +33,7 @@ const STATIC_MAIN_COLORS: StaticPalette = {
 };
 const STATIC_DEPTH_COLORS: StaticPalette = {
   base: "#1c2126",
-  muted: "#29323a",
+  muted: "#252e35",
   impact: "#315686",
 };
 
@@ -38,6 +41,7 @@ function paletteStops(
   pageHeight: number,
   tones: StaticToneLayout,
   palette: StaticPalette,
+  specialImpactColor = palette.impact,
 ) {
   const clamp = (value: number) => Math.max(0, Math.min(pageHeight, value));
   const boundaries = Array.from(
@@ -46,20 +50,27 @@ function paletteStops(
       pageHeight,
       ...tones.muted.flatMap((range) => [clamp(range.top), clamp(range.bottom)]),
       ...tones.impact.flatMap((range) => [clamp(range.top), clamp(range.bottom)]),
+      ...(specialImpactColor === palette.impact
+        ? []
+        : tones.specialImpact.flatMap((range) => [clamp(range.top), clamp(range.bottom)])),
     ]),
   ).sort((first, second) => first - second);
   const intervals = boundaries.slice(0, -1).map((top, index) => {
     const bottom = boundaries[index + 1];
     const midpoint = top + (bottom - top) / 2;
-    const color = tones.impact.some(
+    const color = tones.specialImpact.some(
       (range) => midpoint >= range.top && midpoint < range.bottom,
     )
-      ? palette.impact
-      : tones.muted.some(
-            (range) => midpoint >= range.top && midpoint < range.bottom,
-          )
-        ? palette.muted
-        : palette.base;
+      ? specialImpactColor
+      : tones.impact.some(
+          (range) => midpoint >= range.top && midpoint < range.bottom,
+        )
+        ? palette.impact
+        : tones.muted.some(
+              (range) => midpoint >= range.top && midpoint < range.bottom,
+            )
+          ? palette.muted
+          : palette.base;
 
     return { bottom, color, top };
   });
@@ -127,6 +138,11 @@ export function StaticCircuitVector({
           pageDocumentTop,
           IMPACT_SECTION_SELECTOR,
         ),
+        specialImpact: sectionRanges(
+          pageElement,
+          pageDocumentTop,
+          SPECIAL_IMPACT_SECTION_SELECTOR,
+        ),
       };
       const layoutKey = JSON.stringify({
         pageWidth: Math.round(pageWidth * 10) / 10,
@@ -140,7 +156,7 @@ export function StaticCircuitVector({
       artElement.dataset.renderState = "rendering-vector";
       const width = Math.max(1, pageWidth);
       const height = Math.max(1, pageHeight);
-      const mainStops = paletteStops(height, tones, STATIC_MAIN_COLORS);
+      const mainStops = paletteStops(height, tones, STATIC_MAIN_COLORS, STATIC_SPECIAL_IMPACT_MAIN_COLOR);
       const depthStops = paletteStops(height, tones, STATIC_DEPTH_COLORS);
       const tileElements: HTMLElement[] = [];
       const retainedObjectUrls = new Set<string>();

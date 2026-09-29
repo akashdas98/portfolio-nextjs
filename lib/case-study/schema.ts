@@ -397,6 +397,7 @@ const evidenceGridSectionSchema = z.object({
 const impactHighlightSectionSchema = z.object({
   ...sectionHeadingSchema,
   type: z.literal("impact-highlight"),
+  circuitImpactPalette: z.enum(["dark-blue-pink"]).optional(),
   detail: z.string().min(1),
   capabilities: z.array(z.string().min(1)).min(1).max(4).optional(),
   metrics: z

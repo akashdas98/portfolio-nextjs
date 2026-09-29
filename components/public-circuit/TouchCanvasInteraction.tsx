@@ -7,6 +7,7 @@ import {
   MUTED_SECTION_SELECTOR,
   PINK_ENVELOPE_STOPS,
   POINTER_TRAIL_DURATION,
+  SPECIAL_IMPACT_SECTION_SELECTOR,
   loadLensGeometry,
   sectionRanges,
   type EnvelopeStop,
@@ -295,6 +296,7 @@ export function TouchCanvasInteraction({
     let layoutVersion = 0;
     let mutedRanges: ToneRange[] = [];
     let impactRanges: ToneRange[] = [];
+    let specialImpactRanges: ToneRange[] = [];
     let viewportPixelRatio = 1;
     let surfacePageLeft = 0;
     let surfacePageTop = 0;
@@ -417,6 +419,7 @@ export function TouchCanvasInteraction({
       renderLeft = (pageWidth - sourceWidth * renderScale) / 2;
       mutedRanges = sectionRanges(pageElement, pageDocumentTop, MUTED_SECTION_SELECTOR);
       impactRanges = sectionRanges(pageElement, pageDocumentTop, IMPACT_SECTION_SELECTOR);
+      specialImpactRanges = sectionRanges(pageElement, pageDocumentTop, SPECIAL_IMPACT_SECTION_SELECTOR);
       layoutVersion += 1;
       if (debugElement) {
         debugElement.dataset.layoutVersion = String(layoutVersion);
@@ -460,7 +463,7 @@ export function TouchCanvasInteraction({
     function geometryRequest(point: { x: number; y: number }) {
       const request = touchGeometryRequest(point, { layoutVersion, renderLeft, renderScale, pageWidth });
       const tones = touchRequiredTones(
-        point.y, TOUCH_LENS_DIAMETER, mutedRanges, impactRanges,
+        point.y, TOUCH_LENS_DIAMETER, mutedRanges, impactRanges, specialImpactRanges,
       );
       return { ...request, key: `${request.key}:${tones.join(",")}`, tones };
     }
@@ -992,9 +995,9 @@ export function TouchCanvasInteraction({
     }
 
     function toneColors(tone: TouchTone) {
-      return tone === "pink"
-        ? { halo: "rgb(223 58 148 / 0.95)", core: "#fff0f8" }
-        : { halo: "rgb(0 124 255 / 0.95)", core: "#edf9ff" };
+      if (tone === "pink") return { halo: "rgb(223 58 148 / 0.95)", core: "#fff0f8" };
+      if (tone === "impact") return { halo: "rgb(223 58 148 / 0.95)", core: "#4aa8ff" };
+      return { halo: "rgb(0 124 255 / 0.95)", core: "#edf9ff" };
     }
 
     function paintSample(
@@ -1021,6 +1024,7 @@ export function TouchCanvasInteraction({
         sampleTop + size,
         mutedRanges,
         impactRanges,
+        specialImpactRanges,
       );
       const prepared = preparation.active;
       if (!prepared || prepared.geometry !== geometry ||
