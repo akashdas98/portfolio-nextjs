@@ -4,14 +4,14 @@ Updated: 2026-09-30. Read `AGENTS.md`.
 
 ## Current Task
 
-- Objective: remove live-only touch-glow appearance delay and restore activation when touching during ongoing scrolling, preserving accepted native gestures and paint behavior.
-- Scope/approval: user reports later touches delayed only on live, and touch during ongoing scroll fails on both live/local. Authorized release correction continues through verified commit/push/deploy. No source geometry, CMS/Storage, palette or decorated-surface expansion; promotions remain verified complete.
-- Status: Parent touch delivery/input feature active; implementation/local verification complete, deployment/live verification and physical momentum-scroll follow-up remain.
+- Objective: correct iPad interactive-glow blur at normal scale while preserving touch movement, visuals and native gestures; retain documented Safari inertial-input limitation.
+- Scope/approval: user says continue after native-browser limitation diagnosis. Fix interactive glow quality (static background fine), preserving bounded resources/native gestures and all geometry/palettes. Prior release authorization covers verified commit/push/deploy; promotions verified complete. Do not blindly enlarge full-region raster allocations.
+- Status: Parent PCB correction active; density correction physically accepted on iPad (clearer, responsiveness good). Production build and clean LAN restoration pass; commit/push/deploy/live verification remain. Native Safari inertial-tap limitation retained.
 - Completed: prior first-paint correction remains live at e4ab9ef. Touch correction implemented: plain viewport-band geometry prefetch (zero new raster allocation) and release/new-contact boundary preservation. Production build/TypeScript,66 affected unit tests, Chromium/WebKit input/slow-network edge/new-band checks and touch-capable WebKit first-paint variants passed; see docs/releases/v2-touch-delivery.md.
 - Verification: prior PCB first-paint correction remains verified (docs/releases/v2-pcb-first-paint.md). New first-touch latency: live Chromium304ms (HTTP285ms), WebKit810ms (HTTP509ms), local Chromium28ms (HTTP7ms, worker2ms); same-region repeats11ms/57ms. This supports a live geometry-wait boundary, not enlarged raster warmup. Release/new-contact beforeRAF reproduced lost activation; boundary flush now passes Chromium/WebKit. Physical momentum-scroll confirmation remains required; browser reproduction does not prove the reported device gesture.
-- Allocation: parent owns live/local timing and runtime/release verification; reuse Sol-high for touch preparation ownership diagnosis. Model demand is async lifecycle, geometry/halo and native pointer invariants; effort demand is startup/cancellation tracing and cold/warm timing tests. Prior broker review evidence supports this pair; neither axis changes for the new startup boundary.
+- Allocation: reuse Sol-high read-only quality architecture diagnosis; parent owns baseline browser pixel/timing inspection. Model demand: mask/decorated/output sampling, exact geometry and resource invariants (prior pipeline/lifecycle work supports Sol). Effort demand: trace losses and compare coherent bounded fixes; neither axis changes for remaining quality reasoning. No implementation until evidence/recommendation review.
 - Acceptance: prefetch bounded plain geometry for visible contact buckets before contact/on viewport change, zero new raster allocation; preserve one active/one preparing decorated region, density, halo/flame/trails/hold6s/native pan/pinch/hybrid/reduced motion and atomic PCB-before-UI. Lifecycle release/cancel cannot be overwritten by a new contact beforeRAF; verify fresh/repeated/edge/new-band contacts and actual-device scrolling follow-up.
-- Remaining: follow the ordered task table below. Commit/push/deploy and verify live fresh/later/edge contacts plus lifecycle regression. Then retain physical-device momentum-scroll activation/pinch confirmation as the feature acceptance gate (device/browser question pending). No expanded raster warmup; contact can still wait if it arrives before uncached geometry.
+- Remaining: follow the ordered task table below. CMS gate/commit/push and verify deployment/live840px touch output and public routes. Physical iPad accepted; production build/TypeScript and clean LAN restoration (HTML+17assets200/cache) pass. Local48 affected tests plus3 capture tests, Chromium/WebKit six-variant density captures, home/project/impact120-frame movement, normal trails, lifecycle and raw-capture checks pass. See docs/releases/v2-touch-quality.md and ignored pcb-glow-quality artifacts. Keep native inertial-tap limitation documented; no custom scroll.
 
 | Order | PCB feature task | State | Exit condition |
 | ---: | --- | --- | --- |
@@ -23,7 +23,8 @@ Updated: 2026-09-30. Read `AGENTS.md`.
 | 6 | EDD color and PCB regeneration review | done | User approved all; three paired artwork/document promotions remotely verified. |
 | 7 | v2 checks, commit, push and deploy | done | v2.0.0 at b0bc73b pushed, tagged and deployed; live loading defect reopened below. |
 | 8 | Correct live PCB first paint | done | Visible PCB appears together before UI, belowfold preparation/interaction preserved; production/live verified. |
-| 9 | Remove touch glow startup delay | active | Fresh and repeated contact appears promptly without movement/appearance/gesture or resource regressions. |
+| 9 | Touch delivery and native scroll diagnosis | done | Delivery correction deployed; inertial-tap browser limitation demonstrated, retained and user accepted proceeding. |
+| 10 | iPad interactive glow sharpness | active | Interactive glow clear at normal scale, static background unchanged; preserve movement/resource bounds. |
 
 ### Routing task outcome (preserve)
 

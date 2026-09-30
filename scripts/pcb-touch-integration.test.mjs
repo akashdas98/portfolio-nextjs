@@ -9,6 +9,9 @@ import { pathToFileURL } from "node:url";
 
 import {
   boundedCanvasPixelRatio,
+  touchRegionPixelRatio,
+  touchRegionDensityMatches,
+  TOUCH_REGION_MAX_PIXELS,
   cacheTouchDecoratedSurface,
   clearTouchDecoratedSurfaces,
   evictOldestTouchGeometry,
@@ -417,9 +420,51 @@ test("regional mask resources have hard cache and pixel ceilings", () => {
   }
   assert.equal(cache.size, TOUCH_GEOMETRY_CACHE_LIMIT);
   assert.deepEqual([...cache.keys()], ["5", "6", "7", "8"]);
-  const ratio = boundedCanvasPixelRatio(1000, 1000, 4, TOUCH_MASK_MAX_PIXELS);
+  const ratio = touchRegionPixelRatio(1000, 1000, 4);
   assert.ok(ratio <= 2);
-  assert.ok(1000 * 1000 * ratio * ratio <= TOUCH_MASK_MAX_PIXELS + 1);
+  assert.ok(Math.ceil(1000 * ratio) ** 2 <= TOUCH_MASK_MAX_PIXELS);
+});
+
+test("regional source and tone sampling respect actual ceil-sized pixel allocation", () => {
+  for (const [width, height] of [[938, 708], [1368, 708], [1728, 708], [1368.25, 707.9999999999999], [1000, 1000], [1549.25, 1549.25]]) {
+    for (const deviceRatio of [1, 1.25, 2, 3, NaN]) {
+      const ratio = touchRegionPixelRatio(width, height, deviceRatio);
+      assert.ok(ratio >= 1 && ratio <= 2);
+      if (Math.ceil(width) * Math.ceil(height) > TOUCH_REGION_MAX_PIXELS) {
+        assert.equal(ratio, 1, "minimum-one sampling takes precedence when its raster already exceeds the ceiling");
+      } else {
+        assert.ok(Math.ceil(width * ratio) * Math.ceil(height * ratio) <= TOUCH_REGION_MAX_PIXELS);
+      }
+    }
+  }
+  assert.equal(TOUCH_MASK_MAX_PIXELS, TOUCH_REGION_MAX_PIXELS);
+  assert.equal(touchRegionPixelRatio(4000, 4000, 2), 1, "the existing logical minimum is explicit above the budget");
+  assert.throws(() => touchRegionPixelRatio(0, 708, 2), /Invalid/);
+});
+
+test("phone and iPad effective core density improve while the 420px output uses native bounded sampling", () => {
+  const oldPhoneSource = boundedCanvasPixelRatio(938, 708, 3, 1_200_000);
+  const phone = touchRegionPixelRatio(938, 708, 3);
+  const ipad = touchRegionPixelRatio(1368, 708, 2);
+  assert.ok(phone > oldPhoneSource);
+  assert.ok(ipad > oldPhoneSource, "new iPad source density exceeds the physically accepted phone baseline");
+  assert.ok(ipad > 1.57 && ipad < 1.58);
+  assert.equal(boundedCanvasPixelRatio(420, 420, 2, 2_400_000), 2);
+  assert.equal(Math.ceil(420 * 2) ** 2, 705_600);
+});
+
+test("tone extension preserves shared density and rejects stale retained sampling", () => {
+  const ratio = touchRegionPixelRatio(1368, 708, 2);
+  const surfaces = new Map([["blue", ratio]]);
+  assert.equal(touchRegionDensityMatches(ratio, surfaces.values(), ratio), true);
+  for (const tone of ["pink", "impact"]) surfaces.set(tone, touchRegionPixelRatio(1368, 708, 2));
+  assert.equal(touchRegionDensityMatches(ratio, surfaces.values(), ratio), true);
+  assert.ok(2 * surfaces.size * Math.ceil(1368 * ratio) * Math.ceil(708 * ratio) <= 14_400_000,
+    "three tones across active/preparing regions stay within the explicit per-surface budget");
+  surfaces.set("pink", 1);
+  assert.equal(touchRegionDensityMatches(ratio, surfaces.values(), ratio), false, "old low-density boundary tone cannot be reused");
+  assert.equal(touchRegionDensityMatches(1.113, [ratio], ratio), false, "an old low-resolution mask cannot be retained");
+  assert.equal(touchRegionDensityMatches(ratio, [ratio], 2), false, "a changed sampling request requires new preparation");
 });
 
 test("decorated geometry retains only the current and one preparatory region", () => {

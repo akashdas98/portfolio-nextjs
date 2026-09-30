@@ -1,5 +1,9 @@
 # Changelog
 
+## v2 touch glow quality correction - 2026-09-30
+
+Unify bounded source-mask and decorated-glow density, remove the palette-boundary resolution drop, and budget the visible canvas by its own area. See [verification and device acceptance](docs/releases/v2-touch-quality.md). Native inertial-tap input withholding is recorded separately in the touch delivery notes.
+
 ## v2 touch delivery and lifecycle correction - 2026-09-30
 
 Prefetch bounded viewport geometry for live touch appearance and preserve release/new-contact transitions while scrolling. See [verification and device follow-up](docs/releases/v2-touch-delivery.md).

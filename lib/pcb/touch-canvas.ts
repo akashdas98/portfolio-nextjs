@@ -2,7 +2,9 @@ export const TOUCH_GEOMETRY_CACHE_LIMIT = 4;
 export const TOUCH_DECORATED_REGION_CACHE_LIMIT = 2;
 export const TOUCH_DECORATED_HALO_PASSES = 3;
 export const TOUCH_DECORATED_HALO_BLUR = 8.5;
-export const TOUCH_MASK_MAX_PIXELS = 1_200_000;
+export const TOUCH_REGION_MAX_PIXELS = 2_400_000;
+// Shared source/decorated raster ceiling; retain the existing exported name.
+export const TOUCH_MASK_MAX_PIXELS = TOUCH_REGION_MAX_PIXELS;
 export const TOUCH_VIEWPORT_MAX_PIXELS = 2_400_000;
 export const TOUCH_MAX_PIXEL_RATIO = 2;
 
@@ -172,6 +174,34 @@ export function boundedCanvasPixelRatio(
     Number.isFinite(devicePixelRatio) ? devicePixelRatio : 1,
     Math.sqrt(maxPixels / area),
   ));
+}
+
+/** One sampling density for the source mask and every decorated tone.
+ * Ceil-sized backing stores stay within the regional ceiling whenever the
+ * existing minimum of one pixel per CSS pixel can itself fit that ceiling.
+ */
+export function touchRegionPixelRatio(cssWidth: number, cssHeight: number, devicePixelRatio: number) {
+  if (![cssWidth, cssHeight].every(Number.isFinite) || cssWidth <= 0 || cssHeight <= 0) {
+    throw new Error("Invalid touch region raster size.");
+  }
+  const candidate = boundedCanvasPixelRatio(cssWidth, cssHeight, devicePixelRatio, TOUCH_REGION_MAX_PIXELS);
+  const pixels = (ratio: number) => Math.ceil(cssWidth * ratio) * Math.ceil(cssHeight * ratio);
+  if (pixels(candidate) <= TOUCH_REGION_MAX_PIXELS) return candidate;
+  // Do not silently change the established logical minimum for huge regions.
+  if (pixels(1) > TOUCH_REGION_MAX_PIXELS) return 1;
+  let lower = 1;
+  let upper = candidate;
+  for (let step = 0; step < 48; step += 1) {
+    const middle = (lower + upper) / 2;
+    if (pixels(middle) <= TOUCH_REGION_MAX_PIXELS) lower = middle;
+    else upper = middle;
+  }
+  return lower;
+}
+
+/** A retained region cannot mix source or tone sampling generations. */
+export function touchRegionDensityMatches(maskRatio: number, surfaceRatios: Iterable<number>, requestedRatio: number) {
+  return maskRatio === requestedRatio && Array.from(surfaceRatios).every((ratio) => ratio === requestedRatio);
 }
 
 export function touchCanvasSurfaceOrigin(

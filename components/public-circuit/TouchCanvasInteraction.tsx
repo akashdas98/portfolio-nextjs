@@ -18,6 +18,8 @@ import {
 } from "@/components/public-circuit/shared";
 import {
   boundedCanvasPixelRatio,
+  touchRegionPixelRatio,
+  touchRegionDensityMatches,
   parseTouchCanvasPath,
   touchCanvasSurfaceOrigin,
   touchDecoratedCrop,
@@ -29,12 +31,12 @@ import {
   touchToneIntervals,
   TOUCH_DECORATED_HALO_BLUR,
   TOUCH_DECORATED_HALO_PASSES,
-  TOUCH_MASK_MAX_PIXELS,
   TOUCH_VIEWPORT_MAX_PIXELS,
   type TouchCanvasPath,
   type TouchTone,
 } from "@/lib/pcb/touch-canvas";
 import { createTouchPreparation, createTouchGeometryWarmup, createTouchGeometryWarmSchedule, publishTouchMainCanvas, waitForTouchPreparation } from "@/lib/pcb/touch-preparation";
+import { createTouchDeviceCaptureBuffer, serializeTouchDeviceCapture } from "@/lib/pcb/touch-device-capture";
 import { createTouchHaloWorker } from "@/lib/pcb/touch-halo-worker";
 import {
   createTouchInteractionState,
@@ -146,12 +148,7 @@ async function createTouchGeometryMask(
   await checkpoint();
   const cssWidth = request.region.width * request.renderScale;
   const cssHeight = request.region.height * request.renderScale;
-  const pixelRatio = boundedCanvasPixelRatio(
-    cssWidth,
-    cssHeight,
-    window.devicePixelRatio,
-    TOUCH_MASK_MAX_PIXELS,
-  );
+  const pixelRatio = request.pixelRatio;
   const mask = document.createElement("canvas");
   mask.width = Math.max(1, Math.ceil(cssWidth * pixelRatio));
   mask.height = Math.max(1, Math.ceil(cssHeight * pixelRatio));
@@ -199,6 +196,7 @@ function touchGeometryRequest(
     renderLeft: number;
     renderScale: number;
     pageWidth: number;
+    devicePixelRatio: number;
   },
 ) {
   const { bucketY, region, requiredRegion } = touchGeometryRegions(
@@ -214,14 +212,17 @@ function touchGeometryRequest(
     layout.renderScale;
   region.width = (layout.pageWidth + TOUCH_LENS_DIAMETER + 2 * TOUCH_FULL_WIDTH_GUARD) /
     layout.renderScale;
+  const pixelRatio = touchRegionPixelRatio(
+    region.width * layout.renderScale, region.height * layout.renderScale, layout.devicePixelRatio,
+  );
   const key = [
     layout.layoutVersion,
     region.x,
     bucketY,
     layout.renderScale,
     layout.renderLeft,
-  ].map((value) => value.toFixed(4)).join(":");
-  return { ...layout, key, region, requiredRegion };
+  ].map((value) => value.toFixed(4)).join(":") + `:${pixelRatio}`;
+  return { ...layout, key, region, requiredRegion, pixelRatio };
 }
 
 export function TouchCanvasInteraction({
@@ -331,38 +332,135 @@ export function TouchCanvasInteraction({
     let retryPreparationAt = 0;
     let diagnosticUnderlayStyle: HTMLStyleElement | null = null;
     const captureFrames: Array<Record<string, number | string>> = [];
+    const captureEvents = captureEnabled ? createTouchDeviceCaptureBuffer() : null;
+    const captureEventIds = captureEnabled ? new WeakMap<Event, number>() : null;
+    const captureRawCounts: Record<string, number> = {};
+    let captureSequence = 0;
     let captureUploadTimer: number | null = null;
+    let captureUploadStartedAt = 0;
+    let captureUploadInFlight = false;
+    let captureFrame: number | null = null;
+    let captureDispatchTimer: number | null = null;
+    let captureFirstQueuedEventId = 0;
+    let captureLatestEventId = 0;
+
+    function captureSnapshot(kind: string, eventId = 0): Record<string, number | string> {
+      return {
+        kind, eventId, t: Math.round(performance.now()),
+        scrollX: window.scrollX, scrollY: window.scrollY,
+        visualScale: window.visualViewport?.scale ?? 1,
+        visualLeft: window.visualViewport?.offsetLeft ?? 0,
+        visualTop: window.visualViewport?.offsetTop ?? 0,
+        visualWidth: window.visualViewport?.width ?? window.innerWidth,
+        visualHeight: window.visualViewport?.height ?? window.innerHeight,
+        phase: state.phase, activeId: state.activeTouchId ?? "none",
+        statePoint: JSON.stringify(state.point),
+        pendingPhase: pendingTouchPhase ?? "none", pendingId: pendingTouchId ?? "none",
+        pendingPoint: JSON.stringify(pendingPagePoint), inputDirty: Number(inputDirty),
+        pointerActive: Number(pointerTouchActive), trackedId: trackedTouchId ?? "none",
+        scrollPointerId: scrollTouchPointerId ?? "none", scrollNativeId: scrollNativeTouchId ?? "none",
+        scrollAnchor: JSON.stringify(scrollTouchAnchor),
+        sample: JSON.stringify(touchSample), publishedPoint: JSON.stringify(currentPoint),
+        mainFront: mainFront ?? "none",
+        mainTransform: mainFront === null ? "none" : mainCanvases[mainFront]?.style.transform ?? "none",
+        mainVisibility: mainFront === null ? "none" : mainCanvases[mainFront]?.style.visibility ?? "none",
+        geometryStatus: canvas?.dataset.geometryStatus ?? "none",
+        preparing: Number(preparation.running), geometryMisses,
+      };
+    }
 
     function uploadCapture() {
-      if (!captureEnabled || captureFrames.length === 0) return;
+      if (!captureEnabled || captureUploadInFlight || (captureFrames.length === 0 && !captureEvents?.size)) return;
       const frames = captureFrames.splice(0);
+      const events = captureEvents?.drain() ?? [];
+      const body = serializeTouchDeviceCapture({
+        schema: "pcb-touch-device-capture-v1", at: new Date().toISOString(),
+        pathname: window.location.pathname,
+        viewport: [window.innerWidth, window.innerHeight],
+        devicePixelRatio: window.devicePixelRatio, visualScale: window.visualViewport?.scale ?? 1,
+        pointerCancels, pointerMoves, fallbackMoves, preparationStarts, preparationAborts, geometryMisses,
+        rawCounts: { ...captureRawCounts }, droppedEvents: captureEvents?.dropped ?? 0,
+        frames, events,
+      });
+      captureUploadStartedAt = 0;
+      captureUploadInFlight = true;
       void fetch("/api/pcb-touch-capture", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          schema: "pcb-touch-device-capture-v1",
-          at: new Date().toISOString(),
-          viewport: [window.innerWidth, window.innerHeight],
-          devicePixelRatio: window.devicePixelRatio,
-          visualScale: window.visualViewport?.scale ?? 1,
-          pointerCancels,
-          pointerMoves,
-          fallbackMoves,
-          preparationStarts,
-          preparationAborts,
-          geometryMisses,
-          frames,
-        }),
-      }).catch(() => {});
+        method: "POST", headers: { "content-type": "application/json" }, body,
+      }).catch(() => {}).finally(() => {
+        captureUploadInFlight = false;
+        if (!disposed && (captureFrames.length || captureEvents?.size)) scheduleCaptureUpload();
+      });
     }
 
     function scheduleCaptureUpload() {
-      if (!captureEnabled) return;
+      if (!captureEnabled || disposed) return;
       if (captureUploadTimer !== null) window.clearTimeout(captureUploadTimer);
+      const now = performance.now();
+      if (!captureUploadStartedAt) captureUploadStartedAt = now;
+      // Settle briefly, but ongoing native scrolling must also produce a
+      // bounded capture even when no contact was accepted and no glow painted.
       captureUploadTimer = window.setTimeout(() => {
         captureUploadTimer = null;
         uploadCapture();
-      }, 300);
+      }, Math.min(300, Math.max(0, 750 - (now - captureUploadStartedAt))));
+    }
+
+    function captureInputDecision(event: Event, reason: string) {
+      if (!captureEvents) return;
+      captureEvents.add({ ...captureSnapshot("decision", captureEventIds?.get(event) ?? 0), reason });
+      scheduleCaptureUpload();
+    }
+
+    function captureRawInput(event: Event) {
+      if (!captureEvents || disposed || (event instanceof PointerEvent && event.pointerType !== "touch")) return;
+      const eventId = ++captureSequence;
+      captureLatestEventId = eventId;
+      captureEventIds?.set(event, eventId);
+      const countKey = `${event.isTrusted ? "trusted" : "untrusted"}:${event.type}`;
+      captureRawCounts[countKey] = (captureRawCounts[countKey] ?? 0) + 1;
+      const record = {
+        ...captureSnapshot("raw-before", eventId), eventType: event.type,
+        eventAt: event.timeStamp, trusted: Number(event.isTrusted),
+        cancelable: Number(event.cancelable), defaultPrevented: Number(event.defaultPrevented),
+        target: event.target instanceof Element ? event.target.tagName : "other",
+        path: event.composedPath().slice(0, 6).map((target) => target instanceof Element ? target.tagName :
+          target === window ? "WINDOW" : target === document ? "DOCUMENT" : "OTHER").join("/"),
+      };
+      if (event instanceof PointerEvent) Object.assign(record, {
+        pointerId: event.pointerId, pointerType: event.pointerType, primary: Number(event.isPrimary),
+        buttons: event.buttons, pressure: event.pressure, clientX: event.clientX, clientY: event.clientY,
+      });
+      if (typeof TouchEvent !== "undefined" && event instanceof TouchEvent) {
+        const list = (touches: TouchList) => JSON.stringify(Array.from(touches).slice(0, 8)
+          .map((touch) => [touch.identifier, touch.clientX, touch.clientY]));
+        Object.assign(record, {
+          touches: list(event.touches), changedTouches: list(event.changedTouches), targetTouches: list(event.targetTouches),
+          touchCount: event.touches.length, changedCount: event.changedTouches.length,
+        });
+      }
+      captureEvents.add(record);
+      scheduleCaptureUpload();
+      // A native dispatch may run microtask checkpoints between listeners.
+      // One later task observes the completed listener batch; exact per-event
+      // decisions above retain their own IDs even when this snapshot coalesces.
+      if (captureDispatchTimer === null) {
+        captureFirstQueuedEventId = eventId;
+        captureDispatchTimer = window.setTimeout(() => {
+          captureDispatchTimer = null;
+          if (disposed || !captureEvents) return;
+          captureEvents.add({
+            ...captureSnapshot("after-dispatch-batch", captureLatestEventId),
+            firstEventId: captureFirstQueuedEventId,
+          });
+          if (captureFrame === null) captureFrame = window.requestAnimationFrame(() => {
+            captureFrame = null;
+            if (disposed || !captureEvents) return;
+            captureEvents.add(captureSnapshot("after-raf-batch", captureLatestEventId));
+            scheduleCaptureUpload();
+          });
+          scheduleCaptureUpload();
+        }, 0);
+      }
     }
     const steadyEnvelopes = new Map<TouchTone, HTMLCanvasElement>();
     const preparation = createTouchPreparation({
@@ -435,11 +533,9 @@ export function TouchCanvasInteraction({
 
     function resizeViewportCanvas() {
       if (!canvas) return;
-      const width = Math.max(1, window.innerWidth);
-      const height = Math.max(1, window.innerHeight);
       viewportPixelRatio = boundedCanvasPixelRatio(
-        width,
-        height,
+        TOUCH_LENS_DIAMETER,
+        TOUCH_LENS_DIAMETER,
         window.devicePixelRatio,
         TOUCH_VIEWPORT_MAX_PIXELS,
       );
@@ -520,7 +616,7 @@ export function TouchCanvasInteraction({
     }
 
     function geometryRequest(point: { x: number; y: number }) {
-      const request = touchGeometryRequest(point, { layoutVersion, renderLeft, renderScale, pageWidth });
+      const request = touchGeometryRequest(point, { layoutVersion, renderLeft, renderScale, pageWidth, devicePixelRatio: window.devicePixelRatio });
       const tones = touchRequiredTones(
         point.y, TOUCH_LENS_DIAMETER, mutedRanges, impactRanges, specialImpactRanges,
       );
@@ -554,9 +650,7 @@ export function TouchCanvasInteraction({
     ) {
       const cssWidth = request.region.width * request.renderScale;
       const cssHeight = request.region.height * request.renderScale;
-      const maskRatio = boundedCanvasPixelRatio(
-        cssWidth, cssHeight, window.devicePixelRatio, TOUCH_MASK_MAX_PIXELS,
-      );
+      const maskRatio = request.pixelRatio;
       const result = await haloWorker.decorateRegion({
         paths: paths.map((path) => parseTouchCanvasPath(path.source)),
         maskWidth: Math.max(1, Math.ceil(cssWidth * maskRatio)),
@@ -726,14 +820,9 @@ export function TouchCanvasInteraction({
       preparationStarted = preparationStartedAt;
       let geometryLoadedAt = preparationStartedAt;
       let maskReadyAt = preparationStartedAt;
-      // A tablet boundary needs two complete decorated regions. Keep their
-      // combined shadow raster within a CSS-pixel budget; phone composition
-      // retains its existing density and the final lens still paints at the
-      // viewport ratio.
-      const pixelRatio = request.tones.length > 1 &&
-        window.matchMedia("(min-width: 651px)").matches
-        ? Math.min(viewportPixelRatio, 1)
-        : viewportPixelRatio;
+      // Source masks and all tones share the same bounded region sampling.
+      // Viewport dimensions and palette count must never soften the core.
+      const pixelRatio = request.pixelRatio;
       const checkpoint = async () => {
         if (disposed || !isCurrent()) throw new Error("Touch preparation was superseded.");
         // A task boundary gives input and paint a turn between bounded stages.
@@ -763,7 +852,10 @@ export function TouchCanvasInteraction({
       };
       preparationStage = "yield";
       await checkpoint();
-      const reusable = preparation.active;
+      const active = preparation.active;
+      const reusable = active && touchRegionDensityMatches(
+        active.geometry.maskPixelRatio, Array.from(active.surfaces.values(), (surface) => surface.pixelRatio), pixelRatio,
+      ) ? active : null;
       const missingTones = reusable && geometryCoversRequest(reusable.geometry, request)
         ? request.tones.filter((tone) => !reusable.surfaces.has(tone))
         : [];
@@ -900,7 +992,7 @@ export function TouchCanvasInteraction({
       const sourceMargin = typeof margin === "number"
         ? margin / request.renderScale
         : { x: margin.x / request.renderScale, y: margin.y / request.renderScale };
-      return geometry !== null && touchGeometryCovers(
+      return geometry !== null && geometry.maskPixelRatio === request.pixelRatio && touchGeometryCovers(
         geometry,
         { layoutVersion: request.layoutVersion, region: request.requiredRegion },
         sourceMargin,
@@ -914,7 +1006,7 @@ export function TouchCanvasInteraction({
     ) {
       return prepared !== null &&
         geometryCoversRequest(prepared.geometry, request, margin) &&
-        request.tones.every((tone) => prepared.surfaces.has(tone));
+        request.tones.every((tone) => prepared.surfaces.get(tone)?.pixelRatio === request.pixelRatio);
     }
 
     function preparedCoversPrefetch(
@@ -1286,6 +1378,14 @@ export function TouchCanvasInteraction({
         );
         if (painted) currentPoint = { ...paintPoint };
       }
+      if (diagnosticEnabled || captureEnabled) {
+        const retained = preparation.active?.geometry;
+        canvas.dataset.maskPixelRatio = retained?.maskPixelRatio.toFixed(6) ?? "none";
+        canvas.dataset.regionPixels = retained ? String(
+          Math.ceil(retained.region.width * retained.renderScale * retained.maskPixelRatio) *
+          Math.ceil(retained.region.height * retained.renderScale * retained.maskPixelRatio),
+        ) : "0";
+      }
       canvas.dataset.geometryCacheSize = String(preparation.active ? 1 : 0);
       canvas.dataset.preparedTones = [...(preparation.active?.surfaces.keys() ?? [])].join(",");
       if (debugElement) canvas.dataset.preparedPixelRatios =
@@ -1462,7 +1562,7 @@ export function TouchCanvasInteraction({
     }
 
     function handleTouch(event: TouchEvent, type: "contact" | "move" | "release" | "cancel") {
-      if (pointerTouchActive) return;
+      if (pointerTouchActive) { captureInputDecision(event, "native-ignored-pointer-owner"); return; }
       // Samples may coalesce, but a completed gesture must reach the reducer
       // before a new contact replaces its pending ID/phase. Scroll frames can
       // be delayed long enough for both lifecycle events to arrive together.
@@ -1472,7 +1572,7 @@ export function TouchCanvasInteraction({
       }
       if (scrollTouchAnchor && scrollTouchPointerId !== null) {
         const touch = changedTouch(event, scrollNativeTouchId);
-        if (!touch) return;
+        if (!touch) { captureInputDecision(event, "native-ignored-scroll-id-mismatch"); return; }
         if (type === "move" && (debugElement || captureEnabled)) fallbackMoves += 1;
         if (scrollNativeTouchId === null) scrollNativeTouchId = touch.identifier;
         const at = performance.now();
@@ -1503,12 +1603,16 @@ export function TouchCanvasInteraction({
           scrollTouchPointerId = null;
           scrollNativeTouchId = null;
         }
+        captureInputDecision(event, "native-accepted-scroll-bridge");
         scheduleFrame(at);
         if (type === "release" || type === "cancel") scheduleCaptureUpload();
         return;
       }
       const touch = changedTouch(event);
-      if (!touch || (type === "contact" && trackedTouchId !== null)) return;
+      if (!touch || (type === "contact" && trackedTouchId !== null)) {
+        captureInputDecision(event, !touch ? "native-ignored-no-matching-id" : "native-ignored-existing-owner");
+        return;
+      }
       if (type === "contact") {
         scrollTouchAnchor = null;
         scrollTouchPointerId = null;
@@ -1522,7 +1626,9 @@ export function TouchCanvasInteraction({
           ? Math.round(delivery) : -1;
       }
       if (type === "contact") trackedTouchId = touch.identifier;
-      if (type !== "contact" && touch.identifier !== trackedTouchId) return;
+      if (type !== "contact" && touch.identifier !== trackedTouchId) {
+        captureInputDecision(event, "native-ignored-tracked-id-mismatch"); return;
+      }
       const nextSample = {
         clientX: touch.clientX,
         clientY: touch.clientY,
@@ -1545,6 +1651,7 @@ export function TouchCanvasInteraction({
       if (type === "release" || type === "cancel") {
         trackedTouchId = null;
       }
+      captureInputDecision(event, "native-accepted");
       scheduleFrame(at);
       if (type === "release" || type === "cancel") scheduleCaptureUpload();
     }
@@ -1552,7 +1659,7 @@ export function TouchCanvasInteraction({
     function handlePointerTouch(event: PointerEvent, type: "contact" | "move" | "release" | "cancel") {
       if (event.pointerType !== "touch") return;
       if (type === "contact") {
-        if (pointerTouchActive) return;
+        if (pointerTouchActive) { captureInputDecision(event, "pointer-ignored-existing-owner"); return; }
         if (pendingTouchPhase === "release" || pendingTouchPhase === "cancel") {
           reducePendingInput();
         }
@@ -1569,6 +1676,7 @@ export function TouchCanvasInteraction({
         scrollTouchPointerId = null;
         scrollNativeTouchId = null;
       } else if (!pointerTouchActive || event.pointerId !== trackedTouchId) {
+        captureInputDecision(event, "pointer-ignored-owner-or-id-mismatch");
         return;
       }
       if (type === "move" && (debugElement || captureEnabled)) pointerMoves += 1;
@@ -1599,6 +1707,7 @@ export function TouchCanvasInteraction({
         pointerTouchActive = false;
         trackedTouchId = null;
       }
+      captureInputDecision(event, "pointer-accepted");
       scheduleFrame(at);
       if (type === "release" || type === "cancel") scheduleCaptureUpload();
     }
@@ -1618,7 +1727,9 @@ export function TouchCanvasInteraction({
     const onPointerUp = (event: PointerEvent) => handlePointerTouch(event, "release");
     const onPointerCancel = (event: PointerEvent) => {
       if (event.pointerType !== "touch" || !pointerTouchActive ||
-          event.pointerId !== trackedTouchId) return;
+          event.pointerId !== trackedTouchId) {
+        captureInputDecision(event, "pointer-cancel-ignored-owner-or-id-mismatch"); return;
+      }
       if (debugElement || captureEnabled) pointerCancels += 1;
       if (touchSample) {
         // Pointer cancellation hands native panning to Safari, but the finger
@@ -1641,6 +1752,7 @@ export function TouchCanvasInteraction({
         pendingTouchAt = performance.now();
         pendingTouchPhase = "move";
         inputDirty = true;
+        captureInputDecision(event, "pointer-cancel-native-handoff");
         scheduleFrame(pendingTouchAt);
         return;
       }
@@ -1685,6 +1797,13 @@ export function TouchCanvasInteraction({
     rebuildLayout();
     const resizeObserver = new ResizeObserver(rebuildLayout);
     resizeObserver.observe(pageElement);
+    const rawCaptureTypes = ["touchstart", "touchmove", "touchend", "touchcancel",
+      "pointerdown", "pointermove", "pointerup", "pointercancel", "gotpointercapture", "lostpointercapture", "scroll"];
+    if (captureEnabled) {
+      captureEvents?.add(captureSnapshot("capture-start"));
+      scheduleCaptureUpload();
+      for (const type of rawCaptureTypes) window.addEventListener(type, captureRawInput, listenerOptions);
+    }
     window.addEventListener("touchstart", onTouchStart, listenerOptions);
     window.addEventListener("touchmove", onTouchMove, listenerOptions);
     window.addEventListener("touchend", onTouchEnd, listenerOptions);
@@ -1704,6 +1823,9 @@ export function TouchCanvasInteraction({
       if (captureUploadTimer !== null) window.clearTimeout(captureUploadTimer);
       uploadCapture();
       if (frame !== null) window.cancelAnimationFrame(frame);
+      if (captureFrame !== null) window.cancelAnimationFrame(captureFrame);
+      if (captureDispatchTimer !== null) window.clearTimeout(captureDispatchTimer);
+      for (const type of rawCaptureTypes) window.removeEventListener(type, captureRawInput, listenerOptions);
       if (holdTimer !== null) window.clearTimeout(holdTimer);
       resizeObserver.disconnect();
       window.removeEventListener("touchstart", onTouchStart, listenerOptions);

@@ -1,5 +1,6 @@
 import { appendFile } from "node:fs/promises";
 import path from "node:path";
+import { isTouchDeviceCapture } from "@/lib/pcb/touch-device-capture";
 
 export async function POST(request: Request) {
   if (process.env.NODE_ENV !== "development") {
@@ -13,8 +14,7 @@ export async function POST(request: Request) {
   } catch {
     return new Response(null, { status: 400 });
   }
-  if (!capture || typeof capture !== "object" ||
-      (capture as { schema?: unknown }).schema !== "pcb-touch-device-capture-v1") {
+  if (!isTouchDeviceCapture(capture)) {
     return new Response(null, { status: 400 });
   }
   await appendFile(
