@@ -138,3 +138,7 @@ The optional final argument to `prepare:pcb-background` overrides the default `4
 - Minimal motion
 - No decorative developer clichés
 - Accessible focus states and reduced-motion support
+
+### Touch delivery and lifecycle verification
+
+Run `node --experimental-strip-types --test scripts/pcb-touch-geometry-warmup.test.mjs scripts/pcb-touch-preparation.test.mjs scripts/pcb-geometry-delivery.test.mjs` for bounded plain-geometry coverage, cancellation and scheduling checks. With the site running and an installed Playwright module/browser, run `node scripts/verify-pcb-touch-lifecycle.mjs http://127.0.0.1:3000` (optional final `webkit`) for release/new-contact and activation-during-scroll regressions. The script uses a local Playwright package or the Windows installed-browser link registry; these checks do not replace physical-device momentum/pinch verification.

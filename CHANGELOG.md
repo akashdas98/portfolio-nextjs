@@ -1,5 +1,9 @@
 # Changelog
 
+## v2 touch delivery and lifecycle correction - 2026-09-30
+
+Prefetch bounded viewport geometry for live touch appearance and preserve release/new-contact transitions while scrolling. See [verification and device follow-up](docs/releases/v2-touch-delivery.md).
+
 ## v2 first-paint correction - 2026-09-30
 
 Visible PCB tiles now appear together before UI entrance, while belowfold preparation continues. Bounded regional batches and shared spatial coverage reduce separate geometry requests. See [verification and release notes](docs/releases/v2-pcb-first-paint.md).

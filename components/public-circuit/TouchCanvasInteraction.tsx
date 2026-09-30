@@ -23,6 +23,8 @@ import {
   touchDecoratedCrop,
   touchEnvelopeStops,
   touchGeometryRegions,
+  touchViewportGeometryRegion,
+  touchViewportGeometryBand,
   touchRequiredTones,
   touchToneIntervals,
   TOUCH_DECORATED_HALO_BLUR,
@@ -32,7 +34,7 @@ import {
   type TouchCanvasPath,
   type TouchTone,
 } from "@/lib/pcb/touch-canvas";
-import { createTouchPreparation, publishTouchMainCanvas, waitForTouchPreparation } from "@/lib/pcb/touch-preparation";
+import { createTouchPreparation, createTouchGeometryWarmup, createTouchGeometryWarmSchedule, publishTouchMainCanvas, waitForTouchPreparation } from "@/lib/pcb/touch-preparation";
 import { createTouchHaloWorker } from "@/lib/pcb/touch-halo-worker";
 import {
   createTouchInteractionState,
@@ -370,6 +372,61 @@ export function TouchCanvasInteraction({
       failed: () => { retryPreparationAt = performance.now() + 500; },
       cancelled: () => { preparationAborts += 1; },
     });
+    const coarsePreference = window.matchMedia("(any-pointer: coarse)");
+    let geometryWarmFrame: number | null = null;
+    let geometryWarmRetryAt = 0;
+    const geometryWarmup = createTouchGeometryWarmup<{
+      key: string;
+      layoutVersion: number;
+      region: SourceRegion;
+    }>({
+      load: (request) => loadLensGeometry(lensImageUrl, request.region),
+      failed: () => { geometryWarmRetryAt = performance.now() + 500; },
+    });
+
+    function warmVisibleGeometry() {
+      if (disposed || !coarsePreference.matches) {
+        geometryWarmup.reset();
+        return;
+      }
+      if (pageWidth <= 0 || renderScale <= 0 || performance.now() < geometryWarmRetryAt) return;
+      const region = touchViewportGeometryRegion(
+        touchViewportGeometryBand({ top: window.scrollY - pageDocumentTop, height: window.innerHeight }),
+        { renderLeft, renderScale, pageWidth },
+        TOUCH_LENS_DIAMETER, TOUCH_GEOMETRY_CELL_SIZE,
+        TOUCH_PREFETCH_MARGIN, TOUCH_FULL_WIDTH_GUARD,
+      );
+      const request = {
+        key: JSON.stringify([layoutVersion, region.x, region.y, region.width, region.height]),
+        layoutVersion,
+        region,
+      };
+      // The shared cache owns actual geometry lifetime. Revalidate through
+      // it on each viewport intent; metadata alone cannot prove a cached
+      // selection survived eviction. Fulfilled coverage resolves immediately.
+      if (geometryWarmup.wanted && touchGeometryCovers(geometryWarmup.wanted, request)) return;
+      geometryWarmup.want(request);
+    }
+
+    function scheduleGeometryWarmup() {
+      if (disposed || geometryWarmFrame !== null) return;
+      geometryWarmFrame = window.requestAnimationFrame(() => {
+        geometryWarmFrame = null;
+        warmVisibleGeometry();
+      });
+    }
+
+    const geometryWarmSchedule = createTouchGeometryWarmSchedule({ warm: scheduleGeometryWarmup });
+    const scheduleScrolledGeometryWarmup = () => geometryWarmSchedule.scroll();
+
+    function onGeometryCapabilityChange() {
+      if (coarsePreference.matches) { geometryWarmSchedule.now(); return; }
+      geometryWarmSchedule.clear();
+      if (geometryWarmFrame !== null) window.cancelAnimationFrame(geometryWarmFrame);
+      geometryWarmFrame = null;
+      geometryWarmup.reset();
+    }
+
     const trails: TouchTrail[] = [];
     const flameSlots: Array<TouchLocalFlame | null> = Array.from(
       { length: TOUCH_LOCAL_FLAME_CONTRACT.slotCount },
@@ -427,6 +484,8 @@ export function TouchCanvasInteraction({
         debugElement.dataset.viewportHeight = String(window.innerHeight);
       }
       preparation.reset();
+      geometryWarmup.reset();
+      geometryWarmSchedule.now();
       clearSteadyEnvelopes();
       for (const trail of trails.splice(0)) trail.bitmap.remove();
       resizeViewportCanvas();
@@ -1404,6 +1463,13 @@ export function TouchCanvasInteraction({
 
     function handleTouch(event: TouchEvent, type: "contact" | "move" | "release" | "cancel") {
       if (pointerTouchActive) return;
+      // Samples may coalesce, but a completed gesture must reach the reducer
+      // before a new contact replaces its pending ID/phase. Scroll frames can
+      // be delayed long enough for both lifecycle events to arrive together.
+      if (type === "contact" &&
+          (pendingTouchPhase === "release" || pendingTouchPhase === "cancel")) {
+        reducePendingInput();
+      }
       if (scrollTouchAnchor && scrollTouchPointerId !== null) {
         const touch = changedTouch(event, scrollNativeTouchId);
         if (!touch) return;
@@ -1487,6 +1553,9 @@ export function TouchCanvasInteraction({
       if (event.pointerType !== "touch") return;
       if (type === "contact") {
         if (pointerTouchActive) return;
+        if (pendingTouchPhase === "release" || pendingTouchPhase === "cancel") {
+          reducePendingInput();
+        }
         pointerTouchActive = true;
         if (debugElement || captureEnabled) {
           pointerMoves = 0;
@@ -1625,6 +1694,10 @@ export function TouchCanvasInteraction({
     pageElement.addEventListener("pointerup", onPointerUp, listenerOptions);
     pageElement.addEventListener("pointercancel", onPointerCancel, listenerOptions);
     window.addEventListener("scroll", onScroll, listenerOptions);
+    // Independent delivery intent: no touch coordinates, raster work or shell
+    // publication runs from this passive viewport preparation listener.
+    window.addEventListener("scroll", scheduleScrolledGeometryWarmup, listenerOptions);
+    coarsePreference.addEventListener("change", onGeometryCapabilityChange);
 
     return () => {
       disposed = true;
@@ -1642,6 +1715,11 @@ export function TouchCanvasInteraction({
       pageElement.removeEventListener("pointerup", onPointerUp, listenerOptions);
       pageElement.removeEventListener("pointercancel", onPointerCancel, listenerOptions);
       window.removeEventListener("scroll", onScroll, listenerOptions);
+      window.removeEventListener("scroll", scheduleScrolledGeometryWarmup, listenerOptions);
+      coarsePreference.removeEventListener("change", onGeometryCapabilityChange);
+      if (geometryWarmFrame !== null) window.cancelAnimationFrame(geometryWarmFrame);
+      geometryWarmSchedule.dispose();
+      geometryWarmup.dispose();
       canvas?.remove();
       diagnosticUnderlayStyle?.remove();
       for (const main of mainCanvases) {

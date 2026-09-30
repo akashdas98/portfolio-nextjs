@@ -255,3 +255,48 @@ export function evictOldestTouchGeometry<T>(cache: Map<string, T>) {
     cache.delete(oldest);
   }
 }
+
+/** Union the complete existing contact buckets, not just visible glow crops.
+ * This is geometry delivery only: every decorated contact surface keeps its
+ * existing dimensions, density and single-region ownership.
+ */
+export function touchViewportGeometryRegion(
+  viewport: { top: number; height: number },
+  layout: { renderLeft: number; renderScale: number; pageWidth: number },
+  lensDiameter: number,
+  cellSize: number,
+  prefetchMargin: number,
+  fullWidthGuard: number,
+): TouchRegion {
+  if (![viewport.top, viewport.height, layout.renderLeft, layout.renderScale,
+    layout.pageWidth, lensDiameter, cellSize, prefetchMargin, fullWidthGuard].every(Number.isFinite) ||
+    viewport.height <= 0 || layout.renderScale <= 0 || layout.pageWidth <= 0 ||
+    lensDiameter <= 0 || cellSize <= 0 || prefetchMargin < 0 || fullWidthGuard < 0) {
+    throw new Error("Invalid touch viewport geometry layout.");
+  }
+  const first = touchGeometryRegions(
+    { x: 0, y: viewport.top - prefetchMargin }, layout, lensDiameter, cellSize,
+  );
+  const last = touchGeometryRegions(
+    { x: 0, y: viewport.top + viewport.height + prefetchMargin }, layout, lensDiameter, cellSize,
+  );
+  return {
+    x: (-layout.renderLeft - lensDiameter / 2 - fullWidthGuard) / layout.renderScale,
+    y: first.region.y,
+    width: (layout.pageWidth + lensDiameter + 2 * fullWidthGuard) / layout.renderScale,
+    // Keep strict broker containment true after subtraction/addition rounding.
+    // This tiny outward reserve changes delivery bounds, never source geometry.
+    height: last.region.y + last.region.height - first.region.y +
+      Math.max(1, Math.abs(last.region.y + last.region.height), Math.abs(first.region.y)) * Number.EPSILON * 4,
+  };
+}
+
+/** Stable viewport delivery bands with one band ahead, independent of document height. */
+export function touchViewportGeometryBand(viewport: { top: number; height: number }, bandSize = 512) {
+  if (![viewport.top, viewport.height, bandSize].every(Number.isFinite) || viewport.height <= 0 || bandSize <= 0) {
+    throw new Error("Invalid touch viewport geometry band.");
+  }
+  const top = Math.floor(viewport.top / bandSize) * bandSize;
+  const bottom = Math.ceil((viewport.top + viewport.height) / bandSize) * bandSize + bandSize;
+  return { top, height: bottom - top };
+}

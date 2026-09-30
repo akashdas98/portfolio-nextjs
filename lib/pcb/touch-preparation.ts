@@ -107,3 +107,50 @@ export function publishTouchMainCanvas(
   if (front !== null) surfaces[front].style.visibility = "hidden";
   return back;
 }
+
+/** Geometry-only ahead-of-contact work retains request metadata, never pixels.
+ * Cancel only this latest consumer's wait; shared delivery remains available
+ * to contact, static and desktop consumers. Obsolete reads cannot serialize
+ * the current viewport behind an unresolved transport.
+ */
+export function createTouchGeometryWarmup<Request extends { key: string }>(options: {
+  load: (request: Request) => Promise<unknown>;
+  failed?: (error: unknown) => void;
+}) {
+  return createTouchPreparation<Request, Request>({
+    async prepare(request, _isCurrent, signal) {
+      await waitForTouchPreparation(options.load(request), signal);
+      return request;
+    },
+    release() {},
+    ready() {},
+    failed: options.failed,
+  });
+}
+
+/** Replace scroll intent until it settles; layout/capability work may start immediately.
+ * This bounds request churn, not the lifetime of shared HTTP transports.
+ */
+export function createTouchGeometryWarmSchedule(options: {
+  warm: () => void;
+  delay?: number;
+  timer?: (callback: () => void, delay: number) => () => void;
+}) {
+  const timer = options.timer ?? ((callback, delay) => {
+    const handle = setTimeout(callback, delay);
+    return () => clearTimeout(handle);
+  });
+  let cancel: (() => void) | null = null;
+  let disposed = false;
+  function clear() { cancel?.(); cancel = null; }
+  return {
+    scroll() {
+      if (disposed) return;
+      clear();
+      cancel = timer(() => { cancel = null; if (!disposed) options.warm(); }, options.delay ?? 120);
+    },
+    now() { if (!disposed) { clear(); options.warm(); } },
+    clear,
+    dispose() { disposed = true; clear(); },
+  };
+}
