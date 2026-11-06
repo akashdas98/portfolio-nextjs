@@ -1,4 +1,3 @@
-import { preload } from "react-dom";
 import type { AdminProject } from "@/lib/admin/types";
 import type { CaseStudySectionDocument, CaseStudyDocument } from "@/lib/case-study/schema";
 import {
@@ -12,6 +11,7 @@ import { CrossPlatformFeatureDiagram } from "./CrossPlatformFeatureDiagram";
 import { EddCalculationDiagram } from "./EddCalculationDiagram";
 import { LeadNetworkDiagram } from "./LeadNetworkDiagram";
 import { PublicCircuitBackground } from "./PublicCircuitBackground";
+import { PublicStartupSkeleton } from "./PublicLoadingSkeleton";
 
 type CaseStudyRendererProps = {
   document: CaseStudyDocument;
@@ -21,7 +21,6 @@ type CaseStudyRendererProps = {
 export function CaseStudyRenderer({ document, project }: CaseStudyRendererProps) {
   const backgroundUrl = getCaseStudyBackgroundUrl(document.background);
   const backgroundLensUrl = getCaseStudyBackgroundLensUrl(document.background);
-  preload(backgroundLensUrl, { as: "fetch", crossOrigin: "anonymous" });
 
   return (
     <main
@@ -35,6 +34,13 @@ export function CaseStudyRenderer({ document, project }: CaseStudyRendererProps)
         lensImageUrl={backgroundLensUrl}
         sourceWidth={document.background.width}
         sourceHeight={document.background.height}
+      />
+      <PublicStartupSkeleton
+        kind="case-study"
+        projectName={project.name}
+        title={project.title}
+        summary={document.summary}
+        role={document.role}
       />
       <section className="case-hero shell circuit-exposed-section">
         <CaseStudyBackLink />

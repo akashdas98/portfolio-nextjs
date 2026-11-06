@@ -44,3 +44,4 @@ Top-level layout:
 Generated/cache folders such as `.next`, `node_modules`, `out`, `.vercel`, logs, and local environment files should not be committed.
 
 - `lib/pcb/` and `app/api/pcb/route.ts`: bounded anonymous spatial delivery from the exact homepage lens or configured public Storage bucket; conservative SVG bounds retain original path strings. No database content is relocated.
+- `lib/pcb/persistent-index.ts`: bounded compressed derivative cache for immutable Storage-owned spatial indexes; entries fit Next's cache limit and retain exact geometry/order across server restarts. This is runtime cache, not a project-content source.

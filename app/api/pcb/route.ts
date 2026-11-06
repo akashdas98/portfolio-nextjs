@@ -15,7 +15,7 @@ function successHeaders(sourceKind: "local" | "remote", source: string) {
     "Cache-Control": process.env.NODE_ENV === "development"
       ? "no-store"
       : sourceKind === "remote" && fingerprinted
-        ? "public, max-age=86400, s-maxage=31536000, immutable"
+        ? "public, max-age=31536000, s-maxage=31536000, immutable"
         : "public, max-age=0, s-maxage=300, must-revalidate",
     "X-Content-Type-Options": "nosniff",
   };

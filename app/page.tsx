@@ -5,6 +5,7 @@ import { ContactForm } from "@/components/ContactForm";
 import { Header } from "@/components/Header";
 import { ProjectCard } from "@/components/ProjectCard";
 import { PublicCircuitBackground } from "@/components/PublicCircuitBackground";
+import { PublicStartupSkeleton } from "@/components/PublicLoadingSkeleton";
 import { getPublicProjects } from "@/lib/admin/data";
 import { services } from "@/lib/content";
 
@@ -46,6 +47,7 @@ export default async function Home() {
           sourceWidth={2400}
             sourceHeight={11789}
         />
+        <PublicStartupSkeleton />
         <section className="hero shell circuit-exposed-section">
           <p className="eyebrow reveal">
             <CircuitUnderlay size="compact">

@@ -2,8 +2,10 @@ import "server-only";
 
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 import { supabaseUrl } from "@/lib/supabase/config";
+import { createPcbIndexLoader } from "@/lib/pcb/persistent-index";
 import {
   MAX_PCB_SOURCE_BYTES,
   parsePcbLensSvg,
@@ -11,12 +13,20 @@ import {
   selectPcbPaths,
   selectPcbPathBatch,
   type PcbRegion,
-  type PcbSpatialIndex,
 } from "@/lib/pcb/spatial";
 
-const MAX_PARSED_SOURCES = 8;
 const REMOTE_SOURCE_TIMEOUT_MS = 10_000;
-const parsedSources = new Map<string, Promise<PcbSpatialIndex>>();
+const indexLoader = createPcbIndexLoader({
+  // Keep callback identity identical for chunk publication and recovery reads;
+  // unstable_cache includes the callback source in its persistent key.
+  getOrCreate: (key, tag, create) => unstable_cache(async () => create(), [key], {
+    revalidate: 31_536_000,
+    tags: [tag],
+  })(),
+  invalidate: (tag) => { revalidateTag(tag, { expire: 0 }); },
+}, {
+  onCacheError: (error) => console.warn("PCB spatial index cache recovery required.", error),
+});
 
 export class PcbSourceError extends Error {
   constructor(public readonly status: number, message: string) {
@@ -29,11 +39,12 @@ async function readRemoteSource(url: string) {
   let response: Response;
   try {
     response = await fetch(url, {
-      cache: process.env.NODE_ENV === "development" ? "no-store" : "force-cache",
+      // Raw SVG responses exceed Next's per-entry limit. Persist the compressed
+      // parser result instead; never silently attempt to cache this full body.
+      cache: "no-store",
       headers: { accept: "image/svg+xml,application/xml;q=0.9" },
       redirect: "manual",
       signal: AbortSignal.timeout(REMOTE_SOURCE_TIMEOUT_MS),
-      ...(process.env.NODE_ENV === "development" ? {} : { next: { revalidate: 31_536_000 } }),
     });
   } catch {
     throw new PcbSourceError(502, "The PCB source could not be loaded.");
@@ -96,26 +107,16 @@ async function loadIndex(source: string) {
     load = () => readRemoteSource(target.url);
   }
 
-  const cached = parsedSources.get(cacheKey);
-  if (cached) return cached;
-  while (parsedSources.size >= MAX_PARSED_SOURCES) {
-    const oldest = parsedSources.keys().next().value;
-    if (oldest === undefined) break;
-    parsedSources.delete(oldest);
-  }
-  const promise = load().then((text) => {
+  return indexLoader.load(cacheKey, async () => {
+    const text = await load();
     try {
       return parsePcbLensSvg(text);
     } catch (error) {
       if (error instanceof PcbSourceError) throw error;
       throw new PcbSourceError(422, error instanceof Error ? error.message : "The PCB source is invalid.");
     }
-  });
-  parsedSources.set(cacheKey, promise);
-  promise.catch(() => {
-    if (parsedSources.get(cacheKey) === promise) parsedSources.delete(cacheKey);
-  });
-  return promise;
+  }, process.env.NODE_ENV === "production" && target.kind === "remote" &&
+    /\.[a-f0-9]{20}\.svg$/i.test(target.url));
 }
 
 export async function loadPcbRegion(source: string, region: PcbRegion) {
