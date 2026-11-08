@@ -7,6 +7,7 @@ Read before application, API, admin, data, schema, asset ownership, or dependenc
 - Add client components only when interactivity requires them.
 - Keep JavaScript minimal and purposeful.
 - Public PCB bootstrap preload and broker acquisition must use the same URL and matching browser request policy. Only explicit pending bootstraps may cover waiting consumers; other pending enhancement requests cannot block first paint. The literal same-origin endpoint rejects bootstrap redirects. Preserve exact source selection and immediate outside-band delivery; keep origin-generation timings distinct from browser/CDN waiting.
+- Emit the bootstrap as a native server-rendered link element. An imperative React resource hint may reach dynamic case-study pages through Flight only after scripts execute. Verify both home and dynamic routes with delayed application scripts: acquisition must precede script completion, not merely occur a few milliseconds before the renderer effect.
 - Versioned home PCB geometry is immutable only under the exact source-byte revision in `lib/pcb/home-identity.ts`; keep its source-hash test aligned with any approved asset update. Never reuse an old immutable revision for changed bytes. Legacy unversioned requests retain revalidation; Storage-owned project sources retain their existing fingerprint identity.
 - Avoid unnecessary dependencies and component libraries.
 - Keep content data structured in `lib/content.ts` unless a page-specific reason exists.

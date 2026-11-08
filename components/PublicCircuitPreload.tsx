@@ -1,4 +1,3 @@
-import { preload } from "react-dom";
 import { createPcbBootstrap } from "@/lib/pcb/bootstrap";
 
 /** Start the exact bounded response consumed by the static geometry broker. */
@@ -12,10 +11,15 @@ export function PublicCircuitPreload({
   height: number;
 }) {
   const bootstrap = createPcbBootstrap(source, width, height);
-  preload(bootstrap.href, {
-    as: "fetch",
-    fetchPriority: "high",
-    media: "(scripting: enabled)",
-  });
-  return null;
+  // A host element must reach streamed case-study HTML itself. An imperative
+  // React preload hint can remain in Flight until the application scripts run.
+  return (
+    <link
+      rel="preload"
+      href={bootstrap.href}
+      as="fetch"
+      fetchPriority="high"
+      media="(scripting: enabled)"
+    />
+  );
 }

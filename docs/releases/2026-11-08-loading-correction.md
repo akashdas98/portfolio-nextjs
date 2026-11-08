@@ -1,12 +1,14 @@
 # Complete loading correction — local implementation, 2026-11-08
 
-User authorized implementing the whole loading correction while preserving the intended PCB-first presentation. This supersedes diagnosis-only scope and the earlier suggestion to use early content release as the fix. Local verification is complete; release and live verification are pending under the existing loading-release authorization.
+User authorized implementing the whole loading correction while preserving the intended PCB-first presentation. This supersedes diagnosis-only scope and the earlier suggestion to use early content release as the fix. Initial commita2d0f26deployed; a native-link follow-up closes a dynamic-route issue found by stricter live verification. Final follow-up deployment verification is pending under the existing loading-release authorization.
 
 ## Root boundaries corrected
 
 The measured dependency chain started regional artwork delivery only after application scripts loaded and React effects ran. A separate passive interaction warmup could compete with that first-paint delivery. Independent eight-second CSS, skeleton and scroll timers then produced the reported partial-page state. A critical tile error could also wait behind an unrelated worker before reporting failure.
 
 The generic bounded source-band preload now starts from server-rendered HTML, without awaiting Storage, decoding SVG in SSR, or changing canonical content. The client broker consumes that exact URL and shares its pending response only with contained tile consumers. Other regions—including restored scroll positions and unusually tall viewports—retain immediate on-demand delivery. Only explicitly registered bootstrap entries can cover pending consumers; an unrelated pending full-source interaction cannot hold the static renderer hostage.
+
+The preload is an explicit native link element. The first implementation used imperative React resource hints, which worked in the static homepage but reached Vercel dynamic case-study pages through Flight after application scripts. A strict delayed-script case test exposed that difference: merely starting shortly before the renderer effect was insufficient evidence of early acquisition. The native element passes the production-build test in both engines, acquiring approximately5s before delayed application scripts complete. Do not substitute an imperative hint without verifying that boundary on the deployed dynamic routes.
 
 The first2048source units plus16units of conservative padding are resource-cache coverage, not a viewport/device heuristic or a different composition. Existing native bounds, source order, palettes, tile size, raster budgets and source authority are unchanged. Home bootstrap is approximately130KB compressed; other regions still use exact spatial selection. No unbounded inline artwork payload or source fetch was added to the HTML critical path.
 
