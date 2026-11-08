@@ -1,5 +1,7 @@
 ﻿import type { PcbPath, PcbRegion } from "./spatial";
 
+import { buildPcbGeometryUrl, createPcbSourceParams } from "./bootstrap.ts";
+
 export const PCB_GEOMETRY_CACHE_LIMIT = 128;
 export const PCB_GEOMETRY_BATCH_LIMIT = 8;
 export const PCB_GEOMETRY_TIMEOUT_MS = 20_000;
@@ -93,6 +95,9 @@ export function createGeometryDeliveryBroker(options: {
   // Eviction never cancels a caller. Pending consumers remain rescuable by a
   // containing fulfillment, even when their cache entry has been evicted.
   const pending = new Set<GeometryEntry>();
+  // Only explicit startup acquisition may hold a narrower request while pending.
+  // A slow full-source interaction warmup must never become that dependency.
+  const pendingBootstraps = new Set<GeometryEntry>();
 
   function touch(entry: GeometryEntry) {
     if (cache.get(entry.key) !== entry) return;
@@ -123,6 +128,7 @@ export function createGeometryDeliveryBroker(options: {
     entry.state = "fulfilled";
     entry.paths = paths;
     pending.delete(entry);
+    pendingBootstraps.delete(entry);
     entry.resolve(paths);
     const delivery = entry.delivery;
     if (delivery) {
@@ -131,6 +137,15 @@ export function createGeometryDeliveryBroker(options: {
       // equivalent geometry. Touch cancellation never aborts shared transport.
       if (delivery.consumers.size === 0) endDelivery(delivery, true);
     }
+  }
+
+  function rejectEntry(entry: GeometryEntry, error: unknown) {
+    if (entry.state !== "pending") return;
+    entry.state = "rejected";
+    pending.delete(entry);
+    pendingBootstraps.delete(entry);
+    if (cache.get(entry.key) === entry) cache.delete(entry.key);
+    entry.reject(error);
   }
 
   function publish(entry: GeometryEntry, paths: PcbPath[]) {
@@ -168,18 +183,45 @@ export function createGeometryDeliveryBroker(options: {
       fulfill(entry, selectDeliveredGeometry(covering.paths!, region));
       return { entry, created: false };
     }
+    let bootstrap: GeometryEntry | undefined;
+    for (const candidate of pendingBootstraps) {
+      if (candidate.url === url && covers(candidate.region, region) &&
+        (!bootstrap || candidate.region.width * candidate.region.height < bootstrap.region.width * bootstrap.region.height)) {
+        bootstrap = candidate;
+      }
+    }
+    if (bootstrap) {
+      // The bootstrap transport owns its deadline/retry. Keep this consumer
+      // attached even if either cache entry is evicted before it settles.
+      bootstrap.promise.then(
+        (paths) => publish(entry, selectDeliveredGeometry(paths, entry.region)),
+        (error) => rejectEntry(entry, error),
+      );
+      return { entry, created: false };
+    }
     return { entry, created: true };
   }
 
   async function request(entries: GeometryEntry[], batch: boolean, signal: AbortSignal) {
-    const params = new URLSearchParams({ source: entries[0].url });
+    let href: string;
     if (batch) {
+      const params = createPcbSourceParams(entries[0].url);
       params.set("regions", JSON.stringify(entries.map((entry) => entry.region)));
+      href = `/api/pcb?${params}`;
     } else {
-      for (const [name, value] of Object.entries(entries[0].region)) params.set(name, String(value));
+      href = buildPcbGeometryUrl(entries[0].url, entries[0].region);
     }
     let response: Response;
-    try { response = await fetcher(`/api/pcb?${params}`, { signal }); }
+    try {
+      // Link preloads without crossorigin use NoCors/Include. Match both
+      // fields: WebKit otherwise compares its preload's Origin header against
+      // fetch's basic same-origin request and downloads the response again.
+      // The builder always targets this origin's literal /api/pcb endpoint;
+      // reject redirects so these credentials cannot follow another origin.
+      response = await fetcher(href, !batch && pendingBootstraps.has(entries[0])
+        ? { signal, mode: "no-cors", credentials: "include", redirect: "error" }
+        : { signal });
+    }
     catch (error) { throw new GeometryTransportError(error instanceof Error ? error.message : "PCB network delivery failed.", true); }
     if (!response.ok) throw new GeometryTransportError(`PCB projection failed: ${response.status}`, false);
     let result: { paths?: unknown; regions?: unknown };
@@ -240,11 +282,7 @@ export function createGeometryDeliveryBroker(options: {
           if (attempt === 0 && error instanceof GeometryTransportError && error.retryable) continue;
           endDelivery(delivery, false);
           for (const entry of delivery.consumers) {
-            if (entry.state !== "pending") continue;
-            entry.state = "rejected";
-            pending.delete(entry);
-            if (cache.get(entry.key) === entry) cache.delete(entry.key);
-            entry.reject(error);
+            rejectEntry(entry, error);
           }
           delivery.consumers.clear();
           return;
@@ -254,6 +292,12 @@ export function createGeometryDeliveryBroker(options: {
   }
 
   return {
+    loadBootstrap(url: string, region: PcbRegion) {
+      const { entry, created } = lookup(url, region);
+      if (entry.state === "pending") pendingBootstraps.add(entry);
+      if (created) start([entry], false);
+      return entry.promise;
+    },
     load(url: string, region: PcbRegion) {
       const { entry, created } = lookup(url, region);
       if (created) start([entry], false);

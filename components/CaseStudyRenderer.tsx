@@ -11,6 +11,7 @@ import { CrossPlatformFeatureDiagram } from "./CrossPlatformFeatureDiagram";
 import { EddCalculationDiagram } from "./EddCalculationDiagram";
 import { LeadNetworkDiagram } from "./LeadNetworkDiagram";
 import { PublicCircuitBackground } from "./PublicCircuitBackground";
+import { PublicCircuitPreload } from "./PublicCircuitPreload";
 import { PublicStartupSkeleton } from "./PublicLoadingSkeleton";
 
 type CaseStudyRendererProps = {
@@ -29,6 +30,7 @@ export function CaseStudyRenderer({ document, project }: CaseStudyRendererProps)
       data-public-animations
       data-public-circuit
     >
+      <PublicCircuitPreload source={backgroundLensUrl} width={document.background.width} height={document.background.height} />
       <PublicCircuitBackground
         imageUrl={backgroundUrl}
         lensImageUrl={backgroundLensUrl}

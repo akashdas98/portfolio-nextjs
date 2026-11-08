@@ -487,6 +487,7 @@ export function TouchCanvasInteraction({
         geometryWarmup.reset();
         return;
       }
+      if (pageElement.querySelector<HTMLElement>(".public-circuit-art")?.dataset.viewportState !== "ready") return;
       if (pageWidth <= 0 || renderScale <= 0 || performance.now() < geometryWarmRetryAt) return;
       const region = touchViewportGeometryRegion(
         touchViewportGeometryBand({ top: window.scrollY - pageDocumentTop, height: window.innerHeight }),
@@ -1816,6 +1817,7 @@ export function TouchCanvasInteraction({
     // Independent delivery intent: no touch coordinates, raster work or shell
     // publication runs from this passive viewport preparation listener.
     window.addEventListener("scroll", scheduleScrolledGeometryWarmup, listenerOptions);
+    pageElement.addEventListener("pcb:viewport-ready", scheduleGeometryWarmup);
     coarsePreference.addEventListener("change", onGeometryCapabilityChange);
 
     return () => {
@@ -1838,6 +1840,7 @@ export function TouchCanvasInteraction({
       pageElement.removeEventListener("pointercancel", onPointerCancel, listenerOptions);
       window.removeEventListener("scroll", onScroll, listenerOptions);
       window.removeEventListener("scroll", scheduleScrolledGeometryWarmup, listenerOptions);
+      pageElement.removeEventListener("pcb:viewport-ready", scheduleGeometryWarmup);
       coarsePreference.removeEventListener("change", onGeometryCapabilityChange);
       if (geometryWarmFrame !== null) window.cancelAnimationFrame(geometryWarmFrame);
       geometryWarmSchedule.dispose();

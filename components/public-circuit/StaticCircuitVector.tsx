@@ -6,9 +6,11 @@ import {
   MUTED_SECTION_SELECTOR,
   SPECIAL_IMPACT_SECTION_SELECTOR,
   loadLensGeometryBatch,
+  loadLensGeometryBootstrap,
   sectionRanges,
   type ToneRange,
 } from "@/components/public-circuit/shared";
+import { createPcbBootstrap } from "@/lib/pcb/bootstrap";
 
 type StaticToneLayout = {
   impact: ToneRange[];
@@ -112,6 +114,10 @@ export function StaticCircuitVector({
     const artElement = art;
     const pageElement = page;
     artElement.dataset.renderState = "initializing";
+    const bootstrap = createPcbBootstrap(lensImageUrl, sourceWidth, sourceHeight);
+    // Matches the server preload exactly. Only this explicitly registered
+    // early acquisition may cover pending tile consumers in the shared broker.
+    void loadLensGeometryBootstrap(bootstrap.source, bootstrap.region).catch(() => {});
     let renderVersion = 0;
     let layoutFrame: number | null = null;
     let previousLayoutKey = "";
@@ -193,6 +199,7 @@ export function StaticCircuitVector({
           tile.top + STATIC_VECTOR_TILE_SIZE > viewportTop);
       };
       let publication = 0;
+      let failed = false;
       let pendingPublication = "";
       const afterPaint = (callback: () => void) => {
         const frame = requestAnimationFrame(() => {
@@ -206,7 +213,7 @@ export function StaticCircuitVector({
         paintFrames.add(frame);
       };
       checkViewport = () => {
-        if (version !== renderVersion || !initialLayout) return;
+        if (version !== renderVersion || failed || !initialLayout) return;
         const visible = visibleTiles();
         if (!visible.every((tile) => decoded.has(key(tile)))) {
           artElement.dataset.currentViewportState = "pending";
@@ -252,7 +259,7 @@ export function StaticCircuitVector({
       // hostage. Replacement layouts remain atomic so resizing never mixes two
       // differently aligned projections. At most two local resources are in flight.
       async function renderTiles() {
-        while (tiles.length && version === renderVersion) {
+        while (tiles.length && version === renderVersion && !failed) {
           const viewportTop = window.scrollY - pageDocumentTop;
           tiles.sort((a, b) => {
             const distance = (tile: { top: number }) => Math.max(
@@ -292,7 +299,7 @@ export function StaticCircuitVector({
           const [localPaths] = await prepared.get(key(selected))!;
           prepared.delete(key(selected));
           activeTiles.delete(key(selected));
-          if (version !== renderVersion) return;
+          if (version !== renderVersion || failed) return;
           const positive = localPaths.filter((path) => !path.source.includes('="black"'))
             .map((path) => path.source).join("");
           const negative = localPaths.filter((path) => path.source.includes('="black"'))
@@ -334,7 +341,7 @@ export function StaticCircuitVector({
           let tileElement: HTMLElement = image;
           try {
             await image.decode();
-            if (version !== renderVersion) {
+            if (version !== renderVersion || failed) {
               URL.revokeObjectURL(objectUrl);
               allocatedObjectUrls.delete(objectUrl);
               return;
@@ -376,25 +383,30 @@ export function StaticCircuitVector({
           }
         }
       }
-      const results = await Promise.allSettled([renderTiles(), renderTiles()]);
+      function failLayout(error: unknown) {
+        if (failed || version !== renderVersion) return;
+        failed = true;
+        publication += 1;
+        pendingPublication = "";
+        previousLayoutKey = "";
+        artElement.dataset.renderState = "error";
+        artElement.dataset.viewportState = "failed";
+        artElement.dataset.currentViewportState = "failed";
+        artElement.dataset.renderError = error instanceof Error ? error.message : "PCB projection failed.";
+        releaseUnpublishedFallbacks();
+        // A rejected critical tile cannot wait behind the other worker's
+        // unrelated below-fold fetches before releasing the existing fallback.
+        artElement.dispatchEvent(new CustomEvent("pcb:viewport-ready", { bubbles: true }));
+      }
+      await Promise.all([renderTiles().catch(failLayout), renderTiles().catch(failLayout)]);
       if (version !== renderVersion) {
         // Replacement candidates are never mounted until the full set is ready.
         // A superseded layout must not retain their SVG fallback resources.
         releaseUnpublishedFallbacks();
         return;
       }
-      const failure = results.find((result) => result.status === "rejected");
-      if (failure?.status === "rejected") {
-        // Keep the previous layout or any decoded initial tiles. A later layout
-        // retry or unmount releases its resources.
+      if (failed) {
         releaseUnpublishedFallbacks();
-        previousLayoutKey = "";
-        artElement.dataset.renderState = "error";
-        artElement.dataset.viewportState = "failed";
-        artElement.dataset.currentViewportState = "failed";
-        artElement.dispatchEvent(new CustomEvent("pcb:viewport-ready", { bubbles: true }));
-        artElement.dataset.renderError = failure.reason instanceof Error
-          ? failure.reason.message : "PCB projection failed.";
         return;
       }
 

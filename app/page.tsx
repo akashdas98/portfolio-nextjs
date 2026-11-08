@@ -5,6 +5,7 @@ import { ContactForm } from "@/components/ContactForm";
 import { Header } from "@/components/Header";
 import { ProjectCard } from "@/components/ProjectCard";
 import { PublicCircuitBackground } from "@/components/PublicCircuitBackground";
+import { PublicCircuitPreload } from "@/components/PublicCircuitPreload";
 import { PublicStartupSkeleton } from "@/components/PublicLoadingSkeleton";
 import { getPublicProjects } from "@/lib/admin/data";
 import { services } from "@/lib/content";
@@ -34,6 +35,7 @@ export default async function Home() {
 
   return (
     <>
+      <PublicCircuitPreload source="/pcb-backgrounds/home-lens.svg" width={2400} height={11789} />
       <Header />
       <main
         id="top"

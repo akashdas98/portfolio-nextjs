@@ -12,6 +12,8 @@ Top-level layout:
 - `app/api/contact/route.ts`: contact form endpoint using Zod validation and Resend email delivery.
 - `components/`: reusable UI components for the header, contact form, project cards, and system visuals.
 - `components/PublicCircuitBackground.tsx`: deterministic PCB orchestration for the static projection and independently owned desktop/touch interaction renderers; excludes admin and reduced-motion interaction.
+- `components/PublicCircuitPreload.tsx` and `lib/pcb/bootstrap.ts`: bounded source-band acquisition starts from server HTML and is consumed by the shared geometry broker before per-tile delivery; canonical rendering never awaits artwork in SSR.
+- `lib/pcb/first-viewport.ts`: passive enhancement scheduling after initial static publication; actual input keeps its direct demand path.
 - `components/public-circuit/StaticCircuitVector.tsx`: regional static vector projection ownership.
 - `components/public-circuit/DesktopCircuitInteraction.tsx`: frozen on-demand native SVG desktop interaction ownership.
 - `components/public-circuit/TouchCanvasInteraction.tsx`: accepted bounded Canvas touch lifecycle and paint ownership.

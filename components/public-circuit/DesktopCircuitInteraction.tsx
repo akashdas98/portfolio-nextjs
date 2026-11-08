@@ -1,5 +1,7 @@
 "use client";
 
+import { afterInitialPcbPaint } from "@/lib/pcb/first-viewport";
+
 import { useEffect, useId, useRef, type RefObject } from "react";
 import {
   createEnvelopeDirections,
@@ -903,8 +905,11 @@ export function DesktopCircuitInteraction({
       };
     }
 
+    let cancelPassiveWarmup = () => {};
     if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-      lensWarmupTimer = window.setTimeout(ensureLensGeometry, 1_200);
+      lensWarmupTimer = window.setTimeout(() => {
+        cancelPassiveWarmup = afterInitialPcbPaint(pageElement, ensureLensGeometry);
+      }, 1_200);
     }
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
     window.addEventListener("pointerleave", handlePointerLeave);
@@ -922,6 +927,7 @@ export function DesktopCircuitInteraction({
       disposed = true;
       hideLens();
       if (lensWarmupTimer !== null) window.clearTimeout(lensWarmupTimer);
+      cancelPassiveWarmup();
       if (layoutFrame !== null) window.cancelAnimationFrame(layoutFrame);
       if (pointerFrame !== null) window.cancelAnimationFrame(pointerFrame);
       resizeObserver.disconnect();

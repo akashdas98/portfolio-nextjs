@@ -190,7 +190,7 @@ body {
  * these after eight seconds if hydration or artwork initialization fails.
  * Without scripting the canonical page remains immediately accessible. */
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
-  main[data-public-animations]:has(.public-circuit-art[data-viewport-state="pending"])
+  main[data-public-animations]:not([data-pcb-startup-state="failed"]):has(.public-circuit-art[data-viewport-state="pending"])
     :is(.reveal, .reveal-item):not([data-reveal-scroll="true"]):not([data-reveal-initial="done"]) {
     animation-delay: calc(8s + var(--public-reveal-delay));
   }
@@ -198,7 +198,7 @@ body {
 }
 
 @media (scripting: enabled) {
-  body:has(main[data-public-animations] .public-circuit-art[data-viewport-state="pending"])
+  body:has(main[data-public-animations]:not([data-pcb-startup-state="failed"]) .public-circuit-art[data-viewport-state="pending"])
     :is(.site-header, .site-footer):not([data-pcb-entrance="done"]) {
     animation: public-pcb-startup-hold 8s step-end backwards;
   }
@@ -4308,9 +4308,9 @@ p {
 
 /* Reduced motion preserves the paint order with an instantaneous release. */
 @media (scripting: enabled) and (prefers-reduced-motion: reduce) {
-  main[data-public-animations]:has(.public-circuit-art[data-viewport-state="pending"])
+  main[data-public-animations]:not([data-pcb-startup-state="failed"]):has(.public-circuit-art[data-viewport-state="pending"])
     :is(.reveal, .reveal-item):not([data-revealed="true"]),
-  body:has(main[data-public-animations] .public-circuit-art[data-viewport-state="pending"])
+  body:has(main[data-public-animations]:not([data-pcb-startup-state="failed"]) .public-circuit-art[data-viewport-state="pending"])
     :is(.site-header, .site-footer):not([data-pcb-entrance="done"]) {
     animation: public-pcb-startup-hold 8s step-end backwards !important;
     animation-duration: 8s !important;
@@ -4434,7 +4434,7 @@ p {
   to { visibility: hidden; }
 }
 @media (scripting: enabled) {
-  main[data-public-animations]:has(.public-circuit-art[data-viewport-state="pending"])
+  main[data-public-animations]:not([data-pcb-startup-state="failed"]):has(.public-circuit-art[data-viewport-state="pending"])
     > .public-loading-skeleton--art {
     display: block;
   }

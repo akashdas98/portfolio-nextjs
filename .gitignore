@@ -10,6 +10,7 @@ out
 .playwright-mcp/
 supabase/.temp/
 artifacts/pcb-regeneration-*/
+artifacts/loading-diagnosis-2026-11-08/
 public/pcb-previews/
 /*-desktop.png
 /*-ipad.png

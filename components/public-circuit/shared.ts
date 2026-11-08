@@ -87,6 +87,10 @@ export function loadLensGeometry(url: string, region: SourceRegion): Promise<Len
   return geometryDelivery.load(url, region);
 }
 
+export function loadLensGeometryBootstrap(url: string, region: SourceRegion): Promise<LensPath[]> {
+  return geometryDelivery.loadBootstrap(url, region);
+}
+
 export function loadLensGeometryBatch(url: string, regions: SourceRegion[]): Promise<LensPath[][]> {
   return geometryDelivery.loadBatch(url, regions);
 }

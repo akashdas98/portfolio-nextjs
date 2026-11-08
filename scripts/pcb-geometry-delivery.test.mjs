@@ -3,17 +3,34 @@ import test from "node:test";
 import { createGeometryDeliveryBroker, selectDeliveredGeometry, PCB_GEOMETRY_BATCH_LIMIT } from "../lib/pcb/geometry-delivery.ts";
 import { parsePcbBatchRegions, selectPcbPathBatch, selectPcbPaths, MAX_PCB_BATCH_REGIONS } from "../lib/pcb/spatial.ts";
 import { waitForTouchPreparation } from "../lib/pcb/touch-preparation.ts";
+import { buildPcbGeometryUrl } from "../lib/pcb/bootstrap.ts";
 
 const region = (x = 0, y = 0, width = 10, height = 10) => ({ x, y, width, height });
 const path = (source, left, top, right, bottom) => ({ source, left, top, right, bottom });
 const paths = [path("first", -5, 0, 0, 3), path("second", 3, 3, 15, 9), path("third", 20, 20, 40, 40)];
 const tick = () => new Promise((resolve) => setImmediate(resolve));
+
+test("bootstrap matches native preload mode without allowing credentialed redirects", async () => {
+  const seen = [];
+  const broker = createGeometryDeliveryBroker({ fetcher: async (url, init) => {
+    seen.push({ url, init });
+    return { ok: true, json: async () => ({ paths: [] }) };
+  } });
+  await broker.loadBootstrap("source", region());
+  assert.equal(seen[0].url.startsWith("/api/pcb?"), true);
+  assert.equal(seen[0].init.mode, "no-cors");
+  assert.equal(seen[0].init.credentials, "include");
+  assert.equal(seen[0].init.redirect, "error");
+  await broker.load("source", region(200));
+  assert.equal(seen[1].init.mode, undefined);
+  assert.equal(seen[1].init.credentials, undefined);
+});
 const body = (value) => ({ ok: true, json: async () => value });
 function fixture(options = {}) {
   const requests = [];
   const broker = createGeometryDeliveryBroker({ timeoutMs: 500, ...options, fetcher(input, init) {
     return new Promise((resolve, reject) => {
-      const request = { input, signal: init.signal, resolve, reject };
+      const request = { input, signal: init.signal, credentials: init.credentials, resolve, reject };
       requests.push(request);
       init.signal.addEventListener("abort", () => reject(init.signal.reason), { once: true });
     });
@@ -196,4 +213,106 @@ test("invalid client batches cannot leave allocated pending promises", () => {
   assert.throws(() => broker.loadBatch("a", Array(9).fill(region())), /between 1 and 8/);
   assert.throws(() => broker.loadBatch("a", [region(), region(0, 0, -1)]), /Invalid/);
   assert.equal(requests.length, 0); assert.equal(broker.cacheSize, 0);
+});
+
+test("explicit pending bootstrap covers a tile batch with one exact preload URL", async () => {
+  const { broker, requests } = fixture();
+  const coverage = region(-16, -16, 100, 100);
+  const bootstrap = broker.loadBootstrap("a", coverage);
+  const regions = [region(), region(20, 20), region(60, 60)];
+  const tiles = broker.loadBatch("a", regions);
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].input, buildPcbGeometryUrl("a", coverage));
+  assert.equal(requests[0].credentials, "include", "match same-origin native preload credentials");
+  requests[0].resolve(body({ paths }));
+  assert.deepEqual(await bootstrap, paths);
+  const selected = await tiles;
+  assert.deepEqual(selected, regions.map((r) => selectDeliveredGeometry(paths, r)));
+  assert.strictEqual(selected[0][0], paths[0]);
+  assert.strictEqual(selected[1][0], paths[2]);
+});
+
+test("out-of-band and foreign-source requests start while bootstrap is pending", async () => {
+  const { broker, requests } = fixture();
+  const bootstrap = broker.loadBootstrap("a", region(-16, -16, 100, 100));
+  const outside = broker.load("a", region(200, 200));
+  const foreign = broker.load("b", region());
+  assert.equal(requests.length, 3);
+  requests[1].resolve(body({ paths: [] })); requests[2].resolve(body({ paths: [] }));
+  await Promise.all([outside, foreign]);
+  requests[0].resolve(body({ paths })); await bootstrap;
+});
+
+test("mixed tile batches request only uncovered regions without waiting for bootstrap", async () => {
+  const { broker, requests } = fixture();
+  const bootstrap = broker.loadBootstrap("a", region(-16, -16, 100, 100));
+  const regions = [region(), region(200, 200), region(20, 20)];
+  const batch = broker.loadBatch("a", regions);
+  assert.equal(requests.length, 2);
+  const sent = JSON.parse(new URL(requests[1].input, "http://local").searchParams.get("regions"));
+  assert.deepEqual(sent, [regions[1]]);
+  requests[1].resolve(body({ paths: [], regions: [[]] }));
+  requests[0].resolve(body({ paths })); await bootstrap;
+  assert.deepEqual(await batch, [paths.slice(0, 2), [], paths.slice(2)]);
+});
+
+test("bootstrap and evicted contained consumers reject together and can retry", async () => {
+  const { broker, requests } = fixture({ cacheLimit: 1 });
+  const coverage = region(-16, -16, 100, 100);
+  const bootstrap = broker.loadBootstrap("a", coverage);
+  const first = broker.load("a", region());
+  const second = broker.load("a", region(20, 20));
+  const failed = [bootstrap, first, second].map((waiting) => assert.rejects(waiting, /503/));
+  assert.equal(requests.length, 1);
+  requests[0].resolve({ ok: false, status: 503 }); await Promise.all(failed);
+  assert.equal(broker.cacheSize, 0);
+  const retry = broker.loadBootstrap("a", coverage);
+  const tile = broker.load("a", region());
+  assert.equal(requests.length, 2);
+  requests[1].resolve(body({ paths }));
+  await retry; assert.deepEqual(await tile, paths.slice(0, 2));
+});
+
+test("bootstrap transient retry retains attached contained consumers", async () => {
+  const { broker, requests } = fixture();
+  const coverage = region(-16, -16, 100, 100);
+  const bootstrap = broker.loadBootstrap("a", coverage);
+  const tile = broker.load("a", region());
+  requests[0].reject(new TypeError("temporary offline")); await tick();
+  assert.equal(requests.length, 2);
+  assert.equal(requests[1].input, requests[0].input);
+  requests[1].resolve(body({ paths }));
+  await bootstrap; assert.deepEqual(await tile, paths.slice(0, 2));
+});
+
+test("evicting pending bootstrap and tiles cannot orphan their successful deliveries", async () => {
+  const { broker, requests } = fixture({ cacheLimit: 1 });
+  const bootstrap = broker.loadBootstrap("a", region(-16, -16, 100, 100));
+  const first = broker.load("a", region());
+  const second = broker.load("a", region(20, 20));
+  const outside = broker.load("b", region());
+  assert.equal(requests.length, 2);
+  requests[0].resolve(body({ paths }));
+  requests[1].resolve(body({ paths: [] }));
+  await Promise.all([bootstrap, outside]);
+  assert.deepEqual(await first, paths.slice(0, 2));
+  assert.deepEqual(await second, paths.slice(2));
+  assert.equal(broker.cacheSize, 1);
+});
+
+test("pending interaction coverage never holds critical tiles or bootstrap", async () => {
+  const { broker, requests } = fixture();
+  const interaction = broker.load("a", region(-100, -100, 500, 500));
+  const tile = broker.load("a", region());
+  assert.equal(requests.length, 2, "ordinary pending coverage is not reused");
+  const bootstrap = broker.loadBootstrap("a", region(-16, -16, 100, 100));
+  const laterTile = broker.load("a", region(20, 20));
+  assert.equal(requests.length, 3, "only the explicit bootstrap holds its contained tile");
+  requests[2].resolve(body({ paths }));
+  await bootstrap;
+  assert.deepEqual(await tile, paths.slice(0, 2));
+  assert.deepEqual(await laterTile, paths.slice(2));
+  assert.equal(requests[1].signal.aborted, true);
+  assert.equal(requests[0].signal.aborted, false);
+  requests[0].resolve(body({ paths })); await interaction;
 });

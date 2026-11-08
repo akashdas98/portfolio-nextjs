@@ -143,6 +143,45 @@ export function PublicAnimations() {
     );
     if (!publicMain) return;
     const art = publicMain.querySelector<HTMLElement>(".public-circuit-art");
+    const gateSupported = window.matchMedia("(scripting: enabled)").matches &&
+      CSS.supports("selector(:has(*))");
+    let startupFallback: number | undefined;
+
+    function startupFailed() {
+      return publicMain?.dataset.pcbStartupState === "failed";
+    }
+
+    function clearStartupFallback() {
+      if (startupFallback !== undefined) window.clearTimeout(startupFallback);
+      startupFallback = undefined;
+    }
+
+    function startupWaitRemaining() {
+      const saved = Number(publicMain?.dataset.pcbStartupDeadline);
+      if (Number.isFinite(saved)) return Math.max(0, saved - performance.now());
+      // Read the existing CSS deadline, rather than starting a new eight-second
+      // wait when hydration is late. CSS remains the no-hydration escape.
+      const candidates = [
+        ...Array.from(publicMain?.querySelectorAll(revealSelector) ?? []).slice(0, 8),
+        ...document.querySelectorAll(".site-header, .site-footer"),
+      ];
+      const remaining = candidates.flatMap((element) => element.getAnimations().flatMap((animation) => {
+        const timing = animation.effect?.getTiming();
+        const current = Number(animation.currentTime ?? 0);
+        if (Number(timing?.delay ?? 0) >= pcbRevealFallbackMs) {
+          return [Math.max(0, Number(timing?.delay) - current)];
+        }
+        if (animation instanceof CSSAnimation && animation.animationName === "public-pcb-startup-hold") {
+          return [Math.max(0, Number(timing?.duration ?? 0) - current)];
+        }
+        return [];
+      }));
+      const wait = gateSupported ? Math.min(...remaining, pcbRevealFallbackMs) : pcbRevealFallbackMs;
+      // No remaining gate means CSS has already failed open before hydration.
+      const delay = gateSupported && remaining.length === 0 ? 0 : wait;
+      if (publicMain) publicMain.dataset.pcbStartupDeadline = String(performance.now() + delay);
+      return delay;
+    }
 
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -150,7 +189,12 @@ export function PublicAnimations() {
 
     if (prefersReducedMotion) {
       function releaseReducedMotionContent() {
-        if (art?.getAttribute("data-viewport-state") === "pending") return;
+        if (art?.getAttribute("data-viewport-state") === "pending" && !startupFailed()) return;
+        clearStartupFallback();
+        if (!startupFailed() && publicMain) {
+          publicMain.dataset.pcbStartupState = art?.dataset.viewportState === "failed" ? "failed" : "ready";
+          if (art?.dataset.viewportState === "failed") publicMain.dataset.pcbStartupFailure = "artwork";
+        }
         publicMain?.querySelectorAll(revealSelector).forEach((element) => {
           element.setAttribute("data-revealed", "true");
         });
@@ -164,8 +208,16 @@ export function PublicAnimations() {
         attributeFilter: ["data-viewport-state"],
       });
       publicMain.addEventListener("pcb:viewport-ready", releaseReducedMotionContent);
+      if (art?.dataset.viewportState === "pending" && !startupFailed()) {
+        startupFallback = window.setTimeout(() => {
+          if (publicMain) publicMain.dataset.pcbStartupState = "failed";
+          if (publicMain) publicMain.dataset.pcbStartupFailure = "deadline";
+          releaseReducedMotionContent();
+        }, startupWaitRemaining());
+      }
       releaseReducedMotionContent();
       return () => {
+        clearStartupFallback();
         observer.disconnect();
         publicMain.removeEventListener("pcb:viewport-ready", releaseReducedMotionContent);
       };
@@ -178,17 +230,16 @@ export function PublicAnimations() {
     const queuedRevealTargets = new Set<Element>();
     const queuedCountTargets = new Set<Element>();
     let viewportFallback: number | undefined;
-    const startupGateSupported = window.matchMedia("(scripting: enabled)").matches &&
-      CSS.supports("selector(:has(*))");
+    const startupGateSupported = gateSupported;
 
     function viewportPending() {
-      return art?.getAttribute("data-viewport-state") !== "failed" &&
+      return !startupFailed() && art?.getAttribute("data-viewport-state") !== "failed" &&
         (art?.getAttribute("data-viewport-state") === "pending" ||
           art?.getAttribute("data-current-viewport-state") === "pending");
     }
 
     function releaseInitialTargets() {
-      if (art?.getAttribute("data-viewport-state") === "pending") return;
+      if (art?.getAttribute("data-viewport-state") === "pending" && !startupFailed()) return;
       initialRevealTargets.forEach((deadline, element) => {
         if (element.getAttribute("data-reveal-initial") !== "pending") return;
         // A delayed CSS entrance may already have failed open. Never hide it
@@ -225,8 +276,23 @@ export function PublicAnimations() {
     }
 
     function onViewportReady() {
+      if (art?.dataset.viewportState !== "pending") {
+        clearStartupFallback();
+        if (!startupFailed() && publicMain) {
+          publicMain.dataset.pcbStartupState = art?.dataset.viewportState === "failed" ? "failed" : "ready";
+          if (art?.dataset.viewportState === "failed") publicMain.dataset.pcbStartupFailure = "artwork";
+        }
+      }
       releaseInitialTargets();
       flushViewportTargets();
+    }
+
+    function failStartup() {
+      clearStartupFallback();
+      if (publicMain) publicMain.dataset.pcbStartupState = "failed";
+      if (publicMain) publicMain.dataset.pcbStartupFailure = "deadline";
+      releaseInitialTargets();
+      flushViewportTargets(true);
     }
 
     function finishReveal(element: Element, animation: Animation) {
@@ -335,7 +401,7 @@ export function PublicAnimations() {
       if (element.getAttribute("data-revealed") === "true" &&
         element.getAttribute("data-reveal-initial") !== "pending") return;
       if (!startsBeyondRevealLine) {
-        if (startupGateSupported && art?.getAttribute("data-viewport-state") === "pending") {
+        if (startupGateSupported && !startupFailed() && art?.getAttribute("data-viewport-state") === "pending") {
           const waitingAnimation = element.getAnimations().find((animation) =>
             Number(animation.effect?.getTiming().delay ?? 0) >= pcbRevealFallbackMs,
           );
@@ -429,8 +495,12 @@ export function PublicAnimations() {
       registerTrees(records.flatMap((record) => Array.from(record.addedNodes)));
     });
     mutationObserver.observe(publicMain, { childList: true, subtree: true });
+    if (art?.dataset.viewportState === "pending" && !startupFailed()) {
+      startupFallback = window.setTimeout(failStartup, startupWaitRemaining());
+    } else onViewportReady();
 
     return () => {
+      clearStartupFallback();
       mutationObserver.disconnect();
       readinessObserver.disconnect();
       publicMain.removeEventListener("pcb:viewport-ready", onViewportReady);

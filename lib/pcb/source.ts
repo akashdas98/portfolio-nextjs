@@ -1,11 +1,13 @@
 import "server-only";
 
 import { readFile, stat } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { revalidateTag, unstable_cache } from "next/cache";
 
 import { supabaseUrl } from "@/lib/supabase/config";
 import { createPcbIndexLoader } from "@/lib/pcb/persistent-index";
+import { HOME_PCB_REVISION } from "@/lib/pcb/home-identity";
 import {
   MAX_PCB_SOURCE_BYTES,
   parsePcbLensSvg,
@@ -109,6 +111,9 @@ async function loadIndex(source: string) {
 
   return indexLoader.load(cacheKey, async () => {
     const text = await load();
+    if (target.kind === "local" && createHash("sha256").update(text, "utf8").digest("hex") !== HOME_PCB_REVISION) {
+      throw new PcbSourceError(409, "The PCB source identity does not match its published revision.");
+    }
     try {
       return parsePcbLensSvg(text);
     } catch (error) {
