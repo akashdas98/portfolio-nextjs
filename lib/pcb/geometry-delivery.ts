@@ -16,7 +16,12 @@ type GeometryEntry = {
   state: "pending" | "fulfilled" | "rejected";
   paths?: PcbPath[];
   delivery?: GeometryDelivery;
+  // Promise-only callers own demand until settlement; only handles relinquish it.
+  retained: boolean;
+  leases: number;
 };
+
+export type GeometryHandle = { promise: Promise<PcbPath[]>; release: () => void };
 
 type GeometryDelivery = {
   consumers: Set<GeometryEntry>;
@@ -175,6 +180,7 @@ export function createGeometryDeliveryBroker(options: {
     const promise = new Promise<PcbPath[]>((yes, no) => { resolve = yes; reject = no; });
     const entry: GeometryEntry = {
       key, url, region: { ...region }, promise, resolve, reject, state: "pending",
+      retained: false, leases: 0,
     };
     if (covering) touch(covering);
     insert(entry);
@@ -291,28 +297,57 @@ export function createGeometryDeliveryBroker(options: {
     })();
   }
 
+  function batchEntries(url: string, regions: PcbRegion[]) {
+    if (!Array.isArray(regions) || regions.length < 1 || regions.length > PCB_GEOMETRY_BATCH_LIMIT) {
+      throw new Error("PCB geometry batches require between 1 and 8 regions.");
+    }
+    regions.forEach(validateRegion);
+    return regions.map((region) => lookup(url, region));
+  }
+
   return {
     loadBootstrap(url: string, region: PcbRegion) {
       const { entry, created } = lookup(url, region);
+      entry.retained = true;
       if (entry.state === "pending") pendingBootstraps.add(entry);
       if (created) start([entry], false);
       return entry.promise;
     },
     load(url: string, region: PcbRegion) {
       const { entry, created } = lookup(url, region);
+      entry.retained = true;
       if (created) start([entry], false);
       return entry.promise;
     },
     loadBatch(url: string, regions: PcbRegion[]) {
-      if (!Array.isArray(regions) || regions.length < 1 || regions.length > PCB_GEOMETRY_BATCH_LIMIT) {
-        throw new Error("PCB geometry batches require between 1 and 8 regions.");
-      }
-      // Validate the complete batch before creating any unresolved consumers.
-      regions.forEach(validateRegion);
-      const lookedUp = regions.map((region) => lookup(url, region));
+      const lookedUp = batchEntries(url, regions);
+      lookedUp.forEach(({ entry }) => { entry.retained = true; });
       const created = lookedUp.filter((item) => item.created).map((item) => item.entry);
       start(created, true);
       return Promise.all(lookedUp.map((item) => item.entry.promise));
+    },
+    loadBatchHandles(url: string, regions: PcbRegion[]): GeometryHandle[] {
+      const lookedUp = batchEntries(url, regions);
+      const handles = lookedUp.map(({ entry }) => {
+        entry.leases += 1;
+        // Staged handles can be released before a worker ever awaits them.
+        void entry.promise.catch(() => {});
+        let released = false;
+        return { promise: entry.promise, release() {
+          if (released) return;
+          released = true;
+          entry.leases -= 1;
+          if (entry.state !== "pending" || entry.leases !== 0 || entry.retained) return;
+          rejectEntry(entry, new Error("PCB geometry interest released."));
+          const delivery = entry.delivery;
+          if (delivery) {
+            delivery.consumers.delete(entry);
+            if (delivery.consumers.size === 0) endDelivery(delivery, true);
+          }
+        } };
+      });
+      start(lookedUp.filter((item) => item.created).map((item) => item.entry), true);
+      return handles;
     },
     get cacheSize() { return cache.size; },
   };

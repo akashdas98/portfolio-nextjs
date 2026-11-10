@@ -1,4 +1,5 @@
-import { createGeometryDeliveryBroker } from "@/lib/pcb/geometry-delivery";
+import { getBrowserGeometryDelivery } from "@/lib/pcb/browser-geometry";
+export { IMPACT_SECTION_SELECTOR, MUTED_SECTION_SELECTOR, SPECIAL_IMPACT_SECTION_SELECTOR, sectionRanges, type ToneRange } from "@/lib/pcb/tone-ranges";
 
 export type PublicCircuitBackgroundProps = {
   imageUrl: string;
@@ -28,11 +29,6 @@ export type LensPath = {
   bottom: number;
 };
 
-export type ToneRange = {
-  bottom: number;
-  top: number;
-};
-
 export type EnvelopeStop = {
   offset: number;
   opacity: number;
@@ -40,9 +36,6 @@ export type EnvelopeStop = {
 
 export const LENS_DIAMETER = 615;
 export const LENS_RADIUS = LENS_DIAMETER / 2;
-export const MUTED_SECTION_SELECTOR = ".case-section-muted, .selected-work-section, .about-section, .contact-section";
-export const IMPACT_SECTION_SELECTOR = ".case-impact-section";
-export const SPECIAL_IMPACT_SECTION_SELECTOR = '[data-circuit-impact-palette="dark-blue-pink"]';
 export const POINTER_TRAIL_DURATION = 560;
 export const BLUE_ENVELOPE_STOPS: EnvelopeStop[] = [
   { offset: 0, opacity: 0.96 },
@@ -71,7 +64,6 @@ const FLAME_MIN_RADIUS = 24 * FLAME_RADIUS_SCALE;
 const FLAME_RADIUS_RANGE = 42 * FLAME_RADIUS_SCALE;
 const FLAME_LOWER_SIZE_BAND = 0.3;
 const FLAME_LOWER_SIZE_PROBABILITY = 0.09;
-const geometryDelivery = createGeometryDeliveryBroker();
 
 export function sampleFlameRadius() {
   const isLowerSize = Math.random() < FLAME_LOWER_SIZE_PROBABILITY;
@@ -84,29 +76,5 @@ export function sampleFlameRadius() {
 }
 
 export function loadLensGeometry(url: string, region: SourceRegion): Promise<LensPath[]> {
-  return geometryDelivery.load(url, region);
-}
-
-export function loadLensGeometryBootstrap(url: string, region: SourceRegion): Promise<LensPath[]> {
-  return geometryDelivery.loadBootstrap(url, region);
-}
-
-export function loadLensGeometryBatch(url: string, regions: SourceRegion[]): Promise<LensPath[][]> {
-  return geometryDelivery.loadBatch(url, regions);
-}
-
-export function sectionRanges(
-  page: HTMLElement,
-  pageDocumentTop: number,
-  selector: string,
-) {
-  return Array.from(page.querySelectorAll<HTMLElement>(":scope > section"))
-    .filter((section) => section.matches(selector))
-    .map((section) => {
-      const rect = section.getBoundingClientRect();
-      return {
-        top: rect.top + window.scrollY - pageDocumentTop,
-        bottom: rect.bottom + window.scrollY - pageDocumentTop,
-      };
-    });
+  return getBrowserGeometryDelivery().load(url, region);
 }

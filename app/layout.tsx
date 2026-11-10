@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { PublicAnimations } from "@/components/PublicAnimations";
+import { PublicCircuitEntry } from "@/components/PublicCircuitEntry";
 import "./globals.css";
 
 const developmentFreshnessScript = `
@@ -59,6 +60,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head><PublicCircuitEntry /></head>
       <body>
         {children}
         <footer className="site-footer">

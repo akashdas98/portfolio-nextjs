@@ -116,6 +116,40 @@ test("partially covered batch keeps its transport alive until every consumer is 
   assert.deepEqual(await batch, [paths.slice(0, 2), paths.slice(2)]);
 });
 
+test("per-region handles expose fulfilled and covered entries before stalled peers", async () => {
+  const { broker, requests } = fixture();
+  const cached = broker.load("a", region());
+  requests[0].resolve(body({ paths: paths.slice(0, 2) })); await cached;
+  const handles = broker.loadBatchHandles("a", [region(), region(20, 20), region(200, 200)]);
+  assert.deepEqual(await handles[0].promise, paths.slice(0, 2));
+  const covering = broker.load("a", region(15, 15, 30, 30));
+  requests[2].resolve(body({ paths: paths.slice(2) })); await covering;
+  assert.deepEqual(await handles[1].promise, paths.slice(2));
+  assert.equal(requests[1].signal.aborted, false, "unresolved peer retains the batch");
+  handles.forEach((handle) => handle.release());
+  assert.equal(requests[1].signal.aborted, true);
+  await assert.rejects(handles[2].promise, /interest released/);
+});
+
+test("releasing static handles preserves exact shared and bootstrap consumers", async () => {
+  const { broker, requests } = fixture();
+  const handles = broker.loadBatchHandles("a", [region(), region(20, 20)]);
+  const shared = broker.load("a", region());
+  const duplicate = broker.loadBatchHandles("a", [region(20, 20)]);
+  handles.forEach((handle) => handle.release());
+  assert.equal(requests[0].signal.aborted, false);
+  duplicate[0].release(); duplicate[0].release();
+  await assert.rejects(handles[1].promise, /interest released/);
+  assert.equal(requests[0].signal.aborted, false, "shared interaction still owns one region");
+  requests[0].resolve(body({ paths, regions: [[0, 1], [2]] }));
+  assert.deepEqual(await shared, paths.slice(0, 2));
+  const bootstrap = broker.loadBootstrap("b", region(-16, -16, 100, 100));
+  const contained = broker.loadBatchHandles("b", [region()]);
+  contained[0].release();
+  assert.equal(requests[1].signal.aborted, false);
+  requests[1].resolve(body({ paths })); await bootstrap;
+});
+
 test("canceling one touch wait never aborts shared acquisition or another consumer", async () => {
   const { broker, requests } = fixture();
   const shared = broker.load("a", region());

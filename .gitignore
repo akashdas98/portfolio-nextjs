@@ -22,5 +22,9 @@ resume.pdf
 positioning.md
 portfolio-structure.md
 .codex/lifecycle.json
+/.preview/
+public/_pcb/
+lib/pcb/native-entry-manifest.json
+lib/pcb/native-entry-manifest.json.tmp
 prototypes/pcb-touch-halo-tiles/results.json
 prototypes/pcb-touch-worker/results*.json

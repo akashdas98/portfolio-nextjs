@@ -195,6 +195,12 @@ body {
     animation-delay: calc(8s + var(--public-reveal-delay));
   }
 
+  /* Native publication can precede React. Change the animation name once,
+   * while the existing skeleton gate still covers these initial entrances. */
+  main[data-public-animations]:not([data-pcb-startup-state="failed"]):has(.public-circuit-art[data-startup-entrance="ready"])
+    :is(.reveal, .reveal-item):not([data-reveal-scroll="true"]):not([data-reveal-initial="done"]) {
+    animation-name: public-reveal-ready-entry;
+  }
 }
 
 @media (scripting: enabled) {

@@ -1,6 +1,8 @@
 # Complete loading correction — local implementation, 2026-11-08
 
-User authorized implementing the whole loading correction while preserving the intended PCB-first presentation. This supersedes diagnosis-only scope and the earlier suggestion to use early content release as the fix. Initial commita2d0f26deployed; a native-link follow-up closes a dynamic-route issue found by stricter live verification. Final follow-up deployment verification is pending under the existing loading-release authorization.
+**Reopened 2026-11-09:** the user reports the natural day-later skeleton/content/late-PCB failure persists. Checks below establish tested behavior, not resolution of that recurrence. Current investigation: `2026-11-09-loading-recurrence.md`.
+
+User-authorized loading correction is deployed and live-verified, preserving the intended PCB-first presentation. Initial commita2d0f26and native-link follow-updf3ef16are released. This supersedes diagnosis-only scope and the earlier suggestion to use early content release as the fix.
 
 ## Root boundaries corrected
 
@@ -45,4 +47,17 @@ Ignored `artifacts/loading-diagnosis-2026-11-08/` contains the focused preload-p
 
 Sol/high worker implemented and verified the bounded broker integration; parent owned server wiring, lifecycle, render-failure correction, request-policy diagnosis and runtime verification. Model capability remained Sol for concurrent rendering/cache invariants; high effort supported causal failure and engine-policy analysis. Reassessment changed neither axis. No benchmark savings are claimed.
 
-Pending: release only the reviewed loading changes and verify the exact deployed version. CMS/source data, normal browser settings, unrelated drafts and contact configuration remain untouched. Do not mark the original natural episode conclusively explained by the separate cookie-store navigation delay or by bandwidth alone. The correction removes the proven avoidable dependency/cache/lifecycle defects; it does not guarantee zero latency during an external network or browser connection failure.
+CMS/source data, normal browser settings, unrelated drafts and contact configuration remain untouched. Do not mark the original natural episode conclusively explained by the separate cookie-store navigation delay or by bandwidth alone. The correction removes the proven avoidable dependency/cache/lifecycle defects; it does not guarantee zero latency during an external network or browser connection failure.
+
+## Final production verification
+
+- Final application SHA `df3ef166f7cead9f27d256938c9ce1f0928d2438`; GitHub deployment7634051604reports Production success. Immutable deployment: `https://portfolio-nextjs-itys2dji7-akash-freebird.vercel.app`; public domain: `https://freebirdakash.vercel.app`.
+- Both engines pass the exact deployed four-route desktop, laptop, mobile, reduced-motion and noJS checks. Every normal scripting visit consumes one bootstrap; noJS home and all three case-study routes keep canonical content visible and make no artwork request. No JavaScript page errors or unused-preload warnings in normal checks.
+- Stricter deployed dynamic-case checks pass with scripts held5s. Chrome starts acquisition1198ms versus hydrated consumption6844ms; WebKit492ms versus5715ms. Both preserve normal PCB-first order. This explicitly proves independent native acquisition, rather than accepting a hint that appears milliseconds before the renderer effect.
+- Live prolonged-artwork, geometry-outage and late-JS checks pass in both engines: lower sections do not acquire another eight-second startup wait; late readiness does not re-hide content. Reduced-motion failure paths pass.
+- Final repeated homepage visits transfer zero bytes for unchanged versioned geometry. Reload viewport readiness measured163ms Chromium and207ms WebKit. Fresh final four-route samples ranged634–2821ms Chromium and701–2008ms WebKit; those include differing server/network/cache conditions, so no universal speedup percentage is claimed.
+- All four live source selections match local exact path/bounds/order hashes. Home immutable/legacy parity, bad-revision rejection and origin timing headers pass.
+
+One initial live script-hold probe acquired all bootstrap bytes by361ms but application scripts received headers around14.8s after a5s injected hold. Its normal-order assertion was correctly reclassified as late-JS failure after independent timing proof that the existing deadline elapsed. A focused follow-up with full network logging reached normal readiness around5.55s in both engines. The exact extra script-header wait remains external/unattributed; do not claim it was SVG parsing or cookie-store startup. The deployed cache/overlap/failure corrections and phase diagnostics remain valid. This observation is a reopening trigger if a naturally slow affected visit persists, not evidence that another broad route matrix is needed.
+
+Post-deployment evidence is checkpointed locally; no extra documentation-only push was made after final live verification. The clean LAN dev writer remains at `http://192.168.0.102:3000`; test browsers, production test servers and proxy have stopped.

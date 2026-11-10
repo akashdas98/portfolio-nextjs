@@ -1,6 +1,4 @@
 import { NextResponse } from "next/server";
-import { gzip } from "node:zlib";
-import { promisify } from "node:util";
 
 import { loadPcbRegion, loadPcbRegions, PcbSourceError } from "@/lib/pcb/source";
 import { parsePcbRegion, parsePcbBatchRegions, PcbInputError, resolvePcbSource } from "@/lib/pcb/spatial";
@@ -8,7 +6,6 @@ import { supabaseUrl } from "@/lib/supabase/config";
 import { HOME_PCB_REVISION } from "@/lib/pcb/home-identity";
 
 export const runtime = "nodejs";
-const compress = promisify(gzip);
 
 function successHeaders(sourceKind: "local" | "remote", source: string, revision: string | null) {
   const fingerprinted = sourceKind === "remote"
@@ -51,21 +48,11 @@ export async function GET(request: Request) {
     // Origin-generation durations remain interpretable on cached responses:
     // compare them with the browser's queue/connection/body timings and CDN hit.
     const timingHeaders = () => ({
-      "Server-Timing": `pcb_origin;dur=${(selectedAt - startedAt).toFixed(1)}, pcb_encode;dur=${(performance.now() - selectedAt).toFixed(1)}`,
+      "Server-Timing": `pcb_origin;dur=${(selectedAt - startedAt).toFixed(1)}, pcb_serialize;dur=${(performance.now() - selectedAt).toFixed(1)}`,
     });
     const serialized = JSON.stringify(result);
-    // Route-handler streams are not compressed by the local Next server. Keep
-    // exact SVG strings compact in transit without blocking the server thread.
-    const acceptsGzip = (request.headers.get("accept-encoding") ?? "").split(",").some((entry) => {
-      const [encoding, ...parameters] = entry.trim().split(";");
-      return encoding === "gzip" && !parameters.some((parameter) => /^\s*q=0(?:\.0*)?\s*$/.test(parameter));
-    });
-    if (acceptsGzip) {
-      const body = await compress(serialized);
-      return new Response(new Uint8Array(body), { headers: {
-        ...headers, ...timingHeaders(), "Content-Type": "application/json", "Content-Encoding": "gzip",
-      } });
-    }
+    // Next owns response compression and negotiation. A second manual gzip
+    // layer would leave browsers with compressed bytes after HTTP decoding.
     return new Response(serialized, { headers: {
       ...headers, ...timingHeaders(), "Content-Type": "application/json",
     } });

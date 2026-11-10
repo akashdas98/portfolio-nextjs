@@ -1,6 +1,6 @@
 ﻿# Public loading correction — 2026-11-06
 
-Local correction verified; user authorized deployment on2026-11-06. This release covers loading performance and skeletons only; email configuration, CMS/Storage content, browser settings and user caches remain outside scope.
+Deployed and verified on2026-11-06 after explicit user authorization. This release covers loading performance and skeletons only; email configuration, CMS/Storage content, browser settings and user caches remain outside scope.
 
 ## Findings
 
@@ -31,6 +31,12 @@ Raw scripts, sequences, screenshots and baseline/restart proofs are ignored unde
 
 Parent owned live timing, cache integration, preload/cache-header change and runtime verification. Sol/high worker owned focused dependency tracing, skeleton implementation and persistent-index correction/tests. Capability required coupled cache/rendering-integrity judgment; high effort supported hypothesis discrimination and failure-path verification. Allocation stayed unchanged as concrete evidence emerged; no savings are claimed from benchmarks or worker choice.
 
-Release authorized: commit/push the verified feature, then confirm the exact Vercel Git SHA and production cache/header/readiness behavior. A later affected-profile revisit remains useful. Capture any remaining slow episode using HTML/resource timings and both artwork readiness states. Keep the eight-second emergency release separate from the normal readiness criterion.
+Application commit `94d1d95e4824d7a4b7b8ca6954df3bcceae5e6a4` is pushed to main. GitHub deployment7607266346 reports Production success, with immutable URL `https://portfolio-nextjs-dap5ddovz-akash-freebird.vercel.app` and Vercel build `P2GxHQNhc8hggMFqNGiMLpZeNrp9`. Production domain remains `https://freebirdakash.vercel.app`.
+
+All four live routes returned200, reached artwork readiness, contained one inert skeleton and released canonical headings; no JavaScript errors or unused raw-lens preloads. All three remote geometry responses advertise one-year immutable browser freshness. First deployment-cold viewport readiness was4.687s home,3.593s EDD,2.143s Leads and2.307s Horecah; these include initially empty caches and are not a universal speed guarantee. Skeletons appeared before that work completed. Subsequent interaction-run readiness ranged0.378–1.637s. Distinguish skeleton FCP from final content readiness.
+
+Live Chromium and WebKit each passed desktop/laptop/mobile/reduced-motion/noJS sequences with deliberately delayed geometry; all three case studies passed noJS canonical-content checks. Existing live four-route desktop hover/mobile touch, scroll/resize, failure release and exact batch/single API checks passed. Raw live matrix is in `artifacts/pcb-regeneration-2026-11-06/loading/live-release-four-routes.json`; browser verification artifacts and command invocations use the production origin.
+
+Release complete. A later affected-profile revisit remains useful. Capture any remaining slow episode using HTML/resource timings and both artwork readiness states. Keep the eight-second emergency release separate from the normal readiness criterion. Post-deployment evidence is checkpointed locally; no unrelated draft files were included in the application commit.
 
 Existing production contact/admin follow-ups remain open. Parent retains sequential release operations because Git/deployment validation shares the established scope and evidence; no new worker handoff is needed.

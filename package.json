@@ -13,24 +13,27 @@
     "verify:pcb-touch-svg": "npm run test:pcb-touch-svg && node --experimental-strip-types scripts/verify-pcb-touch-native-svg.mjs && node scripts/verify-pcb-touch-halo.mjs",
     "verify:pcb-derivative-render": "node --experimental-strip-types scripts/verify-pcb-derivative-render.mjs",
     "prepare:pcb-background": "node scripts/prepare-pcb-background.mjs",
-    "dev": "next dev",
-    "build": "next build",
+    "prepare:pcb-native": "node scripts/build-pcb-native.mjs",
+    "prepare": "node scripts/build-pcb-native.mjs",
+    "dev": "node scripts/dev-with-pcb-native.mjs",
+    "build": "node scripts/build-pcb-native.mjs && next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
-    "next": "16.3.7",
+    "next": "16.4.6",
     "react": "latest",
     "react-dom": "latest",
     "resend": "latest",
-    "zod": "latest"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "esbuild": "0.28.2",
     "typescript": "latest"
   }
 }

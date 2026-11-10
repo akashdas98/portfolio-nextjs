@@ -29,6 +29,14 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+The development command manages both Next.js and the small native PCB module
+watcher. A native-renderer edit rebuilds its hashed entry and reloads the document;
+stopping the command stops both processes. `npm install` also prepares the native
+asset and manifest. After installing with lifecycle scripts disabled, run
+`npm run prepare:pcb-native` before development, a standalone typecheck or tests
+that inspect the generated entry. `npm run build` prepares it automatically.
+Generated files under `public/_pcb/` and the native entry manifest stay out of Git.
+
 Optionally specify a port (omit it to keep the default of `3000`):
 
 ```bash
@@ -129,6 +137,10 @@ The optional final argument to `prepare:pcb-background` overrides the default `4
 3. Verify the sender domain in Resend.
 4. Configure Supabase environment variables if the admin panel or lead capture should be active.
 5. The connected Vercel project deploys pushes to `main` at `https://freebirdakash.vercel.app`. Verify the exact Git SHA through the Vercel GitHub deployment status and check the public routes/assets after completion. Other Node-compatible hosts require their own configuration.
+
+`vercel.json` selects the single Tokyo function region (`hnd1`) to match the linked
+Supabase project's `ap-northeast-1` region. This takes effect on deployment; verify
+origin-region response headers afterward. Static assets remain globally cached.
 
 ## Design direction
 
